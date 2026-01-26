@@ -22,7 +22,9 @@ class InboundDetail extends Model
         'serial_number',
         'old_serial_number',
         'condition',
-        'storage_level_id'
+        'storage_level_id',
+        'brand_id',
+        'product_group_id'
     ];
 
     public function inbound(): BelongsTo

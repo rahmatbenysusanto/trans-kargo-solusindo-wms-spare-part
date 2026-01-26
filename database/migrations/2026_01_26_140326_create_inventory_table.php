@@ -13,17 +13,18 @@ return new class extends Migration
     {
         Schema::create('inventory', function (Blueprint $table) {
             $table->id();
+            $table->string('unique_id')->unique();
             $table->integer('client_id');
-            $table->integer('inbound_detail_id');
-            $table->integer('bin_id');
-            $table->string('unique_number')->unique();
+            $table->integer('storage_level_id');
+            $table->integer('qty')->default(0);
             $table->string('part_name');
             $table->string('part_number');
-            $table->string('description')->nullable();
-            $table->string('serial_number')->nullable();
-            $table->enum('status', ['available', 'reserved', 'loan', 'defective', 'rma'])->default('available');
-            $table->date('last_staging_date')->nullable();
-            $table->date('last_movement_date')->nullable();
+            $table->string('part_description')->nullable();
+            $table->string('serial_number');
+            $table->string('parent_serial_number')->nullable();
+            $table->string('status');
+            $table->timestamp('last_staging_date')->nullable();
+            $table->timestamp('last_movement_date')->nullable();
             $table->timestamps();
         });
     }

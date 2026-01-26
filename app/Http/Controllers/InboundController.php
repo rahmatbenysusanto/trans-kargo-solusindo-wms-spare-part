@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Inbound;
 use App\Models\InboundDetail;
+use App\Models\Inventory;
+use App\Models\InventoryDetail;
 use App\Models\Product;
 use App\Models\ProductGroup;
 use App\Models\Client;
 use App\Models\StorageZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class InboundController extends Controller
@@ -71,6 +75,24 @@ class InboundController extends Controller
         return view('inbound.put-away.process', compact('title', 'inbound', 'storageZone'));
     }
 
+    private static function makeCode(string $text, int $length = 3): string
+    {
+        return strtoupper(substr(Str::slug($text, ''), 0, $length));
+    }
+
+    public static function generateUniqueId(string $brand, string $group): string
+    {
+        return sprintf(
+            '%s-%s-%s',
+            self::makeCode($brand),
+            self::makeCode($group),
+            strtoupper(Str::random(5))
+        );
+    }
+
+    /**
+     * @throws \Throwable
+     */
     public function updatePutAway(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
@@ -81,6 +103,40 @@ class InboundController extends Controller
             foreach ($products as $id) {
                 InboundDetail::where('id', $id)->update([
                     'storage_level_id' => $storageLevelId
+                ]);
+
+                $inboundDetail = InboundDetail::find($id);
+                $inbound = Inbound::find($inboundDetail->inbound_id);
+                // Update Inventory Data
+                $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)->first();
+                if ($checkInventory) {
+                    $inventoryId = $checkInventory->id;
+                    Inventory::where('serial_number', $inboundDetail->serial_number)->update([
+                        'storage_level_id'  => $storageLevelId,
+                        'qty'               => 1,
+                        'status'            => 'available'
+                    ]);
+                } else {
+                    $brand = Brand::find($inboundDetail->brand_id);
+                    $productGroup = ProductGroup::find($inboundDetail->product_group_id);
+
+                    $createInventory = Inventory::create([
+                        'unique_id'         => $this->generateUniqueId($brand->name, $productGroup->name),
+                        'client_id'         => $inbound->client_id,
+                        'storage_level_id'  => $storageLevelId,
+                        'qty'               => 1,
+                        'part_name'         => $inboundDetail->part_name,
+                        'part_number'       => $inboundDetail->part_number,
+                        'part_description'  => $inboundDetail->part_description,
+                        'serial_number'     => $inboundDetail->serial_number,
+                        'status'            => 'available',
+                    ]);
+                    $inventoryId = $createInventory->id;
+                }
+
+                InventoryDetail::create([
+                    'inventory_id'      => $inventoryId,
+                    'inbound_detail_id' => $id,
                 ]);
             }
 
@@ -100,6 +156,8 @@ class InboundController extends Controller
             return response()->json(['status' => true]);
         } catch (\Throwable $err) {
             DB::rollBack();
+                Log::info($err->getMessage());
+                Log::info($err->getLine());
             return response()->json(['status' => false, 'message' => $err->getMessage()]);
         }
     }
@@ -205,6 +263,8 @@ class InboundController extends Controller
                     'qty'           => 1,
                     'serial_number' => $product['serialNumber'],
                     'condition'     => $product['condition'],
+                    'brand_id'      => $brand->id,
+                    'product_group_id' => $productGroup->id,
                 ]);
             }
 

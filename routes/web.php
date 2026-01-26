@@ -55,6 +55,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
     Route::prefix('/inventory')->controller(InventoryController::class)->group(function () {
         Route::get('/list', 'index')->name('inventory.index');
+        Route::get('/list/{id}', 'show')->name('inventory.show');
 
         Route::get('/stock-movement', 'stockMovement')->name('inventory.stock.movement');
     });
