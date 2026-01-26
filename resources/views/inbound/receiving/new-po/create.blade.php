@@ -138,10 +138,9 @@
                                 <label class="form-label">Condition</label>
                                 <select class="form-control" id="condition">
                                     <option>New</option>
-                                    <option>Second</option>
-                                    <option>Scrap</option>
-                                    <option>Broken</option>
-                                    <option>Repair</option>
+                                    <option>Refurbished</option>
+                                    <option>Faulty</option>
+                                    <option>Write-off Needed</option>
                                 </select>
                             </div>
                         </div>
@@ -328,6 +327,18 @@
                 return;
             }
 
+            const poNumber = document.getElementById('po_number').value;
+            const vendor = document.getElementById('vendor').value;
+            const receivedDate = document.getElementById('date').value;
+            const receivedBy = document.getElementById('received_by').value;
+            const receivingNote = document.getElementById('ntt_no').value;
+            const category = "New PO";
+
+            if (!poNumber || !vendor || !receivedDate || !receivedBy) {
+                Swal.fire('Error', 'Please fill in all required fields (PO Number, Vendor, Date, Received By).', 'error');
+                return;
+            }
+
             Swal.fire({
                 title: 'Are you sure?',
                 text: "Do you want to create this New PO?",
@@ -338,11 +349,49 @@
                 confirmButtonText: 'Yes, create it!'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire(
-                        'Created!',
-                        'Your PO has been created successfully (Simulation).',
-                        'success'
-                    );
+                    Swal.fire({
+                        title: 'Processing...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        }
+                    });
+
+                    fetch('{{ route('receiving.store.new.po') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                category,
+                                poNumber,
+                                vendor,
+                                receivedDate,
+                                receivedBy,
+                                receivingNote,
+                                products
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status) {
+                                localStorage.removeItem('products');
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: 'Your PO has been created successfully.',
+                                    icon: 'success'
+                                }).then(() => {
+                                    window.location.href = '{{ route('receiving') }}';
+                                });
+                            } else {
+                                Swal.fire('Error', data.message || 'Failed to create PO.', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                        });
                 }
             });
         }

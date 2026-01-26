@@ -16,8 +16,9 @@ class InboundController extends Controller
 {
     public function receiving(): View
     {
+        $inbound = Inbound::latest()->paginate(10);
         $title = 'Receiving';
-        return view('inbound.receiving.index', compact('title'));
+        return view('inbound.receiving.index', compact('title', 'inbound'));
     }
 
     public function putAway(): View
@@ -71,17 +72,36 @@ class InboundController extends Controller
      */
     public function storeNewPO(Request $request)
     {
+        $request->validate([
+            'category'      => 'required',
+            'poNumber'      => 'required',
+            'vendor'        => 'required',
+            'receivedDate'  => 'required',
+            'receivedBy'    => 'required',
+            'products'      => 'required|array|min:1',
+        ]);
+
         try {
             DB::beginTransaction();
 
             $inbound = Inbound::create([
-                ''
+                'category'       => $request->post('category'),
+                'number'         => $request->post('poNumber'),
+                'receiving_note' => $request->post('receivingNote'),
+                'vendor'         => $request->post('vendor'),
+                'qty'            => count($request->post('products')),
+                'received_date'  => $request->post('receivedDate'),
+                'received_by'    => $request->post('receivedBy'),
             ]);
 
             foreach ($request->post('products') as $product) {
-                $brand = Brand::where('name', $product['brand'])->first();
-                $productGroup = ProductGroup::where('name', $product['productGroup'])->first();
+                // Find or create Brand
+                $brand = Brand::firstOrCreate(['name' => $product['brand']]);
 
+                // Find or create Product Group
+                $productGroup = ProductGroup::firstOrCreate(['name' => $product['productGroup']]);
+
+                // Find or create Product
                 $findProduct = Product::where('part_name', $product['partName'])
                     ->where('brand_id', $brand->id)
                     ->where('product_group_id', $productGroup->id)
@@ -103,7 +123,7 @@ class InboundController extends Controller
                     'product_id'    => $productId,
                     'part_name'     => $product['partName'],
                     'part_number'   => $product['partNumber'],
-                    'description'   => $product['partDescription'],
+                    'description'   => $product['partDescription'] ?? '',
                     'qty'           => 1,
                     'serial_number' => $product['serialNumber'],
                     'condition'     => $product['condition'],
@@ -117,7 +137,8 @@ class InboundController extends Controller
         } catch (\Throwable $err) {
             DB::rollBack();
             return response()->json([
-                'status' => false,
+                'status'  => false,
+                'message' => $err->getMessage(),
             ]);
         }
     }

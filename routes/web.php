@@ -39,6 +39,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
                 Route::get('/faulty', 'createFaulty')->name('receiving.create.faulty');
                 Route::get('/rma', 'createRma')->name('receiving.create.rma');
                 Route::get('/new-po', 'createNewPO')->name('receiving.create.new.po');
+                Route::post('/store-new-po', 'storeNewPO')->name('receiving.store.new.po');
             });
         });
 

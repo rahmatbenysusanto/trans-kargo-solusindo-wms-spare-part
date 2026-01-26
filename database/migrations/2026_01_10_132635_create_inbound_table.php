@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('inbound', function (Blueprint $table) {
             $table->id();
+            $table->string('category');
             $table->string('number');
             $table->string('reff_number')->nullable();
             $table->string('receiving_note')->nullable();
@@ -21,10 +22,10 @@ return new class extends Migration
             $table->string('courier_invoice')->nullable();
             $table->string('rma_number')->nullable();
             $table->string('itsm_number')->nullable();
-            $table->integer('vendor_id');
+            $table->string('vendor');
             $table->integer('qty')->default(0);
             $table->date('received_date')->nullable();
-            $table->integer('received_by')->nullable();
+            $table->string('received_by')->nullable();
             $table->timestamps();
         });
     }

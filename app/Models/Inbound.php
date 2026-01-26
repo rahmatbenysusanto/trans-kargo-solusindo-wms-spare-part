@@ -13,6 +13,7 @@ class Inbound extends Model
     protected $table = 'inbound';
 
     protected $fillable = [
+        'category',
         'number',
         'reff_number',
         'receiving_note',
@@ -21,7 +22,7 @@ class Inbound extends Model
         'courier_invoice',
         'rma_number',
         'itsm_number',
-        'vendor_id',
+        'vendor',
         'qty',
         'received_date',
         'received_by',
