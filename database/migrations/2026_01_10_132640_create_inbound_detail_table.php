@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('serial_number');
             $table->string('old_serial_number')->nullable();
             $table->string('condition');
+            $table->integer('storage_level_id')->nullable();
             $table->timestamps();
         });
     }

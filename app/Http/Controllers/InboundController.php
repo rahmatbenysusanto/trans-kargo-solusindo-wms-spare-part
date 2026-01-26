@@ -8,6 +8,7 @@ use App\Models\InboundDetail;
 use App\Models\Product;
 use App\Models\ProductGroup;
 use App\Models\Client;
+use App\Models\StorageZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -21,10 +22,86 @@ class InboundController extends Controller
         return view('inbound.receiving.index', compact('title', 'inbound'));
     }
 
+    public function show($id): View
+    {
+        $inbound = Inbound::with('details')->findOrFail($id);
+        $title = 'Receiving';
+        return view('inbound.receiving.show', compact('title', 'inbound'));
+    }
+
+    public function approve(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $inbound = Inbound::findOrFail($request->post('id'));
+            $inbound->update(['status' => 'process qc']);
+
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    public function cancel(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $inbound = Inbound::findOrFail($request->post('id'));
+            $inbound->update(['status' => 'cancel']);
+
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
     public function putAway(): View
     {
+        $inbound = Inbound::where('status', 'process qc')->latest()->paginate(10);
         $title = 'Put Away';
-        return view('inbound.put-away.index', compact('title'));
+        return view('inbound.put-away.index', compact('title', 'inbound'));
+    }
+
+    public function processPutAway($id): View
+    {
+        $inbound = Inbound::with(['details' => function ($query) {
+            $query->whereNull('storage_level_id');
+        }])->findOrFail($id);
+
+        $storageZone = StorageZone::all();
+        $title = 'Put Away';
+        return view('inbound.put-away.process', compact('title', 'inbound', 'storageZone'));
+    }
+
+    public function updatePutAway(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $products = $request->post('products');
+            $storageLevelId = $request->post('storage_level_id');
+
+            foreach ($products as $id) {
+                InboundDetail::where('id', $id)->update([
+                    'storage_level_id' => $storageLevelId
+                ]);
+            }
+
+            // Check if all products in this inbound are already put away
+            $detail = InboundDetail::findOrFail($products[0]);
+            $inboundId = $detail->inbound_id;
+
+            $remaining = InboundDetail::where('inbound_id', $inboundId)
+                ->whereNull('storage_level_id')
+                ->count();
+
+            if ($remaining === 0) {
+                Inbound::where('id', $inboundId)->update(['status' => 'close']);
+            }
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
     }
 
     public function createSpare(): View
@@ -92,6 +169,7 @@ class InboundController extends Controller
                 'qty'            => count($request->post('products')),
                 'received_date'  => $request->post('receivedDate'),
                 'received_by'    => $request->post('receivedBy'),
+                'status'         => 'new' // new, process qc, cancel, close
             ]);
 
             foreach ($request->post('products') as $product) {

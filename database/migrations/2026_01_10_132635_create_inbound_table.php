@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('rma_number')->nullable();
             $table->string('itsm_number')->nullable();
             $table->string('vendor');
+            $table->string('status');
             $table->integer('qty')->default(0);
             $table->date('received_date')->nullable();
             $table->string('received_by')->nullable();

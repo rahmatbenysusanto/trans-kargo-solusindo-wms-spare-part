@@ -31,6 +31,7 @@
                                     <th>#</th>
                                     <th>PO / Ref Number</th>
                                     <th>Category</th>
+                                    <th>Status</th>
                                     <th>Note</th>
                                     <th>RMA</th>
                                     <th>ITSM</th>
@@ -47,6 +48,21 @@
                                         </td>
                                         <td>{{ $item->number }}</td>
                                         <td><span class="badge bg-label-primary">{{ $item->category }}</span></td>
+                                        <td>
+                                            @php
+                                                $statusClass = 'bg-label-secondary';
+                                                if ($item->status == 'new') {
+                                                    $statusClass = 'bg-label-info';
+                                                } elseif ($item->status == 'process qc') {
+                                                    $statusClass = 'bg-label-warning';
+                                                } elseif ($item->status == 'cancel') {
+                                                    $statusClass = 'bg-label-danger';
+                                                } elseif ($item->status == 'close') {
+                                                    $statusClass = 'bg-label-success';
+                                                }
+                                            @endphp
+                                            <span class="badge {{ $statusClass }}">{{ strtoupper($item->status) }}</span>
+                                        </td>
                                         <td>{{ $item->receiving_note ?? '-' }}</td>
                                         <td>{{ $item->rma_number ?? '-' }}</td>
                                         <td>{{ $item->itsm_number ?? '-' }}</td>
@@ -60,10 +76,20 @@
                                                     <i class="ti tabler-dots-vertical"></i>
                                                 </button>
                                                 <div class="dropdown-menu">
-                                                    <a class="dropdown-item" href="javascript:void(0);"><i
-                                                            class="ti tabler-eye me-1"></i> View</a>
-                                                    <a class="dropdown-item" href="javascript:void(0);"><i
-                                                            class="ti tabler-trash me-1"></i> Delete</a>
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('receiving.show', $item->id) }}">
+                                                        <i class="ti tabler-eye me-1"></i> Detail
+                                                    </a>
+                                                    @if ($item->status == 'new')
+                                                        <a class="dropdown-item" href="javascript:void(0);"
+                                                            onclick="approveReceiving({{ $item->id }})">
+                                                            <i class="ti tabler-check me-1"></i> Approve
+                                                        </a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);"
+                                                            onclick="cancelReceiving({{ $item->id }})">
+                                                            <i class="ti tabler-x me-1"></i> Cancel
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
@@ -79,4 +105,75 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('js')
+    <script>
+        function approveReceiving(id) {
+            Swal.fire({
+                title: 'Approve Receiving?',
+                text: "Status will be changed to PROCESS QC",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, approve it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeAjax('{{ route('receiving.approve') }}', id);
+                }
+            });
+        }
+
+        function cancelReceiving(id) {
+            Swal.fire({
+                title: 'Cancel Receiving?',
+                text: "Status will be changed to CANCEL",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, cancel it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeAjax('{{ route('receiving.cancel') }}', id);
+                }
+            });
+        }
+
+        function executeAjax(url, id) {
+            Swal.fire({
+                title: 'Processing...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                }
+            });
+
+            fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        id: id
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status) {
+                        Swal.fire('Success!', 'Status updated successfully.', 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'Failed to update status.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                });
+        }
+    </script>
 @endsection

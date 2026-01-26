@@ -33,6 +33,9 @@ Route::middleware([AuthMiddleware::class])->group(function () {
     Route::prefix('/inbound')->controller(InboundController::class)->group(function () {
         Route::prefix('/receiving')->group(function () {
             Route::get('/', 'receiving')->name('receiving');
+            Route::get('/{id}', 'show')->name('receiving.show');
+            Route::post('/approve', 'approve')->name('receiving.approve');
+            Route::post('/cancel', 'cancel')->name('receiving.cancel');
 
             Route::prefix('/create')->group(function () {
                 Route::get('/spare', 'createSpare')->name('receiving.create.spare');
@@ -45,6 +48,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
         Route::prefix('/put-away')->group(function () {
             Route::get('/', 'putAway')->name('receiving.put.away');
+            Route::get('/process/{id}', 'processPutAway')->name('receiving.put.away.process');
+            Route::post('/update', 'updatePutAway')->name('receiving.put.away.update');
         });
     });
 

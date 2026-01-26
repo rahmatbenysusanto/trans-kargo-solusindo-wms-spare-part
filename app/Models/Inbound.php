@@ -26,6 +26,7 @@ class Inbound extends Model
         'qty',
         'received_date',
         'received_by',
+        'status'
     ];
 
     public function details(): HasMany
