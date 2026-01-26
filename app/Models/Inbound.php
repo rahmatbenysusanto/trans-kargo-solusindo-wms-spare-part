@@ -14,6 +14,7 @@ class Inbound extends Model
 
     protected $fillable = [
         'category',
+        'client_id',
         'number',
         'reff_number',
         'receiving_note',

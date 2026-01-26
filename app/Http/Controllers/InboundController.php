@@ -156,8 +156,8 @@ class InboundController extends Controller
             return response()->json(['status' => true]);
         } catch (\Throwable $err) {
             DB::rollBack();
-                Log::info($err->getMessage());
-                Log::info($err->getLine());
+            Log::info($err->getMessage());
+            Log::info($err->getLine());
             return response()->json(['status' => false, 'message' => $err->getMessage()]);
         }
     }
@@ -205,11 +205,12 @@ class InboundController extends Controller
     /**
      * @throws \Throwable
      */
-    public function storeNewPO(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'category'      => 'required',
-            'poNumber'      => 'required',
+            'client_id'      => 'required',
+            'number'         => 'required',
             'vendor'        => 'required',
             'receivedDate'  => 'required',
             'receivedBy'    => 'required',
@@ -221,9 +222,13 @@ class InboundController extends Controller
 
             $inbound = Inbound::create([
                 'category'       => $request->post('category'),
-                'number'         => $request->post('poNumber'),
+                'client_id'      => $request->post('client_id'),
+                'number'         => $request->post('number'),
                 'receiving_note' => $request->post('receivingNote'),
                 'vendor'         => $request->post('vendor'),
+                'sttb'           => $request->post('sttb'),
+                'courier_delivery_note' => $request->post('delivery_note'),
+                'courier_invoice' => $request->post('courier_invoice'),
                 'qty'            => count($request->post('products')),
                 'received_date'  => $request->post('receivedDate'),
                 'received_by'    => $request->post('receivedBy'),

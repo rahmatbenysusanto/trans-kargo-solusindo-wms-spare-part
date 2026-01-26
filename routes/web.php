@@ -42,7 +42,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
                 Route::get('/faulty', 'createFaulty')->name('receiving.create.faulty');
                 Route::get('/rma', 'createRma')->name('receiving.create.rma');
                 Route::get('/new-po', 'createNewPO')->name('receiving.create.new.po');
-                Route::post('/store-new-po', 'storeNewPO')->name('receiving.store.new.po');
+                Route::post('/store', 'store')->name('receiving.store');
             });
         });
 
@@ -107,10 +107,9 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
     Route::prefix('/user')->controller(UserController::class)->group(function () {
         Route::get('/', 'index')->name('user.index');
-        Route::get('/create', 'create')->name('user.create');
         Route::post('/store', 'store')->name('user.store');
-        Route::get('/edit', 'edit')->name('user.edit');
         Route::post('/update', 'update')->name('user.update');
+        Route::get('/destroy/{id}', 'destroy')->name('user.destroy');
 
         Route::prefix('/menu')->group(function () {
             Route::get('/', 'menu')->name('user.menu');

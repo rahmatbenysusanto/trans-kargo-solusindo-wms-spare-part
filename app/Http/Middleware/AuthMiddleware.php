@@ -15,6 +15,9 @@ class AuthMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (!\Illuminate\Support\Facades\Auth::check()) {
+            return redirect()->route('login');
+        }
         return $next($request);
     }
 }

@@ -17,6 +17,15 @@
                             <input type="text" class="form-control" value="New PO" readonly>
                         </div>
                         <div class="col-4 mb-3">
+                            <label class="form-label">Client</label>
+                            <select class="form-control" name="client_id" id="client_id">
+                                <option value="">-- Choose Client --</option>
+                                @foreach ($client as $item)
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-4 mb-3">
                             <label class="form-label">PO Number</label>
                             <input type="text" class="form-control" name="po_number" id="po_number"
                                 placeholder="PO Number ...">
@@ -328,14 +337,16 @@
             }
 
             const poNumber = document.getElementById('po_number').value;
+            const clientId = document.getElementById('client_id').value;
             const vendor = document.getElementById('vendor').value;
             const receivedDate = document.getElementById('date').value;
             const receivedBy = document.getElementById('received_by').value;
             const receivingNote = document.getElementById('ntt_no').value;
             const category = "New PO";
 
-            if (!poNumber || !vendor || !receivedDate || !receivedBy) {
-                Swal.fire('Error', 'Please fill in all required fields (PO Number, Vendor, Date, Received By).', 'error');
+            if (!poNumber || !clientId || !vendor || !receivedDate || !receivedBy) {
+                Swal.fire('Error', 'Please fill in all required fields (Client, PO Number, Vendor, Date, Received By).',
+                    'error');
                 return;
             }
 
@@ -357,7 +368,7 @@
                         }
                     });
 
-                    fetch('{{ route('receiving.store.new.po') }}', {
+                    fetch('{{ route('receiving.store') }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -365,7 +376,8 @@
                             },
                             body: JSON.stringify({
                                 category,
-                                poNumber,
+                                client_id: clientId,
+                                number: poNumber,
                                 vendor,
                                 receivedDate,
                                 receivedBy,

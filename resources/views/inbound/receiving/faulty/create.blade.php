@@ -148,6 +148,20 @@
                 return;
             }
 
+            const number = document.getElementById('sttb').value;
+            const clientId = document.getElementById('client_id').value;
+            const vendor = document.getElementById('delivery_note').value;
+            const courierInvoice = document.getElementById('courier_invoice').value;
+            const picNtt = document.getElementById('pic_ntt').value;
+            const receivedDate = document.getElementById('date').value;
+            const receivedBy = document.getElementById('received_by').value;
+            const category = "Faulty";
+
+            if (!number || !clientId || !receivedDate || !receivedBy) {
+                Swal.fire('Error', 'Please fill in all required fields (STTB, Client, Date, Received By).', 'error');
+                return;
+            }
+
             Swal.fire({
                 title: 'Are you sure?',
                 text: "Do you want to create this Receiving Faulty?",
@@ -158,11 +172,54 @@
                 confirmButtonText: 'Yes, create it!'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire(
-                        'Created!',
-                        'Your Receiving Faulty has been created successfully (Simulation).',
-                        'success'
-                    );
+                    Swal.fire({
+                        title: 'Processing...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        }
+                    });
+
+                    fetch('{{ route('receiving.store') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                category,
+                                client_id: clientId,
+                                number: number,
+                                vendor: 'Internal',
+                                sttb: number,
+                                delivery_note: document.getElementById('delivery_note').value,
+                                courier_invoice: courierInvoice,
+                                receivingNote: 'PIC NTT: ' + picNtt,
+                                receivedDate,
+                                receivedBy,
+                                products
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status) {
+                                localStorage.removeItem('products');
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: 'Your Receiving Faulty has been created successfully.',
+                                    icon: 'success'
+                                }).then(() => {
+                                    window.location.href = '{{ route('receiving') }}';
+                                });
+                            } else {
+                                Swal.fire('Error', data.message || 'Failed to create Receiving Faulty.',
+                                    'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                        });
                 }
             });
         }
@@ -271,11 +328,11 @@
                                 placeholder="Courier Invoice ...">
                         </div>
                         <div class="col-4 mb-3">
-                            <label class="form-label">Client Name</label>
-                            <select class="form-control" name="client_name" id="client_name">
+                            <label class="form-label">Client</label>
+                            <select class="form-control" name="client_id" id="client_id">
                                 <option value="">-- Choose Client --</option>
                                 @foreach ($client as $item)
-                                    <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
                                 @endforeach
                             </select>
                         </div>

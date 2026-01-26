@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('inbound', function (Blueprint $table) {
             $table->id();
             $table->string('category');
+            $table->integer('client_id');
             $table->string('number');
             $table->string('reff_number')->nullable();
             $table->string('receiving_note')->nullable();
