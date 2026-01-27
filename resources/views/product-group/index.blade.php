@@ -5,8 +5,14 @@
     <div class="row">
         <div class="col-6">
             <div class="card">
-                <div class="card-header d-flex justify-content-end">
-                    <a class="btn btn-primary text-white btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">Add Product
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <form action="{{ route('product.group.index') }}" method="GET" class="d-flex gap-2">
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Search group..."
+                            value="{{ $search ?? '' }}">
+                        <button type="submit" class="btn btn-primary btn-sm text-white">Search</button>
+                    </form>
+                    <a class="btn btn-primary text-white btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">Add
+                        Product
                         Group</a>
                 </div>
                 <div class="card-body">

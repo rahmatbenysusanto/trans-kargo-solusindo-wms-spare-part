@@ -10,9 +10,17 @@ class UserController extends Controller
 {
     public function index(Request $request): View
     {
-        $users = User::latest()->paginate(10);
+        $search = $request->get('search');
+        $users = User::latest()
+            ->when($search, function ($query) use ($search) {
+                return $query->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('username', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%");
+            })
+            ->paginate(10);
+
         $title = 'User';
-        return view('user.index', compact('title', 'users'));
+        return view('user.index', compact('title', 'users', 'search'));
     }
 
     public function store(Request $request)

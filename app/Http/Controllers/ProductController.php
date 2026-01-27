@@ -9,11 +9,14 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $productGroup = ProductGroup::paginate(10);
+        $search = $request->get('search');
+        $productGroup = ProductGroup::when($search, function ($query) use ($search) {
+            return $query->where('name', 'LIKE', "%{$search}%");
+        })->paginate(10);
         $title = 'Product Group';
-        return view('product-group.index', compact('title', 'productGroup'));
+        return view('product-group.index', compact('title', 'productGroup', 'search'));
     }
 
     public function store(Request $request)

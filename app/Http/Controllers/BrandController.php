@@ -8,12 +8,15 @@ use Illuminate\View\View;
 
 class BrandController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $brand = Brand::paginate(10);
+        $search = $request->get('search');
+        $brand = Brand::when($search, function ($query) use ($search) {
+            return $query->where('name', 'LIKE', "%{$search}%");
+        })->paginate(10);
 
         $title = 'Brand';
-        return view('brand.index', compact('title', 'brand'));
+        return view('brand.index', compact('title', 'brand', 'search'));
     }
 
     public function store(Request $request)

@@ -5,7 +5,12 @@
     <div class="row">
         <div class="col-6">
             <div class="card">
-                <div class="card-header d-flex justify-content-end">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <form action="{{ route('client.index') }}" method="GET" class="d-flex gap-2">
+                        <input type="text" name="search" class="form-control form-control-sm"
+                            placeholder="Search client..." value="{{ $search ?? '' }}">
+                        <button type="submit" class="btn btn-primary btn-sm text-white">Search</button>
+                    </form>
                     <a class="btn btn-primary text-white btn-sm" data-bs-toggle="modal" data-bs-target="#addClientModal">Add
                         Client</a>
                 </div>

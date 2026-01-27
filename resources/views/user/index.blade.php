@@ -5,10 +5,15 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0">User List</h5>
-                    <div>
-                        <a href="{{ route('menu.index') }}" class="btn btn-info btn-sm text-white me-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <form action="{{ route('user.index') }}" method="GET" class="d-flex gap-2">
+                            <input type="text" name="search" class="form-control form-control-sm"
+                                placeholder="Search user..." value="{{ $search ?? '' }}">
+                            <button type="submit" class="btn btn-primary btn-sm text-white">Search</button>
+                        </form>
+                        <a href="{{ route('menu.index') }}" class="btn btn-info btn-sm text-white">
                             <i class="bi bi-list-task me-1"></i> Manage Menus
                         </a>
                         <button class="btn btn-primary btn-sm text-white" data-bs-toggle="modal"
