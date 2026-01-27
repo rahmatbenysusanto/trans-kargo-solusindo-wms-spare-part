@@ -6,6 +6,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InboundController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OutboundController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RMAController;
@@ -114,9 +115,13 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::post('/update', 'update')->name('user.update');
         Route::get('/destroy/{id}', 'destroy')->name('user.destroy');
 
-        Route::prefix('/menu')->group(function () {
-            Route::get('/', 'menu')->name('user.menu');
-            Route::post('/store', 'menuStore')->name('user.menu.store');
+        Route::prefix('/menu')->controller(MenuController::class)->group(function () {
+            Route::get('/', 'index')->name('menu.index');
+            Route::post('/store', 'store')->name('menu.store');
+            Route::post('/update', 'update')->name('menu.update');
+            Route::get('/destroy/{id}', 'destroy')->name('menu.destroy');
+            Route::get('/user/{userId}', 'getUserMenus')->name('menu.user');
+            Route::post('/user/toggle', 'toggleUserMenu')->name('menu.user.toggle');
         });
     });
 

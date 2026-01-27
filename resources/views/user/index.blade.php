@@ -7,9 +7,15 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">User List</h5>
-                    <button class="btn btn-primary btn-sm text-white" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                        <i class="bi bi-plus-circle me-1"></i> Add User
-                    </button>
+                    <div>
+                        <a href="{{ route('menu.index') }}" class="btn btn-info btn-sm text-white me-2">
+                            <i class="bi bi-list-task me-1"></i> Manage Menus
+                        </a>
+                        <button class="btn btn-primary btn-sm text-white" data-bs-toggle="modal"
+                            data-bs-target="#addUserModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add User
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -42,6 +48,10 @@
                                         </td>
                                         <td>
                                             <div class="btn-group">
+                                                <button class="btn btn-info btn-sm text-white"
+                                                    onclick="manageMenu('{{ $user->id }}', '{{ $user->name }}')">
+                                                    <i class="bi bi-shield-lock"></i> Menu
+                                                </button>
                                                 <button class="btn btn-secondary btn-sm text-white"
                                                     onclick="editUser('{{ $user->id }}', '{{ $user->name }}', '{{ $user->username }}', '{{ $user->email }}', '{{ $user->no_hp }}', '{{ $user->status }}')">
                                                     <i class="bi bi-pencil"></i> Edit
@@ -165,6 +175,30 @@
             </div>
         </div>
     </div>
+
+    <!-- User Menu Modal -->
+    <div class="modal fade" id="userMenuModal" tabindex="-1" aria-labelledby="userMenuModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userMenuModalLabel">Manage User Menu Access: <span
+                            id="menuUserName"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="menuListContainer">
+                        <!-- Menus will be loaded here via JS -->
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('js')
@@ -177,6 +211,52 @@
             $('#editPhone').val(phone === 'null' ? '' : phone);
             $('#editStatus').val(status);
             $('#editUserModal').modal('show');
+        }
+
+        function manageMenu(userId, userName) {
+            $('#menuUserName').text(userName);
+            $('#menuListContainer').html(
+                '<div class="text-center"><div class="spinner-border text-primary" role="status"></div></div>');
+            $('#userMenuModal').modal('show');
+
+            $.get('{{ url('user/menu/user') }}/' + userId, function(data) {
+                let html = '<ul class="list-group">';
+                data.menus.forEach(function(menu) {
+                    html += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${menu.name}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" 
+                                    ${menu.has_access ? 'checked' : ''} 
+                                    onchange="toggleMenu(${userId}, ${menu.id}, this)">
+                            </div>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+                if (data.menus.length === 0) {
+                    html = '<div class="alert alert-warning">No menus found. Please add menus first.</div>';
+                }
+                $('#menuListContainer').html(html);
+            });
+        }
+
+        function toggleMenu(userId, menuId, checkbox) {
+            $.post('{{ route('menu.user.toggle') }}', {
+                _token: '{{ csrf_token() }}',
+                user_id: userId,
+                menu_id: menuId
+            }, function(response) {
+                if (response.success) {
+                    // Success feedback if needed
+                } else {
+                    alert('Error updating menu access');
+                    checkbox.checked = !checkbox.checked;
+                }
+            }).fail(function() {
+                alert('Error updating menu access');
+                checkbox.checked = !checkbox.checked;
+            });
         }
     </script>
 @endsection
