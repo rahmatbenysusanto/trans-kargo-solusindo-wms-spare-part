@@ -4,6 +4,21 @@
 @section('content')
     <div class="row">
         <div class="col-12">
+            <div class="d-flex justify-content-end mb-3">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        Create Outbound
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" href="{{ route('receiving.create.spare') }}">Spare</a>
+                        <a class="dropdown-item" href="{{ route('receiving.create.faulty') }}">Faulty</a>
+                        <a class="dropdown-item" href="{{ route('receiving.create.rma') }}">RMA</a>
+                        <a class="dropdown-item" href="{{ route('receiving.create.new.po') }}">New PO</a>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header">
 
@@ -14,9 +29,16 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Ticket ID</th>
-                                    <th>NTT RN</th>
-                                    <th>Client</th>
+                                    <th>Category</th>
+                                    <th>PO#</th>
+                                    <th>NTT DN#</th>
+                                    <th>TKS DN#</th>
+                                    <th>TKS Invoice#</th>
+                                    <th>RMA#</th>
+                                    <th>ITSM#</th>
+                                    <th>Qty</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                         </table>
