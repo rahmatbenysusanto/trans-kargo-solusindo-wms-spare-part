@@ -1,12 +1,15 @@
 @extends('layout.index')
-@section('title', 'Stock Movement')
+@section('title', 'Product Movement History')
 
 @section('content')
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Product Movement History</h5>
+                    <a href="{{ route('inventory.product.movement.process') }}" class="btn btn-primary btn-sm text-white">
+                        <i class="ti tabler-arrows-transfer me-1"></i> Movement Product
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -15,7 +18,6 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Product Information</th>
-                                    <th>Type</th>
                                     <th>From</th>
                                     <th>To</th>
                                     <th>Date</th>
@@ -29,12 +31,6 @@
                                         <td>
                                             <div class="fw-bold">{{ $item->inventory->part_name }}</div>
                                             <small class="text-muted">SN: {{ $item->inventory->serial_number }}</small>
-                                        </td>
-                                        <td>
-                                            <span
-                                                class="badge {{ $item->type == 'Movement' ? 'bg-label-warning' : 'bg-label-primary' }}">
-                                                {{ $item->type }}
-                                            </span>
                                         </td>
                                         <td>
                                             @if ($item->fromStorageLevel)

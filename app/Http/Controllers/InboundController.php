@@ -12,6 +12,7 @@ use App\Models\ProductGroup;
 use App\Models\Client;
 use App\Models\StorageZone;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -137,6 +138,16 @@ class InboundController extends Controller
                 InventoryDetail::create([
                     'inventory_id'      => $inventoryId,
                     'inbound_detail_id' => $id,
+                ]);
+
+                // Record History for Put Away
+                \App\Models\InventoryMovement::create([
+                    'inventory_id' => $inventoryId,
+                    'from_storage_level_id' => null, // Initial placement from staging
+                    'to_storage_level_id' => $storageLevelId,
+                    'user_id' => Auth::id(),
+                    'type' => 'Put Away',
+                    'description' => 'Initial Put Away from Staging by ' . Auth::user()->name
                 ]);
             }
 

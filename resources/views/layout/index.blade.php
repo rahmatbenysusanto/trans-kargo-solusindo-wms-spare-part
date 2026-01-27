@@ -89,6 +89,43 @@
     <link rel="stylesheet"
         href="https://demos.pixinvent.com/vuexy-html-admin-template/assets/vendor/libs/sweetalert2/sweetalert2.css" />
 
+    <style>
+        .pagination {
+            display: flex;
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .pagination .page-item .page-link {
+            border-radius: 8px;
+            border: none;
+            color: #6366f1;
+            /* Primary color */
+            font-weight: 500;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            background: #fff;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .pagination .page-item .page-link:hover:not(.active) {
+            background-color: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagination .page-item.disabled .page-link {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+    </style>
     @yield('css')
 </head>
 
@@ -206,7 +243,7 @@
                     </li>
 
                     <li
-                        class="menu-item {{ in_array($title, ['Inventory List', 'Stock Movement']) ? 'show open' : '' }}">
+                        class="menu-item {{ in_array($title, ['Inventory List', 'Stock Movement', 'Product Movement']) ? 'show open' : '' }}">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon icon-base ti tabler-truck-loading"></i>
                             <div data-i18n="Inventory">Inventory</div>
@@ -220,6 +257,11 @@
                             <li class="menu-item {{ $title == 'Stock Movement' ? 'active' : '' }}">
                                 <a href="{{ route('inventory.stock.movement') }}" class="menu-link">
                                     <div data-i18n="Stock Movement">Stock Movement</div>
+                                </a>
+                            </li>
+                            <li class="menu-item {{ $title == 'Product Movement' ? 'active' : '' }}">
+                                <a href="{{ route('inventory.product.movement') }}" class="menu-link">
+                                    <div data-i18n="Product Movement">Product Movement</div>
                                 </a>
                             </li>
                         </ul>

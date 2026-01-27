@@ -33,6 +33,9 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-3">
+                        {{ $brand->links() }}
+                    </div>
                 </div>
             </div>
         </div>

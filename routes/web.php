@@ -58,6 +58,9 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/list/{id}', 'show')->name('inventory.show');
 
         Route::get('/stock-movement', 'stockMovement')->name('inventory.stock.movement');
+        Route::get('/product-movement', 'productMovementIndex')->name('inventory.product.movement');
+        Route::get('/product-movement/process', 'productMovementProcess')->name('inventory.product.movement.process');
+        Route::post('/product-movement/update', 'productMovementUpdate')->name('inventory.product.movement.update');
     });
 
     Route::prefix('/outbound')->controller(OutboundController::class)->group(function () {
