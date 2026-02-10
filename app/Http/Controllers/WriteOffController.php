@@ -10,6 +10,10 @@ class WriteOffController extends Controller
     public function index(): View
     {
         $title = "Write Off";
-        return view('writeoff.index', compact('title'));
+        $data = \App\Models\Outbound::with('client')
+            ->where('category', 'Write-off')
+            ->latest()
+            ->get();
+        return view('writeoff.index', compact('title', 'data'));
     }
 }

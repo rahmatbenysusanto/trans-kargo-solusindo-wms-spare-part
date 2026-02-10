@@ -13,11 +13,16 @@ class InventoryController extends Controller
         $title = 'Inventory List';
         $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client'])
             ->where('qty', 1)
-            ->when($request->sku, function ($query) use ($request) {
-                return $query->where('unique_id', 'like', '%' . $request->sku . '%');
+            ->when($request->search, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('unique_id', 'like', '%' . $request->search . '%')
+                        ->orWhere('part_name', 'like', '%' . $request->search . '%')
+                        ->orWhere('serial_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                });
             })
             ->latest()
-            ->paginate(20);
+            ->paginate(15);
 
         return view('inventory.inventory-list.index', compact('title', 'inventory'));
     }
@@ -35,10 +40,29 @@ class InventoryController extends Controller
     public function show($id): View
     {
         $title = 'Inventory Detail';
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'details.inboundDetail.inbound'])
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client'])
             ->findOrFail($id);
 
-        return view('inventory.inventory-list.show', compact('title', 'inventory'));
+        $sn = $inventory->serial_number;
+
+        // Fetch unified history from the dedicated table
+        $history = \App\Models\InventoryHistory::where('serial_number', $sn)
+            ->latest()
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'date' => $item->created_at,
+                    'type' => $item->type,
+                    'category' => $item->category,
+                    'reference' => $item->reference_number,
+                    'description' => $item->description,
+                    'user' => $item->user,
+                    'from_location' => $item->from_location,
+                    'to_location' => $item->to_location
+                ];
+            });
+
+        return view('inventory.inventory-list.show', compact('title', 'inventory', 'history'));
     }
 
     public function productMovementIndex(): View
@@ -88,6 +112,25 @@ class InventoryController extends Controller
                     'user_id' => Auth::id(),
                     'type' => 'Movement',
                     'description' => 'Product moved by ' . Auth::user()->name
+                ]);
+
+                // Record Unified History
+                $toStorage = \App\Models\StorageLevel::with('bin.rak.zone')->find($request->storage_level_id);
+                $toName = $toStorage ? $toStorage->bin->rak->zone->name . ' - ' . $toStorage->name : 'N/A';
+
+                $fromStorage = \App\Models\StorageLevel::with('bin.rak.zone')->find($oldStorageLevelId);
+                $fromName = $fromStorage ? $fromStorage->bin->rak->zone->name . ' - ' . $fromStorage->name : 'N/A';
+
+                \App\Models\InventoryHistory::create([
+                    'inventory_id' => $id,
+                    'serial_number' => $inventory->serial_number,
+                    'type' => 'Movement',
+                    'category' => 'Location Change',
+                    'reference_number' => '-',
+                    'description' => "Unit moved from [$fromName] to [$toName]",
+                    'user' => Auth::user()->name,
+                    'from_location' => $fromName,
+                    'to_location' => $toName
                 ]);
             }
 

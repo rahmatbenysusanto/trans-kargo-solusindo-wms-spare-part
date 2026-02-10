@@ -10,9 +10,7 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Part Number", "Part Description", "Serial Number", "Product Group", "Brand", "Condition",
-                    "QTY"
-                ]
+                ["Part Name", "Part Number", "Part Description", "Serial Number", "Product Group", "Brand", "Condition"]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(headers);
             const workbook = XLSX.utils.book_new();
@@ -61,7 +59,7 @@
                             productGroup: row["Product Group"] || "",
                             brand: row["Brand"] || "",
                             condition: row["Condition"] || "New",
-                            qty: row["QTY"] || 0,
+                            qty: 1,
                         });
                     }
                 });
@@ -101,9 +99,15 @@
         function addProduct() {
             const products = JSON.parse(localStorage.getItem('products')) ?? [];
             const sn = document.getElementById('serialNumber').value.trim();
+            const brand = document.getElementById('brand').value.trim();
+            const productGroup = document.getElementById('productGroup').value.trim();
 
-            if (!sn) {
-                Swal.fire('Error', 'Serial Number is required', 'error');
+            if (!sn || !brand || !productGroup) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Serial Number, Brand, and Product Group are required',
+                    icon: 'error'
+                });
                 return;
             }
 
@@ -126,7 +130,7 @@
                 productGroup: document.getElementById('productGroup').value,
                 brand: document.getElementById('brand').value,
                 condition: document.getElementById('condition').value,
-                qty: document.getElementById('qty').value,
+                qty: 1,
             };
 
             if (editingIndex !== null) {
@@ -148,81 +152,84 @@
                 return;
             }
 
-            const number = document.getElementById('sttb').value;
-            const clientId = document.getElementById('client_id').value;
-            const vendor = document.getElementById('delivery_note')
-                .value; // In this case, maybe use a fixed vendor or label
-            const courierInvoice = document.getElementById('courier_invoice').value;
-            const picNtt = document.getElementById('pic_ntt').value;
-            const receivedDate = document.getElementById('date').value;
-            const receivedBy = document.getElementById('received_by').value;
-            const category = "Spare";
+            category: document.getElementById('category').value,
+                pi_no: document.getElementById('number').value, // NTT RN#
+                po_number: document.getElementById('po_number').value, // PO#
+                sttb: document.getElementById('sttb').value,
+                delivery_note: document.getElementById('delivery_note').value,
+                courier_invoice: document.getElementById('courier_invoice').value,
+                client_id: document.getElementById('client_id').value,
+                vendor: document.getElementById('vendor').value,
+                date: document.getElementById('date').value,
+                received_by: document.getElementById('received_by').value,
+        };
 
-            if (!number || !clientId || !receivedDate || !receivedBy) {
-                Swal.fire('Error', 'Please fill in all required fields (STTB, Client, Date, Received By).', 'error');
-                return;
-            }
+        if (!data.pi_no || !data.client_id || !data.date || !data.received_by || !data.sttb) {
+            Swal.fire('Error', 'Please fill in all required fields (Category, STTB, NTT RN#, Client, Date, Received By).',
+                'error');
+            return;
+        }
 
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "Do you want to create this Receiving Spare?",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, create it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Processing...',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading()
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "Do you want to create this Receiving Spare?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, create it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading()
+                    }
+                });
+
+                fetch('{{ route('receiving.store.spare') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            category: data.category,
+                            client_id: data.client_id,
+                            number: data.pi_no, // NTT RN#
+                            po_number: data.po_number, // PO#
+                            sttb: data.sttb,
+                            delivery_note: data.delivery_note,
+                            courier_invoice: data.courier_invoice,
+                            vendor: data.vendor,
+                            receivedDate: data.date,
+                            receivedBy: data.received_by,
+                            products
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status) {
+                            localStorage.removeItem('products');
+                            Swal.fire({
+                                title: 'Success!',
+                                text: 'Your Receiving Spare has been created successfully.',
+                                icon: 'success'
+                            }).then(() => {
+                                window.location.href = '{{ route('receiving') }}';
+                            });
+                        } else {
+                            Swal.fire('Error', data.message || 'Failed to create Receiving Spare.',
+                                'error');
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire('Error', 'An unexpected error occurred.', 'error');
                     });
-
-                    fetch('{{ route('receiving.store') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify({
-                                category,
-                                client_id: clientId,
-                                number: number,
-                                vendor: 'Internal', // Or use a vendor field from form
-                                sttb: number,
-                                delivery_note: document.getElementById('delivery_note').value,
-                                courier_invoice: courierInvoice,
-                                receivingNote: 'PIC NTT: ' + picNtt,
-                                receivedDate,
-                                receivedBy,
-                                products
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status) {
-                                localStorage.removeItem('products');
-                                Swal.fire({
-                                    title: 'Success!',
-                                    text: 'Your Receiving Spare has been created successfully.',
-                                    icon: 'success'
-                                }).then(() => {
-                                    window.location.href = '{{ route('receiving') }}';
-                                });
-                            } else {
-                                Swal.fire('Error', data.message || 'Failed to create Receiving Spare.',
-                                    'error');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            Swal.fire('Error', 'An unexpected error occurred.', 'error');
-                        });
-                }
-            });
+            }
+        });
         }
 
         function renderProducts() {
@@ -239,9 +246,17 @@
                     <td>${product.brand}</td>
                     <td>${product.productGroup}</td>
                     <td>${product.partDescription}</td>
-                    <td>${product.qty}</td>
                     <td>${product.serialNumber}</td>
-                    <td><span class="badge bg-info">${product.condition}</span></td>
+                    <td>
+                        <select class="form-control form-control-sm" onchange="updateProductCondition(${index}, this.value)">
+                            <option value="New" ${product.condition === 'New' ? 'selected' : ''}>New</option>
+                            <option value="Second" ${product.condition === 'Second' ? 'selected' : ''}>Second</option>
+                            <option value="Refurbished" ${product.condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
+                            <option value="Scrap" ${product.condition === 'Scrap' ? 'selected' : ''}>Scrap</option>
+                            <option value="Broken" ${product.condition === 'Broken' ? 'selected' : ''}>Broken</option>
+                            <option value="Repair/Disposal Needed" ${product.condition === 'Repair/Disposal Needed' ? 'selected' : ''}>Repair/Disposal Needed</option>
+                        </select>
+                    </td>
                     <td>
                         <button class="btn btn-warning btn-sm" onclick="editProduct(${index})">Edit</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteProduct(${index})">Delete</button>
@@ -263,7 +278,7 @@
             document.getElementById('productGroup').value = product.productGroup;
             document.getElementById('brand').value = product.brand;
             document.getElementById('condition').value = product.condition;
-            document.getElementById('qty').value = product.qty;
+
 
             editingIndex = index;
             document.getElementById('addProductModalLabel').innerText = 'Edit Product';
@@ -280,6 +295,14 @@
             }
         }
 
+        function updateProductCondition(index, newCondition) {
+            const products = JSON.parse(localStorage.getItem('products')) ?? [];
+            if (products[index]) {
+                products[index].condition = newCondition;
+                localStorage.setItem('products', JSON.stringify(products));
+            }
+        }
+
         function resetForm() {
             document.getElementById('partName').value = '';
             document.getElementById('partNumber').value = '';
@@ -288,7 +311,7 @@
             document.getElementById('productGroup').value = '';
             document.getElementById('brand').value = '';
             document.getElementById('condition').value = 'New';
-            document.getElementById('qty').value = '';
+
 
             document.getElementById('addProductModalLabel').innerText = 'Add Product';
             document.getElementById('saveProductBtn').innerText = 'Add Product';
@@ -312,11 +335,24 @@
                     <div class="row">
                         <div class="col-4 mb-3">
                             <label class="form-label">Category</label>
-                            <input type="text" class="form-control" value="Spare" readonly>
+                            <select class="form-control" name="category" id="category">
+                                <option>Spare from Replacement</option>
+                                <option>Spare from Loan</option>
+                            </select>
                         </div>
                         <div class="col-4 mb-3">
                             <label class="form-label">STTB</label>
                             <input type="text" class="form-control" name="sttb" id="sttb" placeholder="STTB ...">
+                        </div>
+                        <div class="col-4 mb-3">
+                            <label class="form-label">NTT RN#</label>
+                            <input type="text" class="form-control" name="number" id="number"
+                                placeholder="NTT RN# ...">
+                        </div>
+                        <div class="col-4 mb-3">
+                            <label class="form-label">PO# (Optional)</label>
+                            <input type="text" class="form-control" name="po_number" id="po_number"
+                                placeholder="PO# ...">
                         </div>
                         <div class="col-4 mb-3">
                             <label class="form-label">Courier DN</label>
@@ -338,9 +374,9 @@
                             </select>
                         </div>
                         <div class="col-4 mb-3">
-                            <label class="form-label">PIC NTT</label>
-                            <input type="text" class="form-control" name="pic_ntt" id="pic_ntt"
-                                placeholder="PIC NTT ...">
+                            <label class="form-label">Vendor / Supplier</label>
+                            <input type="text" class="form-control" name="vendor" id="vendor"
+                                placeholder="Vendor / Supplier ...">
                         </div>
                         <div class="col-4 mb-3">
                             <label class="form-label">Received Date</label>
@@ -380,7 +416,7 @@
                                     <th>Brand</th>
                                     <th>Group</th>
                                     <th>Part Description</th>
-                                    <th>QTY</th>
+
                                     <th>Serial Number</th>
                                     <th>Condition</th>
                                     <th>Action</th>
@@ -450,9 +486,10 @@
                                 <select class="form-control" id="condition">
                                     <option>New</option>
                                     <option>Second</option>
+                                    <option>Refurbished</option>
                                     <option>Scrap</option>
                                     <option>Broken</option>
-                                    <option>Repair</option>
+                                    <option>Repair/Disposal Needed</option>
                                 </select>
                             </div>
                         </div>
@@ -476,10 +513,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">QTY</label>
-                                <input type="number" class="form-control" id="qty" placeholder="QTY ...">
-                            </div>
+
                         </div>
                     </div>
                 </div>

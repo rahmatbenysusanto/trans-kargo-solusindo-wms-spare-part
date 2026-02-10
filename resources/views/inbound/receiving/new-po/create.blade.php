@@ -173,10 +173,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">QTY</label>
-                                <input type="number" class="form-control" id="qty" placeholder="QTY ...">
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -289,9 +286,15 @@
         function addProduct() {
             const products = JSON.parse(localStorage.getItem('products')) ?? [];
             const sn = document.getElementById('serialNumber').value.trim();
+            const brand = document.getElementById('brand').value.trim();
+            const productGroup = document.getElementById('productGroup').value.trim();
 
-            if (!sn) {
-                Swal.fire('Error', 'Serial Number is required', 'error');
+            if (!sn || !brand || !productGroup) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Serial Number, Brand, and Product Group are required',
+                    icon: 'error'
+                });
                 return;
             }
 
@@ -314,7 +317,7 @@
                 productGroup: document.getElementById('productGroup').value,
                 brand: document.getElementById('brand').value,
                 condition: document.getElementById('condition').value,
-                qty: document.getElementById('qty').value,
+                qty: 1,
             };
 
             if (editingIndex !== null) {
@@ -368,7 +371,7 @@
                         }
                     });
 
-                    fetch('{{ route('receiving.store') }}', {
+                    fetch('{{ route('receiving.store.new-po') }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -424,7 +427,16 @@
                     <td>${product.partDescription}</td>
                     <td>${product.qty}</td>
                     <td>${product.serialNumber}</td>
-                    <td><span class="badge bg-info">${product.condition}</span></td>
+                    <td>
+                        <select class="form-control form-control-sm" onchange="updateProductCondition(${index}, this.value)">
+                            <option value="New" ${product.condition === 'New' ? 'selected' : ''}>New</option>
+                            <option value="Second" ${product.condition === 'Second' ? 'selected' : ''}>Second</option>
+                            <option value="Refurbished" ${product.condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
+                            <option value="Scrap" ${product.condition === 'Scrap' ? 'selected' : ''}>Scrap</option>
+                            <option value="Broken" ${product.condition === 'Broken' ? 'selected' : ''}>Broken</option>
+                            <option value="Repair/Disposal Needed" ${product.condition === 'Repair/Disposal Needed' ? 'selected' : ''}>Repair/Disposal Needed</option>
+                        </select>
+                    </td>
                     <td>
                         <button class="btn btn-warning btn-sm" onclick="editProduct(${index})">Edit</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteProduct(${index})">Delete</button>
@@ -446,7 +458,7 @@
             document.getElementById('productGroup').value = product.productGroup;
             document.getElementById('brand').value = product.brand;
             document.getElementById('condition').value = product.condition;
-            document.getElementById('qty').value = product.qty;
+
 
             editingIndex = index;
             document.getElementById('addProductModalLabel').innerText = 'Edit Product';
@@ -463,6 +475,14 @@
             }
         }
 
+        function updateProductCondition(index, newCondition) {
+            const products = JSON.parse(localStorage.getItem('products')) ?? [];
+            if (products[index]) {
+                products[index].condition = newCondition;
+                localStorage.setItem('products', JSON.stringify(products));
+            }
+        }
+
         function resetForm() {
             document.getElementById('partName').value = '';
             document.getElementById('partNumber').value = '';
@@ -471,7 +491,7 @@
             document.getElementById('productGroup').value = '';
             document.getElementById('brand').value = '';
             document.getElementById('condition').value = 'New';
-            document.getElementById('qty').value = '';
+
 
             document.getElementById('addProductModalLabel').innerText = 'Add Product';
             document.getElementById('saveProductBtn').innerText = 'Add Product';

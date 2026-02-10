@@ -43,7 +43,11 @@ Route::middleware([AuthMiddleware::class])->group(function () {
                 Route::get('/faulty', 'createFaulty')->name('receiving.create.faulty');
                 Route::get('/rma', 'createRma')->name('receiving.create.rma');
                 Route::get('/new-po', 'createNewPO')->name('receiving.create.new.po');
-                Route::post('/store', 'store')->name('receiving.store');
+
+                Route::post('/store/new-po', 'storeNewPO')->name('receiving.store.new-po');
+                Route::post('/store/spare', 'storeSpare')->name('receiving.store.spare');
+                Route::post('/store/faulty', 'storeFaulty')->name('receiving.store.faulty');
+                Route::post('/store/rma', 'storeRma')->name('receiving.store.rma');
             });
         });
 
@@ -64,8 +68,24 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::post('/product-movement/update', 'productMovementUpdate')->name('inventory.product.movement.update');
     });
 
+    Route::get('/inventory/cycle-count', [\App\Http\Controllers\CycleCountController::class, 'index'])->name('inventory.cycle-count');
+
     Route::prefix('/outbound')->controller(OutboundController::class)->group(function () {
         Route::get('/', 'index')->name('outbound.index');
+
+        Route::prefix('/create')->group(function () {
+            Route::get('/spare', 'createSpare')->name('outbound.create.spare');
+            Route::get('/faulty', 'createFaulty')->name('outbound.create.faulty');
+            Route::get('/rma', 'createRma')->name('outbound.create.rma');
+            Route::get('/write-off', 'createWriteOff')->name('outbound.create.write-off');
+
+            Route::post('/store/spare', 'storeSpare')->name('outbound.store.spare');
+            Route::post('/store/faulty', 'storeFaulty')->name('outbound.store.faulty');
+            Route::post('/store/rma', 'storeRma')->name('outbound.store.rma');
+            Route::post('/store/write-off', 'storeWriteOff')->name('outbound.store.write-off');
+        });
+
+        Route::get('/get-inventory', 'getInventory')->name('outbound.get.inventory');
     });
 
     Route::prefix('/rma')->controller(RmaController::class)->group(function () {

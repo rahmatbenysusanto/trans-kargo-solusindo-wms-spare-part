@@ -243,7 +243,7 @@
                     </li>
 
                     <li
-                        class="menu-item {{ in_array($title, ['Inventory List', 'Stock Movement', 'Product Movement']) ? 'show open' : '' }}">
+                        class="menu-item {{ in_array($title, ['Inventory List', 'Stock Movement', 'Product Movement', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon icon-base ti tabler-truck-loading"></i>
                             <div data-i18n="Inventory">Inventory</div>
@@ -264,6 +264,16 @@
                                     <div data-i18n="Product Movement">Product Movement</div>
                                 </a>
                             </li>
+                            <li class="menu-item {{ $title == 'Write Off' ? 'active' : '' }}">
+                                <a href="{{ route('write-off.index') }}" class="menu-link">
+                                    <div data-i18n="Write-off">Write-off</div>
+                                </a>
+                            </li>
+                            <li class="menu-item {{ $title == 'Cycle Count' ? 'active' : '' }}">
+                                <a href="{{ route('inventory.cycle-count') }}" class="menu-link text-warning">
+                                    <div data-i18n="Cycle Count">Cycle Count</div>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 
@@ -271,20 +281,6 @@
                         <a href="{{ route('outbound.index') }}" class="menu-link">
                             <i class="menu-icon icon-base ti tabler-truck-delivery"></i>
                             <div data-i18n="Outbound">Outbound</div>
-                        </a>
-                    </li>
-
-                    <li class="menu-item {{ $title == 'RMA' ? 'active' : '' }}">
-                        <a href="{{ route('rma.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-replace"></i>
-                            <div data-i18n="RMA / Replacement">RMA / Replacement</div>
-                        </a>
-                    </li>
-
-                    <li class="menu-item {{ $title == 'Write Off' ? 'active' : '' }}">
-                        <a href="{{ route('write-off.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-file-pencil"></i>
-                            <div data-i18n="Write-off">Write-off</div>
                         </a>
                     </li>
 

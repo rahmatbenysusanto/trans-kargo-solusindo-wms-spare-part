@@ -149,6 +149,21 @@ class InboundController extends Controller
                     'type' => 'Put Away',
                     'description' => 'Initial Put Away from Staging by ' . Auth::user()->name
                 ]);
+
+                // Record to Unified History
+                $storage = \App\Models\StorageLevel::with('bin.rak.zone')->find($storageLevelId);
+                $locationName = $storage ? $storage->bin->rak->zone->name . ' - ' . $storage->name : 'N/A';
+
+                \App\Models\InventoryHistory::create([
+                    'inventory_id' => $inventoryId,
+                    'serial_number' => $inboundDetail->serial_number,
+                    'type' => 'Movement',
+                    'category' => 'Put Away',
+                    'reference_number' => $inbound->number,
+                    'description' => 'Item moved from Receiving Staging to ' . $locationName,
+                    'user' => Auth::user()->name,
+                    'to_location' => $locationName
+                ]);
             }
 
             // Check if all products in this inbound are already put away
@@ -216,13 +231,12 @@ class InboundController extends Controller
     /**
      * @throws \Throwable
      */
-    public function store(Request $request)
+    public function storeNewPO(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'category'      => 'required',
             'client_id'      => 'required',
             'number'         => 'required',
-            'vendor'        => 'required',
+            'vendor'         => 'required',
             'receivedDate'  => 'required',
             'receivedBy'    => 'required',
             'products'      => 'required|array|min:1',
@@ -232,67 +246,185 @@ class InboundController extends Controller
             DB::beginTransaction();
 
             $inbound = Inbound::create([
-                'category'       => $request->post('category'),
+                'category'       => 'New PO',
                 'client_id'      => $request->post('client_id'),
                 'number'         => $request->post('number'),
                 'receiving_note' => $request->post('receivingNote'),
                 'vendor'         => $request->post('vendor'),
-                'sttb'           => $request->post('sttb'),
-                'courier_delivery_note' => $request->post('delivery_note'),
-                'courier_invoice' => $request->post('courier_invoice'),
                 'qty'            => count($request->post('products')),
                 'received_date'  => $request->post('receivedDate'),
                 'received_by'    => $request->post('receivedBy'),
-                'status'         => 'new' // new, process qc, cancel, close
+                'status'         => 'new'
             ]);
 
-            foreach ($request->post('products') as $product) {
-                // Find or create Brand
-                $brand = Brand::firstOrCreate(['name' => $product['brand']]);
-
-                // Find or create Product Group
-                $productGroup = ProductGroup::firstOrCreate(['name' => $product['productGroup']]);
-
-                // Find or create Product
-                $findProduct = Product::where('part_name', $product['partName'])
-                    ->where('brand_id', $brand->id)
-                    ->where('product_group_id', $productGroup->id)
-                    ->first();
-
-                if ($findProduct) {
-                    $productId = $findProduct->id;
-                } else {
-                    $createProduct = Product::create([
-                        'part_name'         => $product['partName'],
-                        'brand_id'          => $brand->id,
-                        'product_group_id'  => $productGroup->id,
-                    ]);
-                    $productId = $createProduct->id;
-                }
-
-                InboundDetail::create([
-                    'inbound_id'    => $inbound->id,
-                    'product_id'    => $productId,
-                    'part_name'     => $product['partName'],
-                    'part_number'   => $product['partNumber'],
-                    'description'   => $product['partDescription'] ?? '',
-                    'qty'           => 1,
-                    'serial_number' => $product['serialNumber'],
-                    'condition'     => $product['condition'],
-                    'brand_id'      => $brand->id,
-                    'product_group_id' => $productGroup->id,
-                ]);
-            }
+            $this->storeDetails($inbound, $request->post('products'));
 
             DB::commit();
-            return response()->json([
-                'status' => true,
-            ]);
+            return response()->json(['status' => true]);
         } catch (\Throwable $err) {
             DB::rollBack();
-            return response()->json([
-                'status'  => false,
-                'message' => $err->getMessage(),
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    public function storeSpare(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'category'        => 'required',
+            'client_id'       => 'required',
+            'number'          => 'required', // NTT RN#
+            'sttb'            => 'required',
+            'receivedDate'   => 'required',
+            'receivedBy'     => 'required',
+            'products'       => 'required|array|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $inbound = Inbound::create([
+                'category'              => $request->post('category'),
+                'client_id'             => $request->post('client_id'),
+                'number'                => $request->post('po_number'), // PO#
+                'receiving_note'        => $request->post('number'), // NTT RN#
+                'sttb'                  => $request->post('sttb'),
+                'courier_delivery_note' => $request->post('delivery_note'),
+                'courier_invoice'       => $request->post('courier_invoice'),
+                'vendor'                => $request->post('vendor') ?? 'Internal',
+                'qty'                   => count($request->post('products')),
+                'received_date'         => $request->post('receivedDate'),
+                'received_by'           => $request->post('receivedBy'),
+                'status'                => 'new'
+            ]);
+
+            $this->storeDetails($inbound, $request->post('products'));
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    public function storeFaulty(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'client_id'       => 'required',
+            'number'          => 'required', // NTT RN#
+            'sttb'            => 'required',
+            'receivedDate'   => 'required',
+            'receivedBy'     => 'required',
+            'products'       => 'required|array|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $inbound = Inbound::create([
+                'category'              => 'Faulty',
+                'client_id'             => $request->post('client_id'),
+                'number'                => $request->post('po_number'), // PO# (optional references)
+                'receiving_note'        => $request->post('number'), // NTT RN#
+                'sttb'                  => $request->post('sttb'),
+                'courier_delivery_note' => $request->post('delivery_note'),
+                'courier_invoice'       => $request->post('courier_invoice'),
+                'vendor'                => $request->post('vendor') ?? 'Internal',
+                'qty'                   => count($request->post('products')),
+                'received_date'         => $request->post('receivedDate'),
+                'received_by'           => $request->post('receivedBy'),
+                'status'                => 'new'
+            ]);
+
+            $this->storeDetails($inbound, $request->post('products'));
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    public function storeRma(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'client_id'       => 'required',
+            'number'          => 'required', // RMA#
+            'receivedDate'   => 'required',
+            'receivedBy'     => 'required',
+            'products'       => 'required|array|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $inbound = Inbound::create([
+                'category'              => 'RMA',
+                'client_id'             => $request->post('client_id'),
+                'number'                => $request->post('number'), // RMA#
+                'itsm_number'           => $request->post('itsm_number'),
+                'vendor'                => $request->post('vendor') ?? 'Internal',
+                'qty'                   => count($request->post('products')),
+                'received_date'         => $request->post('receivedDate'),
+                'received_by'           => $request->post('receivedBy'),
+                'status'                => 'new'
+            ]);
+
+            $this->storeDetails($inbound, $request->post('products'));
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    private function storeDetails($inbound, $products)
+    {
+        foreach ($products as $product) {
+            $brand = Brand::firstOrCreate(['name' => $product['brand']]);
+            $productGroup = ProductGroup::firstOrCreate(['name' => $product['productGroup']]);
+
+            $findProduct = Product::where('part_name', $product['partName'])
+                ->where('brand_id', $brand->id)
+                ->where('product_group_id', $productGroup->id)
+                ->first();
+
+            if ($findProduct) {
+                $productId = $findProduct->id;
+            } else {
+                $createProduct = Product::create([
+                    'part_name'         => $product['partName'],
+                    'brand_id'          => $brand->id,
+                    'product_group_id'  => $productGroup->id,
+                ]);
+                $productId = $createProduct->id;
+            }
+
+            InboundDetail::create([
+                'inbound_id'    => $inbound->id,
+                'product_id'    => $productId,
+                'part_name'     => $product['partName'],
+                'part_number'   => $product['partNumber'],
+                'description'   => $product['partDescription'] ?? '',
+                'qty'           => 1,
+                'serial_number' => $product['serialNumber'],
+                'old_serial_number' => $product['oldSerialNumber'] ?? null,
+                'condition'     => $product['condition'],
+                'brand_id'      => $brand->id,
+                'product_group_id' => $productGroup->id,
+            ]);
+
+            \App\Models\InventoryHistory::create([
+                'inventory_id' => null, // Linked later during Put Away
+                'serial_number' => $product['serialNumber'],
+                'type' => 'Inbound',
+                'category' => $inbound->category,
+                'reference_number' => $inbound->number,
+                'description' => "Received item via {$inbound->category} (Ref: {$inbound->number})",
+                'user' => $inbound->received_by,
             ]);
         }
     }

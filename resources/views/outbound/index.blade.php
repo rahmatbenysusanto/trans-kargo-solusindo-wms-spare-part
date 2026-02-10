@@ -6,15 +6,15 @@
         <div class="col-12">
             <div class="d-flex justify-content-end mb-3">
                 <div class="dropdown">
-                    <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
-                            aria-expanded="false">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton"
+                        data-bs-toggle="dropdown" aria-expanded="false">
                         Create Outbound
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="{{ route('receiving.create.spare') }}">Spare</a>
-                        <a class="dropdown-item" href="{{ route('receiving.create.faulty') }}">Faulty</a>
-                        <a class="dropdown-item" href="{{ route('receiving.create.rma') }}">RMA</a>
-                        <a class="dropdown-item" href="{{ route('receiving.create.new.po') }}">New PO</a>
+                        <a class="dropdown-item" href="{{ route('outbound.create.spare') }}">Spare</a>
+                        <a class="dropdown-item" href="{{ route('outbound.create.faulty') }}">Faulty</a>
+                        <a class="dropdown-item" href="{{ route('outbound.create.rma') }}">RMA</a>
+                        <a class="dropdown-item" href="{{ route('outbound.create.write-off') }}">Write-off</a>
                     </div>
                 </div>
             </div>
@@ -41,6 +41,25 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
+                            <tbody>
+                                @foreach ($data as $item)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $item->category }}</td>
+                                        <td>{{ $item->number ?? '-' }}</td>
+                                        <td>{{ $item->ntt_dn_number ?? '-' }}</td>
+                                        <td>{{ $item->tks_dn_number ?? '-' }}</td>
+                                        <td>{{ $item->tks_invoice_number ?? '-' }}</td>
+                                        <td>{{ $item->rma_number ?? '-' }}</td>
+                                        <td>{{ $item->itsm_number ?? '-' }}</td>
+                                        <td>{{ $item->qty }}</td>
+                                        <td><span class="badge bg-secondary">{{ $item->status }}</span></td>
+                                        <td>
+                                            <a href="#" class="btn btn-info btn-sm">View</a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
                         </table>
                     </div>
                 </div>

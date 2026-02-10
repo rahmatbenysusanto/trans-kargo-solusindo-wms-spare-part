@@ -10,8 +10,8 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Part Number", "Part Description", "Serial Number", "Product Group", "Brand", "Condition",
-                    "QTY"
+                ["Part Name", "Part Number", "Part Description", "Serial Number", "Old Serial Number", "Product Group",
+                    "Brand", "Condition"
                 ]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(headers);
@@ -58,10 +58,11 @@
                             partNumber: row["Part Number"] || "",
                             partDescription: row["Part Description"] || "",
                             serialNumber: sn,
+                            oldSerialNumber: row["Old Serial Number"] || "",
                             productGroup: row["Product Group"] || "",
                             brand: row["Brand"] || "",
                             condition: row["Condition"] || "New",
-                            qty: row["QTY"] || 0,
+                            qty: 1,
                         });
                     }
                 });
@@ -101,9 +102,15 @@
         function addProduct() {
             const products = JSON.parse(localStorage.getItem('products')) ?? [];
             const sn = document.getElementById('serialNumber').value.trim();
+            const brand = document.getElementById('brand').value.trim();
+            const productGroup = document.getElementById('productGroup').value.trim();
 
-            if (!sn) {
-                Swal.fire('Error', 'Serial Number is required', 'error');
+            if (!sn || !brand || !productGroup) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Serial Number, Brand, and Product Group are required',
+                    icon: 'error'
+                });
                 return;
             }
 
@@ -123,10 +130,11 @@
                 partNumber: document.getElementById('partNumber').value,
                 partDescription: document.getElementById('partDescription').value,
                 serialNumber: sn,
+                oldSerialNumber: document.getElementById('oldSerialNumber').value.trim(),
                 productGroup: document.getElementById('productGroup').value,
                 brand: document.getElementById('brand').value,
                 condition: document.getElementById('condition').value,
-                qty: document.getElementById('qty').value,
+                qty: 1,
             };
 
             if (editingIndex !== null) {
@@ -148,17 +156,15 @@
                 return;
             }
 
-            const number = document.getElementById('sttb').value;
+            const number = document.getElementById('rma_number').value; // RMA#
+            const itsmNumber = document.getElementById('itsm_number').value; // ITSM#
             const clientId = document.getElementById('client_id').value;
-            const deliveryNote = document.getElementById('delivery_note').value;
-            const courierInvoice = document.getElementById('courier_invoice').value;
-            const picNtt = document.getElementById('pic_ntt').value;
             const receivedDate = document.getElementById('date').value;
             const receivedBy = document.getElementById('received_by').value;
             const category = "RMA";
 
-            if (!number || !clientId || !receivedDate || !receivedBy) {
-                Swal.fire('Error', 'Please fill in all required fields (STTB, Client, Date, Received By).', 'error');
+            if (!number || !clientId || !receivedDate || !receivedBy || !itsmNumber) {
+                Swal.fire('Error', 'Please fill in all required fields (RMA#, ITSM#, Client, Date, Received By).', 'error');
                 return;
             }
 
@@ -180,7 +186,7 @@
                         }
                     });
 
-                    fetch('{{ route('receiving.store') }}', {
+                    fetch('{{ route('receiving.store.rma') }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -189,12 +195,9 @@
                             body: JSON.stringify({
                                 category,
                                 client_id: clientId,
-                                number: number,
+                                number: number, // RMA#
+                                itsm_number: itsmNumber,
                                 vendor: 'Internal',
-                                sttb: number,
-                                delivery_note: deliveryNote,
-                                courier_invoice: courierInvoice,
-                                receivingNote: 'PIC NTT: ' + picNtt,
                                 receivedDate,
                                 receivedBy,
                                 products
@@ -237,9 +240,18 @@
                     <td>${product.brand}</td>
                     <td>${product.productGroup}</td>
                     <td>${product.partDescription}</td>
-                    <td>${product.qty}</td>
                     <td>${product.serialNumber}</td>
-                    <td><span class="badge bg-info">${product.condition}</span></td>
+                    <td>${product.oldSerialNumber || '-'}</td>
+                    <td>
+                        <select class="form-control form-control-sm" onchange="updateProductCondition(${index}, this.value)">
+                            <option value="New" ${product.condition === 'New' ? 'selected' : ''}>New</option>
+                            <option value="Second" ${product.condition === 'Second' ? 'selected' : ''}>Second</option>
+                            <option value="Refurbished" ${product.condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
+                            <option value="Scrap" ${product.condition === 'Scrap' ? 'selected' : ''}>Scrap</option>
+                            <option value="Broken" ${product.condition === 'Broken' ? 'selected' : ''}>Broken</option>
+                            <option value="Repair/Disposal Needed" ${product.condition === 'Repair/Disposal Needed' ? 'selected' : ''}>Repair/Disposal Needed</option>
+                        </select>
+                    </td>
                     <td>
                         <button class="btn btn-warning btn-sm" onclick="editProduct(${index})">Edit</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteProduct(${index})">Delete</button>
@@ -258,10 +270,10 @@
             document.getElementById('partNumber').value = product.partNumber;
             document.getElementById('partDescription').value = product.partDescription;
             document.getElementById('serialNumber').value = product.serialNumber;
+            document.getElementById('oldSerialNumber').value = product.oldSerialNumber || '';
             document.getElementById('productGroup').value = product.productGroup;
             document.getElementById('brand').value = product.brand;
             document.getElementById('condition').value = product.condition;
-            document.getElementById('qty').value = product.qty;
 
             editingIndex = index;
             document.getElementById('addProductModalLabel').innerText = 'Edit Product';
@@ -278,15 +290,23 @@
             }
         }
 
+        function updateProductCondition(index, newCondition) {
+            const products = JSON.parse(localStorage.getItem('products')) ?? [];
+            if (products[index]) {
+                products[index].condition = newCondition;
+                localStorage.setItem('products', JSON.stringify(products));
+            }
+        }
+
         function resetForm() {
             document.getElementById('partName').value = '';
             document.getElementById('partNumber').value = '';
             document.getElementById('partDescription').value = '';
             document.getElementById('serialNumber').value = '';
+            document.getElementById('oldSerialNumber').value = '';
             document.getElementById('productGroup').value = '';
             document.getElementById('brand').value = '';
             document.getElementById('condition').value = 'New';
-            document.getElementById('qty').value = '';
 
             document.getElementById('addProductModalLabel').innerText = 'Add Product';
             document.getElementById('saveProductBtn').innerText = 'Add Product';
@@ -313,18 +333,14 @@
                             <input type="text" class="form-control" value="RMA" readonly>
                         </div>
                         <div class="col-4 mb-3">
-                            <label class="form-label">STTB</label>
-                            <input type="text" class="form-control" name="sttb" id="sttb" placeholder="STTB ...">
+                            <label class="form-label">RMA#</label>
+                            <input type="text" class="form-control" name="rma_number" id="rma_number"
+                                placeholder="RMA# ...">
                         </div>
                         <div class="col-4 mb-3">
-                            <label class="form-label">Courier DN</label>
-                            <input type="text" class="form-control" name="delivery_note" id="delivery_note"
-                                placeholder="Courier DN ...">
-                        </div>
-                        <div class="col-4 mb-3">
-                            <label class="form-label">Courier Invoice</label>
-                            <input type="text" class="form-control" name="courier_invoice" id="courier_invoice"
-                                placeholder="Courier Invoice ...">
+                            <label class="form-label">ITSM#</label>
+                            <input type="text" class="form-control" name="itsm_number" id="itsm_number"
+                                placeholder="ITSM# ...">
                         </div>
                         <div class="col-4 mb-3">
                             <label class="form-label">Client</label>
@@ -334,11 +350,6 @@
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
                                 @endforeach
                             </select>
-                        </div>
-                        <div class="col-4 mb-3">
-                            <label class="form-label">PIC NTT</label>
-                            <input type="text" class="form-control" name="pic_ntt" id="pic_ntt"
-                                placeholder="PIC NTT ...">
                         </div>
                         <div class="col-4 mb-3">
                             <label class="form-label">Received Date</label>
@@ -378,8 +389,8 @@
                                     <th>Brand</th>
                                     <th>Group</th>
                                     <th>Part Description</th>
-                                    <th>QTY</th>
                                     <th>Serial Number</th>
+                                    <th>Old Serial Number</th>
                                     <th>Condition</th>
                                     <th>Action</th>
                                 </tr>
@@ -448,9 +459,10 @@
                                 <select class="form-control" id="condition">
                                     <option>New</option>
                                     <option>Second</option>
+                                    <option>Refurbished</option>
                                     <option>Scrap</option>
                                     <option>Broken</option>
-                                    <option>Repair</option>
+                                    <option>Repair/Disposal Needed</option>
                                 </select>
                             </div>
                         </div>
@@ -475,8 +487,9 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">QTY</label>
-                                <input type="number" class="form-control" id="qty" placeholder="QTY ...">
+                                <label class="form-label">Old Serial Number</label>
+                                <input type="text" class="form-control" id="oldSerialNumber"
+                                    placeholder="Old Serial Number ...">
                             </div>
                         </div>
                     </div>
