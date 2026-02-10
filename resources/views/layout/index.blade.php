@@ -284,6 +284,32 @@
                         </a>
                     </li>
 
+
+                    <li
+                        class="menu-item {{ in_array($title, ['Stock on Hand', 'Movement History', 'Utilization Report']) ? 'show open' : '' }}">
+                        <a href="javascript:void(0);" class="menu-link menu-toggle">
+                            <i class="menu-icon icon-base ti tabler-report"></i>
+                            <div data-i18n="Audit & Reporting">Audit & Reporting</div>
+                        </a>
+                        <ul class="menu-sub">
+                            <li class="menu-item {{ $title == 'Stock on Hand' ? 'active' : '' }}">
+                                <a href="{{ route('reporting.stock-on-hand') }}" class="menu-link">
+                                    <div data-i18n="Stock on Hand">Stock on Hand</div>
+                                </a>
+                            </li>
+                            <li class="menu-item {{ $title == 'Movement History' ? 'active' : '' }}">
+                                <a href="{{ route('reporting.movement-history') }}" class="menu-link">
+                                    <div data-i18n="Movement History">Movement History</div>
+                                </a>
+                            </li>
+                            <li class="menu-item {{ $title == 'Utilization Report' ? 'active' : '' }}">
+                                <a href="{{ route('reporting.utilization') }}" class="menu-link">
+                                    <div data-i18n="Utilization Report">Utilization Report</div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <li class="menu-header small">
                         <span class="menu-header-text" data-i18n="Warehouse">Warehouse</span>
                     </li>

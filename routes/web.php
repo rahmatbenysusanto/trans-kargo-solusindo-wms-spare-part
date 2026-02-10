@@ -9,6 +9,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OutboundController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RMAController;
 use App\Http\Controllers\StorageController;
 use App\Http\Controllers\UserController;
@@ -94,6 +95,12 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
     Route::prefix('/write-off')->controller(WriteOffController::class)->group(function () {
         Route::get('/', 'index')->name('write-off.index');
+    });
+
+    Route::prefix('/reporting')->controller(ReportingController::class)->group(function () {
+        Route::get('/stock-on-hand', 'stockOnHand')->name('reporting.stock-on-hand');
+        Route::get('/movement-history', 'movementHistory')->name('reporting.movement-history');
+        Route::get('/utilization', 'utilizationReport')->name('reporting.utilization');
     });
 
     Route::prefix('/storage')->controller(StorageController::class)->group(function () {
