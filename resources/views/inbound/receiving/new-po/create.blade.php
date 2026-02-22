@@ -2,6 +2,28 @@
 @section('title', 'Create New PO')
 @section('layout_class', 'layout-menu-collapsed')
 
+@section('css')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #dbdade !important;
+            border-radius: 0.375rem !important;
+            height: 38px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #6f6b7d !important;
+            padding-left: 0.9rem !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="row">
         <div class="d-flex justify-content-end mb-3">
@@ -18,7 +40,7 @@
                         </div>
                         <div class="col-4 mb-3">
                             <label class="form-label">Client</label>
-                            <select class="form-control" name="client_id" id="client_id">
+                            <select class="form-control select2" name="client_id" id="client_id">
                                 <option value="">-- Choose Client --</option>
                                 @foreach ($client as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
@@ -136,7 +158,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Product Group</label>
-                                <select class="form-control" id="productGroup">
+                                <select class="form-control select2" id="productGroup">
                                     <option value="">-- Choose Product Group --</option>
                                     @foreach ($productGroup as $item)
                                         <option value="{{ $item->name }}">{{ $item->name }}</option>
@@ -145,11 +167,11 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Condition</label>
-                                <select class="form-control" id="condition">
-                                    <option>New</option>
-                                    <option>Refurbished</option>
-                                    <option>Faulty</option>
-                                    <option>Write-off Needed</option>
+                                <select class="form-control select2" id="condition">
+                                    <option value="New">New</option>
+                                    <option value="Refurbished">Refurbished</option>
+                                    <option value="Faulty">Faulty</option>
+                                    <option value="Write-off Needed">Write-off Needed</option>
                                 </select>
                             </div>
                         </div>
@@ -166,7 +188,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Brand</label>
-                                <select class="form-control" id="brand">
+                                <select class="form-control select2" id="brand">
                                     <option value="">-- Choose Brand --</option>
                                     @foreach ($brand as $item)
                                         <option value="{{ $item->name }}">{{ $item->name }}</option>
@@ -188,8 +210,39 @@
 @endsection
 
 @section('js')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script>
+        $(document).ready(function() {
+            $('#client_id').select2({
+                placeholder: "-- Choose Client --",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#productGroup').select2({
+                dropdownParent: $('#addProductModal'),
+                placeholder: "-- Choose Product Group --",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#brand').select2({
+                dropdownParent: $('#addProductModal'),
+                placeholder: "-- Choose Brand --",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#condition').select2({
+                dropdownParent: $('#addProductModal'),
+                placeholder: "-- Choose Condition --",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+
         localStorage.clear();
         let editingIndex = null;
 
@@ -455,10 +508,10 @@
             document.getElementById('partNumber').value = product.partNumber;
             document.getElementById('partDescription').value = product.partDescription;
             document.getElementById('serialNumber').value = product.serialNumber;
-            document.getElementById('productGroup').value = product.productGroup;
-            document.getElementById('brand').value = product.brand;
-            document.getElementById('condition').value = product.condition;
 
+            $('#productGroup').val(product.productGroup).trigger('change');
+            $('#brand').val(product.brand).trigger('change');
+            $('#condition').val(product.condition).trigger('change');
 
             editingIndex = index;
             document.getElementById('addProductModalLabel').innerText = 'Edit Product';
@@ -488,10 +541,10 @@
             document.getElementById('partNumber').value = '';
             document.getElementById('partDescription').value = '';
             document.getElementById('serialNumber').value = '';
-            document.getElementById('productGroup').value = '';
-            document.getElementById('brand').value = '';
-            document.getElementById('condition').value = 'New';
 
+            $('#productGroup').val('').trigger('change');
+            $('#brand').val('').trigger('change');
+            $('#condition').val('New').trigger('change');
 
             document.getElementById('addProductModalLabel').innerText = 'Add Product';
             document.getElementById('saveProductBtn').innerText = 'Add Product';
