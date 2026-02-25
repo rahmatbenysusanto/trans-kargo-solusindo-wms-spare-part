@@ -115,7 +115,8 @@
                         {{ $inventory->storageLevel->bin->rak->name }}</p>
                     <p class="text-xs text-gray-500 mt-1">Bin: <span
                             class="font-medium text-gray-700">{{ $inventory->storageLevel->bin->name }}</span> | Level:
-                        <span class="font-medium text-gray-700">{{ $inventory->storageLevel->name }}</span></p>
+                        <span class="font-medium text-gray-700">{{ $inventory->storageLevel->name }}</span>
+                    </p>
                 @else
                     <p class="font-bold text-gray-800 italic">Not Set</p>
                     <p class="text-xs text-gray-500 mt-1">Item has no warehouse location.</p>
@@ -134,9 +135,9 @@
             </div>
         </div>
 
-        <!-- Recent History -->
+        <!-- Item History -->
         @if ($history->count() > 0)
-            <h3 class="text-sm font-bold text-gray-800 px-2 mb-2 uppercase tracking-wide">Recent History</h3>
+            <h3 class="text-sm font-bold text-gray-800 px-2 mb-2 uppercase tracking-wide">Item History</h3>
             <div class="bg-white rounded-2xl shadow-md overflow-hidden">
                 <div class="px-5 py-2">
                     @foreach ($history as $record)

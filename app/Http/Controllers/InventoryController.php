@@ -18,7 +18,6 @@ class InventoryController extends Controller
 
         $history = \App\Models\InventoryHistory::where('serial_number', $sn)
             ->latest()
-            ->take(10)
             ->get();
 
         return view('inventory.scan', compact('inventory', 'history'));
