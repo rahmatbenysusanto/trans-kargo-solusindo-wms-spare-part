@@ -137,9 +137,30 @@ class OutboundController extends Controller
 
                 // Update Inventory
                 if ($inventory) {
+                    $inventoryStatus = 'Shipped / Outbound'; // Default fallback
+
+                    switch ($outbound->category) {
+                        case 'Spare from Replacement':
+                        case 'Spare to Replacement':
+                            $inventoryStatus = 'Out for Replacement/ Support';
+                            break;
+                        case 'Spare from Loan':
+                        case 'Spare to Loan':
+                            $inventoryStatus = 'Out for Loan';
+                            break;
+                        case 'Faulty':
+                        case 'RMA':
+                            $inventoryStatus = 'Out for Return';
+                            break;
+                        case 'Write-off':
+                        case 'Spare Write-off':
+                            $inventoryStatus = 'Write-off';
+                            break;
+                    }
+
                     $inventory->update([
                         'qty' => 0,
-                        'status' => 'Shipped / Outbound',
+                        'status' => $inventoryStatus,
                         'last_movement_date' => now()
                     ]);
                 }
@@ -157,7 +178,13 @@ class OutboundController extends Controller
         $clientId = $request->get('client_id');
         $query = \App\Models\Inventory::with(['storageLevel.bin.rak.zone'])
             ->where('qty', '>', 0)
-            ->where('status', '!=', 'Shipped / Outbound');
+            ->whereNotIn('status', [
+                'Shipped / Outbound',
+                'Out for Replacement/ Support',
+                'Out for Loan',
+                'Out for Return',
+                'Write-off'
+            ]);
 
         if ($clientId) {
             $query->where('client_id', $clientId);

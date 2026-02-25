@@ -115,7 +115,8 @@ class InboundController extends Controller
                     Inventory::where('serial_number', $inboundDetail->serial_number)->update([
                         'storage_level_id'  => $storageLevelId,
                         'qty'               => 1,
-                        'status'            => 'available'
+                        'status'            => 'available',
+                        'condition'         => $inboundDetail->condition
                     ]);
                 } else {
                     $brand = Brand::find($inboundDetail->brand_id);
@@ -125,12 +126,16 @@ class InboundController extends Controller
                         'unique_id'         => $this->generateUniqueId($brand->name, $productGroup->name),
                         'client_id'         => $inbound->client_id,
                         'storage_level_id'  => $storageLevelId,
+                        'product_id'        => $inboundDetail->product_id,
+                        'brand_id'          => $inboundDetail->brand_id,
+                        'product_group_id'  => $inboundDetail->product_group_id,
                         'qty'               => 1,
                         'part_name'         => $inboundDetail->part_name,
                         'part_number'       => $inboundDetail->part_number,
                         'part_description'  => $inboundDetail->part_description,
                         'serial_number'     => $inboundDetail->serial_number,
                         'status'            => 'available',
+                        'condition'         => $inboundDetail->condition,
                     ]);
                     $inventoryId = $createInventory->id;
                 }

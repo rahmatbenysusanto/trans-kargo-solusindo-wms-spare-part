@@ -29,6 +29,16 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script>
+        let currentPage = 1;
+        const pageSize = 50;
+
+        // Load master data and create case-insensitive maps
+        const groupList = @json($productGroup->pluck('name'));
+        const brandList = @json($brand->pluck('name'));
+
+        const masterProductGroups = new Map(groupList.map(name => [name.toLowerCase(), name]));
+        const masterBrands = new Map(brandList.map(name => [name.toLowerCase(), name]));
+
         $(document).ready(function() {
             $('#client_id').select2({
                 placeholder: "-- Choose Client --",
@@ -63,8 +73,8 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Part Number", "Part Description", "Serial Number", "Old Serial Number", "Product Group",
-                    "Brand", "Condition"
+                ["Part Name", "Part Number", "Part Desc", "Brand", "Brand Group", "Serial Number",
+                    "Old Serial Number", "Condition"
                 ]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(headers);
@@ -93,48 +103,80 @@
 
                 const products = JSON.parse(localStorage.getItem('products')) ?? [];
 
+                // Optimized duplicate check using Set
+                const existingSn = new Set(products.map(p => p.serialNumber));
                 let duplicates = [];
+                let invalidGroups = new Set();
+                let invalidBrands = new Set();
+
                 jsonData.forEach(row => {
                     const sn = String(row["Serial Number"] || "").trim();
                     if (!sn) return;
 
-                    // Check if already in localStorage
-                    const isDuplicateInStorage = products.some(p => p.serialNumber === sn);
-                    // Check if already in current upload list
-                    const isDuplicateInCurrent = duplicates.includes(sn);
-
-                    if (isDuplicateInStorage || isDuplicateInCurrent) {
+                    if (existingSn.has(sn)) {
                         duplicates.push(sn);
                     } else {
+                        const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || "")
+                            .trim();
+                        const excelBrand = (row["Brand"] || row["Manufacturer"] || "").trim();
+
+                        const groupKey = excelGroup.toLowerCase();
+                        const brandKey = excelBrand.toLowerCase();
+
+                        // Case-insensitive Validation
+                        const masterGroupName = masterProductGroups.get(groupKey);
+                        const masterBrandName = masterBrands.get(brandKey);
+
+                        if (!masterGroupName && excelGroup) invalidGroups.add(excelGroup);
+                        if (!masterBrandName && excelBrand) invalidBrands.add(excelBrand);
+
+                        existingSn.add(sn);
                         products.push({
-                            partName: row["Part Name"] || "",
-                            partNumber: row["Part Number"] || "",
-                            partDescription: row["Part Description"] || "",
+                            partName: row["Part Name"] || row["Material Description"] || row[
+                                "Material"] || "",
+                            partNumber: row["Part Number"] || row["Part Number/SKU"] || row[
+                                "Material"] || "",
+                            partDescription: row["Part Desc"] || row["Part Description"] || row[
+                                "Material Description"] || "",
                             serialNumber: sn,
                             oldSerialNumber: row["Old Serial Number"] || "",
-                            productGroup: row["Product Group"] || "",
-                            brand: row["Brand"] || "",
+                            productGroup: masterGroupName || "",
+                            brand: masterBrandName || "",
                             condition: row["Condition"] || "New",
-                            qty: 1,
+                            qty: row["QTY"] || 1,
                         });
                     }
                 });
 
                 localStorage.setItem('products', JSON.stringify(products));
+                currentPage = 1; // Reset to first page after upload
                 renderProducts();
                 $('#massUploadProductModal').modal('hide');
                 fileInput.value = ''; // Reset input
 
+                let message = "";
                 if (duplicates.length > 0) {
+                    message += `Skipped ${duplicates.length} duplicate Serial Numbers.<br>`;
+                }
+                if (invalidGroups.size > 0) {
+                    message +=
+                        `Detected invalid Product Groups: <b>${Array.from(invalidGroups).join(', ')}</b> (Values cleared).<br>`;
+                }
+                if (invalidBrands.size > 0) {
+                    message +=
+                        `Detected invalid Brands: <b>${Array.from(invalidBrands).join(', ')}</b> (Values cleared).<br>`;
+                }
+
+                if (message) {
                     Swal.fire({
-                        title: 'Upload Finished',
-                        text: `Products uploaded with ${duplicates.length} duplicate Serial Numbers skipped: ${duplicates.join(', ')}`,
+                        title: 'Upload Summary',
+                        html: `<div class="text-start">${message}</div>`,
                         icon: 'warning'
                     });
                 } else {
                     Swal.fire({
                         title: 'Success!',
-                        text: 'All products uploaded successfully!',
+                        text: 'All products uploaded and validated successfully!',
                         icon: 'success'
                     });
                 }
@@ -282,10 +324,23 @@
         function renderProducts() {
             const products = JSON.parse(localStorage.getItem('products')) ?? [];
             const tbody = document.getElementById('productTableBody');
+            const totalProducts = products.length;
+            const totalPages = Math.ceil(totalProducts / pageSize);
+
+            // Adjust current page if out of bounds
+            if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, totalProducts);
+            const pageItems = products.slice(start, end);
+
             tbody.innerHTML = '';
 
-            products.forEach((product, index) => {
-                const row = `
+            let html = '';
+            pageItems.forEach((product, i) => {
+                const index = start + i;
+                html += `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${product.partName}</td>
@@ -298,11 +353,9 @@
                     <td>
                         <select class="form-control form-control-sm" onchange="updateProductCondition(${index}, this.value)">
                             <option value="New" ${product.condition === 'New' ? 'selected' : ''}>New</option>
-                            <option value="Second" ${product.condition === 'Second' ? 'selected' : ''}>Second</option>
                             <option value="Refurbished" ${product.condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
-                            <option value="Scrap" ${product.condition === 'Scrap' ? 'selected' : ''}>Scrap</option>
-                            <option value="Broken" ${product.condition === 'Broken' ? 'selected' : ''}>Broken</option>
-                            <option value="Repair/Disposal Needed" ${product.condition === 'Repair/Disposal Needed' ? 'selected' : ''}>Repair/Disposal Needed</option>
+                            <option value="Faulty" ${product.condition === 'Faulty' ? 'selected' : ''}>Faulty</option>
+                            <option value="Write-off Needed" ${product.condition === 'Write-off Needed' ? 'selected' : ''}>Write-off Needed</option>
                         </select>
                     </td>
                     <td>
@@ -311,8 +364,55 @@
                     </td>
                 </tr>
             `;
-                tbody.innerHTML += row;
             });
+            tbody.innerHTML = html;
+
+            // Update Pagination Info
+            document.getElementById('paginationInfo').innerText = totalProducts > 0 ?
+                `Showing ${start + 1} to ${end} of ${totalProducts} products` :
+                'Showing 0 to 0 of 0 products';
+
+            // Update Pagination Controls
+            renderPaginationControls(totalPages);
+        }
+
+        function renderPaginationControls(totalPages) {
+            const controls = document.getElementById('paginationControls');
+            controls.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // Prev Button
+            controls.innerHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="changePage(${currentPage - 1})">Previous</a>
+                </li>
+            `;
+
+            // Page Numbers (limited)
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+            for (let i = startPage; i <= endPage; i++) {
+                controls.innerHTML += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="javascript:void(0)" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            }
+
+            // Next Button
+            controls.innerHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="changePage(${currentPage + 1})">Next</a>
+                </li>
+            `;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderProducts();
         }
 
         function editProduct(index) {
@@ -455,6 +555,13 @@
                         </table>
                     </div>
                 </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div id="paginationInfo">Showing 0 to 0 of 0 products</div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
@@ -513,11 +620,9 @@
                                 <label class="form-label">Condition</label>
                                 <select class="form-control select2" id="condition">
                                     <option value="New">New</option>
-                                    <option value="Second">Second</option>
                                     <option value="Refurbished">Refurbished</option>
-                                    <option value="Scrap">Scrap</option>
-                                    <option value="Broken">Broken</option>
-                                    <option value="Repair/Disposal Needed">Repair/Disposal Needed</option>
+                                    <option value="Faulty">Faulty</option>
+                                    <option value="Write-off Needed">Write-off Needed</option>
                                 </select>
                             </div>
                         </div>

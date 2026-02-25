@@ -11,7 +11,7 @@ class InventoryController extends Controller
     public function index(Request $request): View
     {
         $title = 'Inventory List';
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client'])
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
             ->where('qty', 1)
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
@@ -40,7 +40,7 @@ class InventoryController extends Controller
     public function show($id): View
     {
         $title = 'Inventory Detail';
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client'])
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
             ->findOrFail($id);
 
         $sn = $inventory->serial_number;

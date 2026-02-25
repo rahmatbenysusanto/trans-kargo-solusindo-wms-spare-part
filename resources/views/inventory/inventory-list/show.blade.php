@@ -23,6 +23,18 @@
                             <p class="mb-0 font-medium">{{ $inventory->part_name }}</p>
                         </div>
                         <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-muted small uppercase">Brand</label>
+                            <p class="mb-0 font-medium">
+                                {{ $inventory->product && $inventory->product->brand ? $inventory->product->brand->name : '-' }}
+                            </p>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-muted small uppercase">Brand Group</label>
+                            <p class="mb-0 font-medium">
+                                {{ $inventory->product && $inventory->product->productGroup ? $inventory->product->productGroup->name : '-' }}
+                            </p>
+                        </div>
+                        <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold text-muted small uppercase">Part Number / SKU</label>
                             <p class="mb-0 fw-medium text-dark">{{ $inventory->part_number }}</p>
                         </div>

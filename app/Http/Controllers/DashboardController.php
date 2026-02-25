@@ -9,7 +9,7 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        $title = 'Dashboard Overview';
+        $title = 'Stock Overview';
 
         // 1. Stock Overview by Status
         $stockByStatus = \App\Models\Inventory::select('status', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
@@ -86,7 +86,7 @@ class DashboardController extends Controller
 
     public function utilizationByClient(): View
     {
-        $title = 'Utilization By Client';
+        $title = 'utilizationByClient';
         $data = \App\Models\Outbound::with('client')
             ->select('client_id', \Illuminate\Support\Facades\DB::raw('count(*) as total_orders'), \Illuminate\Support\Facades\DB::raw('sum(qty) as total_items'))
             ->groupBy('client_id')
@@ -97,7 +97,7 @@ class DashboardController extends Controller
 
     public function rmaMonitoring(): View
     {
-        $title = 'RMA Monitoring';
+        $title = 'rmaMonitoring';
         $data = \App\Models\InboundDetail::whereNotNull('old_serial_number')
             ->latest()
             ->paginate(20);
@@ -107,7 +107,7 @@ class DashboardController extends Controller
 
     public function inboundReturn(): View
     {
-        $title = 'Inbound vs Outbound Trend';
+        $title = 'inboundReturn';
 
         $months = collect();
         for ($i = 11; $i >= 0; $i--) {
@@ -139,7 +139,7 @@ class DashboardController extends Controller
 
     public function stockMonitoring(): View
     {
-        $title = 'Stock Monitoring';
+        $title = 'stockMonitoring';
         $data = \App\Models\Inventory::select('part_name', 'part_number', 'part_description', \Illuminate\Support\Facades\DB::raw('sum(qty) as total_qty'))
             ->groupBy('part_name', 'part_number', 'part_description')
             ->orderBy('total_qty', 'desc')

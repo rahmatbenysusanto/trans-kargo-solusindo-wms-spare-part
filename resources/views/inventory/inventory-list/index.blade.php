@@ -28,16 +28,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
-                                    <th>Warehouse Location / Rack ID</th>
-                                    <th>Part Name</th>
-                                    <th>Part Number / SKU</th>
-                                    <th>Part Description</th>
-                                    <th>Serial Number (SN)</th>
-                                    <th>Parent SN</th>
-                                    <th>Asset#</th>
-                                    <th>Status Stock / Asset</th>
-                                    <th>Last Staging Date</th>
-                                    <th>Last Movement Date</th>
+                                    <th>Identifiers</th>
+                                    <th>Product Details</th>
+                                    <th>Warehouse Location</th>
+                                    <th>Status & Dates</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -47,46 +41,84 @@
                                         <td>{{ $loop->iteration + ($inventory->currentPage() - 1) * $inventory->perPage() }}
                                         </td>
                                         <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="text-dark fw-bold mb-1"><i
+                                                        class="ti tabler-barcode text-muted me-1"></i>{{ $item->unique_id }}</span>
+                                                <span class="badge bg-label-info w-px-150 text-start"><i
+                                                        class="ti tabler-qrcode me-1"></i>{{ $item->serial_number }}</span>
+                                                @if ($item->parent_serial_number)
+                                                    <small class="text-muted mt-1">Parent:
+                                                        {{ $item->parent_serial_number }}</small>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold text-primary">{{ $item->part_name }}</span>
+                                                <small class="text-muted mb-1">P/N: {{ $item->part_number }}</small>
+                                                <div>
+                                                    <span
+                                                        class="badge bg-label-secondary me-1">{{ $item->product && $item->product->brand ? $item->product->brand->name : '-' }}</span>
+                                                    <span
+                                                        class="badge bg-label-secondary">{{ $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-' }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
                                             @if ($item->storageLevel)
-                                                <span class="text-primary fw-bold">
-                                                    {{ $item->storageLevel->bin->rak->zone->name }} -
-                                                    {{ $item->storageLevel->bin->rak->name }} -
-                                                    {{ $item->storageLevel->bin->name }} -
-                                                    {{ $item->storageLevel->name }}
-                                                </span>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="badge bg-label-primary p-2 me-2"><i
+                                                            class="ti tabler-map-pin"></i></div>
+                                                    <div class="d-flex flex-column">
+                                                        <span
+                                                            class="fw-bold text-dark">{{ $item->storageLevel->bin->rak->zone->name }}
+                                                            - {{ $item->storageLevel->bin->rak->name }}</span>
+                                                        <small class="text-muted">Bin: {{ $item->storageLevel->bin->name }}
+                                                            | Lvl: {{ $item->storageLevel->name }}</small>
+                                                    </div>
+                                                </div>
                                             @else
-                                                <span class="text-muted">N/A</span>
+                                                <span class="text-muted"><i class="ti tabler-map-pin-off me-1"></i>Not
+                                                    Set</span>
                                             @endif
                                         </td>
-                                        <td>{{ $item->part_name }}</td>
-                                        <td>{{ $item->part_number }}</td>
-                                        <td>{{ $item->part_description }}</td>
-                                        <td><span class="badge bg-label-info">{{ $item->serial_number }}</span></td>
-                                        <td>{{ $item->parent_serial_number ?? '-' }}</td>
-                                        <td><span class="text-dark fw-medium">{{ $item->unique_id }}</span></td>
                                         <td>
-                                            @if ($item->status == 'In Stock' || $item->status == 'Available')
-                                                <span class="badge bg-success">{{ $item->status }}</span>
-                                            @elseif(in_array($item->status, ['Defective', 'Broken', 'Faulty']))
-                                                <span class="badge bg-danger">{{ $item->status }}</span>
-                                            @else
-                                                <span class="badge bg-warning">{{ $item->status }}</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/Y H:i') : '-' }}
-                                        </td>
-                                        <td>{{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/Y H:i') : '-' }}
+                                            <div class="d-flex flex-column align-items-start">
+                                                @if ($item->status == 'In Stock' || $item->status == 'Available')
+                                                    <span class="badge bg-success mb-1">{{ $item->status }}</span>
+                                                @elseif(in_array($item->status, ['Defective', 'Broken', 'Faulty']))
+                                                    <span class="badge bg-danger mb-1">{{ $item->status }}</span>
+                                                @else
+                                                    <span class="badge bg-warning mb-1">{{ $item->status }}</span>
+                                                @endif
+                                                <small class="text-muted"><i class="ti tabler-clock me-1"></i>Appr:
+                                                    {{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/y') : '-' }}</small>
+                                                <small class="text-muted"><i
+                                                        class="ti tabler-arrows-right-left me-1"></i>Moved:
+                                                    {{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/y') : '-' }}</small>
+                                            </div>
                                         </td>
                                         <td>
-                                            <a href="{{ route('inventory.show', $item->id) }}"
-                                                class="btn btn-primary btn-sm d-flex align-items-center justify-content-center">
-                                                <i class="ti tabler-info-circle me-1"></i> Detail
-                                            </a>
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ route('inventory.show', $item->id) }}"
+                                                    class="btn btn-primary btn-sm d-flex align-items-center justify-content-center">
+                                                    <i class="icon-base ti tabler-info-circle me-1"></i> Detail
+                                                </a>
+                                                <button type="button"
+                                                    onclick="printBarcode('{{ $item->unique_id }}', '{{ $item->part_number }}', '{{ $item->serial_number }}')"
+                                                    class="btn btn-info btn-sm d-flex align-items-center justify-content-center">
+                                                    <i class="icon-base ti tabler-printer me-1"></i> Print
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="12" class="text-center py-5 text-muted">No inventory records found.
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="d-flex flex-column align-items-center justify-content-center">
+                                                <i class="ti tabler-box-off text-muted mb-2" style="font-size: 3rem;"></i>
+                                                <p class="text-muted mb-0">No inventory records found.</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -100,4 +132,87 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('js')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        function printBarcode(uniqueId, partNumber, serialNumber) {
+            const printWindow = window.open('', '_blank', 'width=600,height=400');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print QR Code - ${uniqueId}</title>
+                        <style>
+                            @page {
+                                margin: 0;
+                                size: 50mm 40mm; /* Adjusted for QR Code */
+                            }
+                            body {
+                                margin: 0;
+                                padding: 5px;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                font-family: 'Public Sans', -apple-system, sans-serif;
+                                height: 100vh;
+                                box-sizing: border-box;
+                            }
+                            #qrcode {
+                                margin-bottom: 5px;
+                            }
+                            #qrcode img {
+                                margin: 0 auto;
+                            }
+                            .unique-id {
+                                font-size: 11px;
+                                font-weight: 700;
+                                margin-bottom: 3px;
+                                color: #000;
+                            }
+                            .details {
+                                font-size: 9px;
+                                line-height: 1.2;
+                                font-weight: 600;
+                                text-align: center;
+                                width: 100%;
+                            }
+                            .label-text {
+                                color: #555;
+                                font-weight: 400;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="unique-id">${uniqueId}</div>
+                        <div id="qrcode"></div>
+                        <div class="details">
+                            <div><span class="label-text">P/N:</span> ${partNumber}</div>
+                            <div><span class="label-text">S/N:</span> ${serialNumber}</div>
+                        </div>
+
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+                        <script>
+                            window.onload = function() {
+                                new QRCode(document.getElementById("qrcode"), {
+                                    text: "${uniqueId}",
+                                    width: 100,
+                                    height: 100,
+                                    colorDark : "#000000",
+                                    colorLight : "#ffffff",
+                                    correctLevel : QRCode.CorrectLevel.H
+                                });
+                                setTimeout(() => {
+                                    window.print();
+                                    window.close();
+                                }, 400);
+                            };
+                        <\/script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    </script>
 @endsection
