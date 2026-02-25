@@ -60,6 +60,21 @@ class OutboundController extends Controller
         return view('outbound.write-off.create', compact('title', 'client', 'productGroup', 'brand'));
     }
 
+    public function show($id): View
+    {
+        $outbound = Outbound::with(['client', 'details'])->findOrFail($id);
+        $title = 'Outbound Detail';
+        return view('outbound.show', compact('title', 'outbound'));
+    }
+
+    public function printPdf($id): View
+    {
+        $outbound = Outbound::with(['client', 'details'])->findOrFail($id);
+        // We will just render a view for printing
+        $title = 'Outbound Report';
+        return view('outbound.pdf', compact('title', 'outbound'));
+    }
+
     public function storeSpare(Request $request)
     {
         return $this->storeOutbound($request, 'Spare');

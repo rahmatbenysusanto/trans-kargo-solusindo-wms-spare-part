@@ -8,11 +8,35 @@ use Illuminate\View\View;
 
 class InventoryController extends Controller
 {
+    public function scan($unique_id)
+    {
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
+            ->where('unique_id', $unique_id)
+            ->firstOrFail();
+
+        $sn = $inventory->serial_number;
+
+        $history = \App\Models\InventoryHistory::where('serial_number', $sn)
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return view('inventory.scan', compact('inventory', 'history'));
+    }
+
     public function index(Request $request): View
     {
         $title = 'Inventory List';
         $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
-            ->where('qty', 1)
+            ->when($request->status, function ($query) use ($request) {
+                return $query->where('status', $request->status);
+            })
+            ->when($request->client_id, function ($query) use ($request) {
+                return $query->where('client_id', $request->client_id);
+            })
+            ->when($request->condition, function ($query) use ($request) {
+                return $query->where('condition', $request->condition);
+            })
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
                     $q->where('unique_id', 'like', '%' . $request->search . '%')
@@ -24,7 +48,11 @@ class InventoryController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('inventory.inventory-list.index', compact('title', 'inventory'));
+        $statuses = \App\Models\Inventory::select('status')->distinct()->pluck('status');
+        $conditions = \App\Models\Inventory::select('condition')->distinct()->pluck('condition');
+        $clients = \App\Models\Client::all();
+
+        return view('inventory.inventory-list.index', compact('title', 'inventory', 'statuses', 'conditions', 'clients'));
     }
 
     public function stockMovement(): View

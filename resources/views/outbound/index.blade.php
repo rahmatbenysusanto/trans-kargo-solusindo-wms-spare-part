@@ -55,7 +55,14 @@
                                         <td>{{ $item->qty }}</td>
                                         <td><span class="badge bg-secondary">{{ $item->status }}</span></td>
                                         <td>
-                                            <a href="#" class="btn btn-info btn-sm">View</a>
+                                            <a href="{{ route('outbound.show', $item->id) }}" class="btn btn-info btn-sm"
+                                                title="View Detail">
+                                                <i class="ti tabler-eye"></i>
+                                            </a>
+                                            <a href="{{ route('outbound.print', $item->id) }}" target="_blank"
+                                                class="btn btn-primary btn-sm" title="Print PDF">
+                                                <i class="ti tabler-printer"></i>
+                                            </a>
                                         </td>
                                     </tr>
                                 @endforeach

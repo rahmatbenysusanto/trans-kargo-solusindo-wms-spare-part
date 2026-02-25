@@ -7,8 +7,46 @@
             <div class="card">
                 <div class="card-header">
                     <form action="{{ url()->current() }}" method="GET">
-                        <div class="row">
-                            <div class="col-md-4">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label">Client</label>
+                                <select name="client_id" class="form-select" onchange="this.form.submit()">
+                                    <option value="">All Clients</option>
+                                    @foreach ($clients as $client)
+                                        <option value="{{ $client->id }}"
+                                            {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                                            {{ $client->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select" onchange="this.form.submit()">
+                                    <option value="">All Statuses</option>
+                                    @foreach ($statuses as $status)
+                                        <option value="{{ $status }}"
+                                            {{ request('status') == $status ? 'selected' : '' }}>
+                                            {{ $status }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Condition</label>
+                                <select name="condition" class="form-select" onchange="this.form.submit()">
+                                    <option value="">All Conditions</option>
+                                    @foreach ($conditions as $condition)
+                                        @if ($condition)
+                                            <option value="{{ $condition }}"
+                                                {{ request('condition') == $condition ? 'selected' : '' }}>
+                                                {{ $condition }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-5">
                                 <label class="form-label">Global Search</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" name="search"
@@ -84,13 +122,28 @@
                                         </td>
                                         <td>
                                             <div class="d-flex flex-column align-items-start">
-                                                @if ($item->status == 'In Stock' || $item->status == 'Available')
-                                                    <span class="badge bg-success mb-1">{{ $item->status }}</span>
-                                                @elseif(in_array($item->status, ['Defective', 'Broken', 'Faulty']))
-                                                    <span class="badge bg-danger mb-1">{{ $item->status }}</span>
-                                                @else
-                                                    <span class="badge bg-warning mb-1">{{ $item->status }}</span>
-                                                @endif
+                                                @php
+                                                    $bgClass = 'bg-secondary';
+                                                    switch (strtolower($item->status)) {
+                                                        case 'available':
+                                                        case 'in stock':
+                                                            $bgClass = 'bg-success';
+                                                            break;
+                                                        case 'out for replacement/ support':
+                                                        case 'out for loan':
+                                                        case 'out for return':
+                                                        case 'shipped / outbound':
+                                                            $bgClass = 'bg-warning text-dark';
+                                                            break;
+                                                        case 'write-off':
+                                                        case 'faulty':
+                                                        case 'broken':
+                                                        case 'defective':
+                                                            $bgClass = 'bg-danger';
+                                                            break;
+                                                    }
+                                                @endphp
+                                                <span class="badge {{ $bgClass }} mb-1">{{ $item->status }}</span>
                                                 <small class="text-muted"><i class="ti tabler-clock me-1"></i>Appr:
                                                     {{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/y') : '-' }}</small>
                                                 <small class="text-muted"><i
@@ -195,8 +248,9 @@
                         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
                         <script>
                             window.onload = function() {
+                                const scanUrl = "{{ url('/scan') }}/" + "${uniqueId}";
                                 new QRCode(document.getElementById("qrcode"), {
-                                    text: "${uniqueId}",
+                                    text: scanUrl,
                                     width: 100,
                                     height: 100,
                                     colorDark : "#000000",

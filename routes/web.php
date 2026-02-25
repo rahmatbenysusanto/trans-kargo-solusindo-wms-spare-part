@@ -23,6 +23,8 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/logout', 'logout')->name('logout');
 });
 
+Route::get('/scan/{unique_id}', [InventoryController::class, 'scan'])->name('inventory.scan.public');
+
 Route::middleware([AuthMiddleware::class])->group(function () {
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'index')->name('dashboard');
@@ -73,6 +75,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
     Route::prefix('/outbound')->controller(OutboundController::class)->group(function () {
         Route::get('/', 'index')->name('outbound.index');
+        Route::get('/{id}', 'show')->name('outbound.show');
+        Route::get('/print/{id}', 'printPdf')->name('outbound.print');
 
         Route::prefix('/create')->group(function () {
             Route::get('/spare', 'createSpare')->name('outbound.create.spare');
