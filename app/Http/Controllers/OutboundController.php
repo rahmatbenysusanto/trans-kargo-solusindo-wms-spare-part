@@ -15,13 +15,32 @@ class OutboundController extends Controller
 {
     public function index(Request $request): View
     {
-        $search = $request->get('search');
         $title = 'Outbound';
         $data = Outbound::with('client')
             ->where('category', '!=', 'Write-off')
+            ->when($request->client_id, function ($query) use ($request) {
+                return $query->where('client_id', $request->client_id);
+            })
+            ->when($request->category, function ($query) use ($request) {
+                return $query->where('category', $request->category);
+            })
+            ->when($request->search, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('number', 'like', '%' . $request->search . '%')
+                        ->orWhere('ntt_dn_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('tks_dn_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('tks_invoice_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('rma_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('itsm_number', 'like', '%' . $request->search . '%');
+                });
+            })
             ->latest()
-            ->get();
-        return view('outbound.index', compact('title', 'search', 'data'));
+            ->paginate(15);
+
+        $clients = Client::all();
+        $categories = Outbound::where('category', '!=', 'Write-off')->select('category')->distinct()->pluck('category');
+
+        return view('outbound.index', compact('title', 'data', 'clients', 'categories'));
     }
 
     public function createSpare(): View
