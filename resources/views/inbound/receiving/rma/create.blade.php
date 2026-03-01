@@ -97,7 +97,7 @@
                 const workbook = XLSX.read(data, {
                     type: 'array'
                 });
-                const firstSheetName = workbook.SheetNames[0];
+                const firstSheetName = workbook.SheetNames[1];
                 const worksheet = workbook.Sheets[firstSheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
