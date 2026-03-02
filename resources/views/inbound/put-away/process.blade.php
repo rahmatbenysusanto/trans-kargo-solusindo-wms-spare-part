@@ -39,17 +39,14 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom bg-light">
-                        <div class="row g-2">
-                            <div class="col-md-6 text-start">
-                                <label class="form-label small fw-bold">Filter Part Number</label>
-                                <input type="text" id="filterPN" class="form-control form-control-sm"
-                                    placeholder="Search Part Number..." onkeyup="filterTable()">
-                            </div>
-                            <div class="col-md-6 text-start">
-                                <label class="form-label small fw-bold">Filter Serial Number</label>
-                                <input type="text" id="filterSN" class="form-control form-control-sm"
-                                    placeholder="Search Serial Number..." onkeyup="filterTable()">
-                            </div>
+                        <label class="form-label small fw-bold">Search Product</label>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text" id="search-icon"><i class="ti tabler-search"></i></span>
+                            <span class="input-group-text d-none" id="loading-icon">
+                                <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                            </span>
+                            <input type="text" id="globalSearch" class="form-control form-control-sm"
+                                placeholder="Search SN or Part Number..." onkeyup="debouncedFilter()">
                         </div>
                     </div>
                     <div class="table-responsive" style="max-height: 500px;">
@@ -152,10 +149,24 @@
 @section('js')
     <script>
         let selectedProducts = [];
+        let filterTimeout = null;
+
+        function debouncedFilter() {
+            // Show loading icon
+            document.getElementById('search-icon').classList.add('d-none');
+            document.getElementById('loading-icon').classList.remove('d-none');
+
+            if (filterTimeout) clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                filterTable();
+                // Hide loading icon
+                document.getElementById('search-icon').classList.remove('d-none');
+                document.getElementById('loading-icon').classList.add('d-none');
+            }, 300); // 300ms debounce
+        }
 
         function filterTable() {
-            const pnValue = document.getElementById('filterPN').value.toLowerCase();
-            const snValue = document.getElementById('filterSN').value.toLowerCase();
+            const searchValue = document.getElementById('globalSearch').value.toLowerCase().trim();
             const rows = document.querySelectorAll('#availableTable tbody tr');
 
             rows.forEach(row => {
@@ -167,10 +178,15 @@
                     return;
                 }
 
+                if (!searchValue) {
+                    row.classList.remove('d-none');
+                    return;
+                }
+
                 const pnText = row.cells[0].querySelector('small').innerText.toLowerCase();
                 const snText = row.cells[1].innerText.toLowerCase();
 
-                if (pnText.includes(pnValue) && snText.includes(snValue)) {
+                if (pnText.includes(searchValue) || snText.includes(searchValue)) {
                     row.classList.remove('d-none');
                 } else {
                     row.classList.add('d-none');
