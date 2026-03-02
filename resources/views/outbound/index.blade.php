@@ -33,6 +33,51 @@
                 width: '100%'
             });
         });
+
+        function cancelOutbound(id, number) {
+            Swal.fire({
+                title: 'Cancel Outbound?',
+                text: `Are you sure you want to cancel Outbound ${number}? All items will be returned to inventory.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, cancel it!',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return fetch('{{ route('outbound.cancel') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                id: id
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(response.statusText)
+                            }
+                            return response.json()
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(`Request failed: ${error}`)
+                        })
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (result.value.status) {
+                        Swal.fire('Cancelled!', 'Outbound has been cancelled.', 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', result.value.message || 'Failed to cancel outbound.', 'error');
+                    }
+                }
+            })
+        }
     </script>
 @endsection
 
@@ -167,7 +212,8 @@
                                         </td>
                                         <td>
                                             <div class="d-flex flex-column align-items-start">
-                                                <span class="badge bg-label-success mb-1">{{ $item->status }}</span>
+                                                <span
+                                                    class="badge {{ $item->status == 'cancel' ? 'bg-label-danger' : 'bg-label-success' }} mb-1">{{ $item->status }}</span>
                                                 <small class="text-muted"><i class="ti tabler-calendar me-1"></i>
                                                     {{ $item->outbound_date ? \Carbon\Carbon::parse($item->outbound_date)->format('d/m/Y') : '-' }}</small>
                                                 <small class="text-muted"><i class="ti tabler-user me-1"></i>
@@ -186,6 +232,14 @@
                                                     title="Print PDF">
                                                     <i class="ti tabler-printer me-1"></i> Print
                                                 </a>
+                                                @if ($item->status !== 'cancel')
+                                                    <button type="button"
+                                                        class="btn btn-label-danger btn-sm d-flex align-items-center"
+                                                        onclick="cancelOutbound({{ $item->id }}, '{{ $item->number ?? $item->tks_dn_number }}')"
+                                                        title="Cancel Outbound">
+                                                        <i class="ti tabler-x me-1"></i> Cancel
+                                                    </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

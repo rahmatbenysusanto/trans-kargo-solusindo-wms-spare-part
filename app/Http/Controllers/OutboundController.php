@@ -207,6 +207,54 @@ class OutboundController extends Controller
             return response()->json(['status' => false, 'message' => $err->getMessage()]);
         }
     }
+    public function cancel(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $outbound = Outbound::with('details')->findOrFail($request->post('id'));
+
+            // Check if already cancelled
+            if ($outbound->status === 'cancel') {
+                return response()->json(['status' => false, 'message' => 'This outbound is already cancelled.']);
+            }
+
+            foreach ($outbound->details as $detail) {
+                // Find inventory record
+                $inventory = \App\Models\Inventory::where('serial_number', $detail->serial_number)->first();
+
+                if ($inventory) {
+                    // Update Inventory
+                    $inventory->update([
+                        'qty' => 1,
+                        'status' => 'available',
+                        'last_movement_date' => now()
+                    ]);
+
+                    // Record unified history for the cancellation
+                    \App\Models\InventoryHistory::create([
+                        'inventory_id' => $inventory->id,
+                        'serial_number' => $detail->serial_number,
+                        'type' => 'Movement',
+                        'category' => 'Cancel Outbound',
+                        'reference_number' => $outbound->number ?? $outbound->tks_dn_number,
+                        'description' => "Item returned to inventory due to Outbound cancellation ({$outbound->category})",
+                        'user' => \Illuminate\Support\Facades\Auth::user()->name,
+                    ]);
+                }
+            }
+
+            // Update Outbound status
+            $outbound->update(['status' => 'cancel']);
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
     public function getInventory(Request $request)
     {
         $clientId = $request->get('client_id');

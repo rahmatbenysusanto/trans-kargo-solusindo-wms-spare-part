@@ -193,6 +193,69 @@ class InboundController extends Controller
         }
     }
 
+    public function cancelPutAway(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+            $inboundId = $request->post('id');
+            $inbound = Inbound::with('details')->findOrFail($inboundId);
+
+            // Fetch items that have NOT been put away
+            $pendingDetails = InboundDetail::where('inbound_id', $inboundId)
+                ->whereNull('storage_level_id')
+                ->get();
+
+            $finishedDetailsCount = InboundDetail::where('inbound_id', $inboundId)
+                ->whereNotNull('storage_level_id')
+                ->count();
+
+            if ($pendingDetails->isEmpty()) {
+                return response()->json(['status' => false, 'message' => 'No pending items found to cancel.']);
+            }
+
+            if ($finishedDetailsCount === 0) {
+                // If no items were processed yet, cancel the entire Inbound record
+                $inbound->update(['status' => 'cancel']);
+            } else {
+                // Partial cancel: Splitting Inbound (PO/PA)
+                $cancelledInbound = $inbound->replicate();
+                $cancelledInbound->number = $inbound->number . '-CANCEL';
+                $cancelledInbound->qty = $pendingDetails->count();
+                $cancelledInbound->status = 'cancel';
+                $cancelledInbound->save();
+
+                // Move pending details to the new cancelled inbound
+                foreach ($pendingDetails as $detail) {
+                    $detail->update(['inbound_id' => $cancelledInbound->id]);
+
+                    // Add historical record to Unified History
+                    \App\Models\InventoryHistory::create([
+                        'inventory_id' => null,
+                        'serial_number' => $detail->serial_number,
+                        'type' => 'Inbound',
+                        'category' => $cancelledInbound->category,
+                        'reference_number' => $cancelledInbound->number,
+                        'description' => "Put Away cancelled partially. Moved from {$inbound->number} to {$cancelledInbound->number}",
+                        'user' => Auth::user()->name,
+                    ]);
+                }
+
+                // Update original inbound to reflect only the finished items count
+                $inbound->update([
+                    'qty' => $finishedDetailsCount,
+                    'status' => 'close'
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            Log::error("Cancel Put Away Error: " . $err->getMessage());
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
     public function createSpare(): View
     {
         $brand = Brand::all();

@@ -60,6 +60,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
             Route::get('/', 'putAway')->name('receiving.put.away');
             Route::get('/process/{id}', 'processPutAway')->name('receiving.put.away.process');
             Route::post('/update', 'updatePutAway')->name('receiving.put.away.update');
+            Route::post('/cancel', 'cancelPutAway')->name('receiving.put.away.cancel');
         });
     });
 
@@ -79,6 +80,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/', 'index')->name('outbound.index');
         Route::get('/{id}', 'show')->name('outbound.show');
         Route::get('/print/{id}', 'printPdf')->name('outbound.print');
+        Route::post('/cancel', 'cancel')->name('outbound.cancel');
 
         Route::prefix('/create')->group(function () {
             Route::get('/spare', 'createSpare')->name('outbound.create.spare');
