@@ -45,8 +45,10 @@ Route::middleware([AuthMiddleware::class])->group(function () {
                 Route::get('/spare', 'createSpare')->name('receiving.create.spare');
                 Route::get('/faulty', 'createFaulty')->name('receiving.create.faulty');
                 Route::get('/rma', 'createRma')->name('receiving.create.rma');
+                Route::get('/relokasi', 'createRelokasi')->name('receiving.create.relokasi');
                 Route::get('/new-po', 'createNewPO')->name('receiving.create.new.po');
 
+                Route::post('/store/relokasi', 'storeRelokasi')->name('receiving.store.relokasi');
                 Route::post('/store/new-po', 'storeNewPO')->name('receiving.store.new-po');
                 Route::post('/store/spare', 'storeSpare')->name('receiving.store.spare');
                 Route::post('/store/faulty', 'storeFaulty')->name('receiving.store.faulty');

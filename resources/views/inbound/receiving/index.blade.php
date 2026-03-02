@@ -13,6 +13,7 @@
                     <a class="dropdown-item" href="{{ route('receiving.create.spare') }}">Spare</a>
                     <a class="dropdown-item" href="{{ route('receiving.create.faulty') }}">Faulty</a>
                     <a class="dropdown-item" href="{{ route('receiving.create.rma') }}">RMA</a>
+                    <a class="dropdown-item" href="{{ route('receiving.create.relokasi') }}">Relokasi</a>
                     <a class="dropdown-item" href="{{ route('receiving.create.new.po') }}">New PO</a>
                 </div>
             </div>

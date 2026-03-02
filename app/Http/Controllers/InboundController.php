@@ -223,6 +223,16 @@ class InboundController extends Controller
         return view('inbound.receiving.rma.create', compact('title', 'brand', 'productGroup', 'client'));
     }
 
+    public function createRelokasi(): View
+    {
+        $brand = Brand::all();
+        $productGroup = ProductGroup::all();
+        $client = Client::all();
+
+        $title = "Receiving";
+        return view('inbound.receiving.relokasi.create', compact('title', 'brand', 'productGroup', 'client'));
+    }
+
     public function createNewPO(): View
     {
         $brand = Brand::all();
@@ -236,6 +246,42 @@ class InboundController extends Controller
     /**
      * @throws \Throwable
      */
+    public function storeRelokasi(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'client_id'      => 'required',
+            'number'         => 'required',
+            'vendor'         => 'required',
+            'receivedDate'  => 'required',
+            'receivedBy'    => 'required',
+            'products'      => 'required|array|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $inbound = Inbound::create([
+                'category'       => 'Relokasi',
+                'client_id'      => $request->post('client_id'),
+                'number'         => $request->post('number'),
+                'receiving_note' => $request->post('receivingNote'),
+                'vendor'         => $request->post('vendor'),
+                'qty'            => count($request->post('products')),
+                'received_date'  => $request->post('receivedDate'),
+                'received_by'    => $request->post('receivedBy'),
+                'status'         => 'new'
+            ]);
+
+            $this->storeDetails($inbound, $request->post('products'));
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
     public function storeNewPO(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
