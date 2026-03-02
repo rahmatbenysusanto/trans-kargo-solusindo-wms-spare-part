@@ -134,12 +134,9 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="d-grid gap-2 mt-3">
+                        <div class="d-grid mt-3">
                             <button class="btn btn-success" onclick="submitPutAway()">
                                 <i class="ti tabler-check me-1"></i> Confirm Put Away
-                            </button>
-                            <button class="btn btn-label-danger" onclick="cancelRemainingPutAway()">
-                                <i class="ti tabler-x me-1"></i> Cancel Remaining Products
                             </button>
                         </div>
                     </div>
@@ -328,43 +325,6 @@
                                 });
                             } else {
                                 Swal.fire('Error', data.message || 'Failed to Put Away products.', 'error');
-                            }
-                        });
-                }
-            });
-        }
-
-        function cancelRemainingPutAway() {
-            Swal.fire({
-                title: 'Cancel Remaining Items?',
-                text: "All pending items will be cancelled and moved to a new cancelled reference.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, cancel them!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.showLoading();
-                    fetch('{{ route('receiving.put.away.cancel') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify({
-                                id: {{ $inbound->id }}
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status) {
-                                Swal.fire('Success!', 'Remaining items have been cancelled.', 'success').then(
-                                () => {
-                                        window.location.href = '{{ route('receiving.put.away') }}';
-                                    });
-                            } else {
-                                Swal.fire('Error', data.message || 'Failed to cancel items.', 'error');
                             }
                         });
                 }

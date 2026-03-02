@@ -66,6 +66,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
     Route::prefix('/inventory')->controller(InventoryController::class)->group(function () {
         Route::get('/list', 'index')->name('inventory.index');
+        Route::get('/list/pdf', 'exportPdf')->name('inventory.export.pdf');
+        Route::get('/list/excel', 'exportExcel')->name('inventory.export.excel');
         Route::get('/list/{id}', 'show')->name('inventory.show');
 
         Route::get('/stock-movement', 'stockMovement')->name('inventory.stock.movement');

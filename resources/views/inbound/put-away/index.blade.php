@@ -70,6 +70,10 @@
                                                         href="{{ route('receiving.put.away.process', $item->id) }}">
                                                         <i class="ti tabler-package me-1"></i> Process Put Away
                                                     </a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);"
+                                                        onclick="cancelRemainingPutAway({{ $item->id }}, '{{ $item->number }}')">
+                                                        <i class="ti tabler-x me-1"></i> Cancel Remaining
+                                                    </a>
                                                 </div>
                                             </div>
                                         </td>
@@ -85,4 +89,45 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('js')
+    <script>
+        function cancelRemainingPutAway(id, number) {
+            Swal.fire({
+                title: 'Cancel Remaining Items?',
+                text: `Are you sure you want to cancel the remaining items for ${number}? Items not yet in shelving will be moved to a cancelled reference.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, cancel them!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    fetch('{{ route('receiving.put.away.cancel') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                id: id
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status) {
+                                Swal.fire('Success!', 'Remaining items have been cancelled.', 'success').then(
+                                () => {
+                                        location.reload();
+                                    });
+                            } else {
+                                Swal.fire('Error', data.message || 'Failed to cancel items.', 'error');
+                            }
+                        });
+                }
+            });
+        }
+    </script>
 @endsection

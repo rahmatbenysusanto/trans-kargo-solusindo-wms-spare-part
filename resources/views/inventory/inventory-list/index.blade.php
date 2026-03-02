@@ -5,7 +5,19 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center border-bottom mb-3">
+                    <h5 class="card-title mb-0">Inventory Data</h5>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('inventory.export.pdf', request()->all()) }}" target="_blank"
+                            class="btn btn-label-secondary">
+                            <i class="ti tabler-file-type-pdf me-1"></i> Export PDF
+                        </a>
+                        <a href="{{ route('inventory.export.excel', request()->all()) }}" class="btn btn-label-success">
+                            <i class="ti tabler-file-spreadsheet me-1"></i> Export Excel
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body pt-0">
                     <form action="{{ url()->current() }}" method="GET">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-3">
@@ -59,8 +71,7 @@
                             </div>
                         </div>
                     </form>
-                </div>
-                <div class="card-body">
+                    <hr class="my-4">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-light">

@@ -54,6 +54,106 @@ class InventoryController extends Controller
         return view('inventory.inventory-list.index', compact('title', 'inventory', 'statuses', 'conditions', 'clients'));
     }
 
+    public function exportPdf(Request $request): View
+    {
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
+            ->when($request->status, function ($query) use ($request) {
+                return $query->where('status', $request->status);
+            })
+            ->when($request->client_id, function ($query) use ($request) {
+                return $query->where('client_id', $request->client_id);
+            })
+            ->when($request->condition, function ($query) use ($request) {
+                return $query->where('condition', $request->condition);
+            })
+            ->when($request->search, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('unique_id', 'like', '%' . $request->search . '%')
+                        ->orWhere('part_name', 'like', '%' . $request->search . '%')
+                        ->orWhere('serial_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->latest()
+            ->get();
+
+        $title = 'Inventory List Report';
+        return view('inventory.inventory-list.pdf', compact('title', 'inventory'));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
+            ->when($request->status, function ($query) use ($request) {
+                return $query->where('status', $request->status);
+            })
+            ->when($request->client_id, function ($query) use ($request) {
+                return $query->where('client_id', $request->client_id);
+            })
+            ->when($request->condition, function ($query) use ($request) {
+                return $query->where('condition', $request->condition);
+            })
+            ->when($request->search, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('unique_id', 'like', '%' . $request->search . '%')
+                        ->orWhere('part_name', 'like', '%' . $request->search . '%')
+                        ->orWhere('serial_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->latest()
+            ->get();
+
+        $filename = "inventory-list-" . date('Y-m-d') . ".xls";
+
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+
+        echo "<table border='1'>";
+        echo "<thead>";
+        echo "<tr>";
+        echo "<th>No</th>";
+        echo "<th>Asset ID</th>";
+        echo "<th>Client</th>";
+        echo "<th>Part Name</th>";
+        echo "<th>Part Number</th>";
+        echo "<th>Serial Number</th>";
+        echo "<th>Brand</th>";
+        echo "<th>Product Group</th>";
+        echo "<th>Location</th>";
+        echo "<th>Status</th>";
+        echo "<th>Condition</th>";
+        echo "<th>Last Movement</th>";
+        echo "</tr>";
+        echo "</thead>";
+        echo "<tbody>";
+
+        foreach ($inventory as $index => $item) {
+            $location = $item->storageLevel ? $item->storageLevel->bin->rak->zone->name . " - " . $item->storageLevel->name : 'N/A';
+            $brand = $item->product && $item->product->brand ? $item->product->brand->name : '-';
+            $group = $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-';
+
+            echo "<tr>";
+            echo "<td>" . ($index + 1) . "</td>";
+            echo "<td>{$item->unique_id}</td>";
+            echo "<td>" . ($item->client->name ?? '-') . "</td>";
+            echo "<td>{$item->part_name}</td>";
+            echo "<td>{$item->part_number}</td>";
+            echo "<td>'{$item->serial_number}</td>"; // Prefix with ' to force string in Excel
+            echo "<td>{$brand}</td>";
+            echo "<td>{$group}</td>";
+            echo "<td>{$location}</td>";
+            echo "<td>{$item->status}</td>";
+            echo "<td>{$item->condition}</td>";
+            echo "<td>" . ($item->last_movement_date ?? '-') . "</td>";
+            echo "</tr>";
+        }
+
+        echo "</tbody>";
+        echo "</table>";
+        exit;
+    }
+
     public function stockMovement(): View
     {
         $title = 'Stock Movement';
