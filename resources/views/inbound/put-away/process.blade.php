@@ -38,6 +38,20 @@
                             class="ti tabler-arrow-right ms-1"></i></button>
                 </div>
                 <div class="card-body p-0">
+                    <div class="p-3 border-bottom bg-light">
+                        <div class="row g-2">
+                            <div class="col-md-6 text-start">
+                                <label class="form-label small fw-bold">Filter Part Number</label>
+                                <input type="text" id="filterPN" class="form-control form-control-sm"
+                                    placeholder="Search Part Number..." onkeyup="filterTable()">
+                            </div>
+                            <div class="col-md-6 text-start">
+                                <label class="form-label small fw-bold">Filter Serial Number</label>
+                                <input type="text" id="filterSN" class="form-control form-control-sm"
+                                    placeholder="Search Serial Number..." onkeyup="filterTable()">
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive" style="max-height: 500px;">
                         <table class="table table-hover align-middle" id="availableTable">
                             <thead class="sticky-top bg-white">
@@ -139,6 +153,31 @@
     <script>
         let selectedProducts = [];
 
+        function filterTable() {
+            const pnValue = document.getElementById('filterPN').value.toLowerCase();
+            const snValue = document.getElementById('filterSN').value.toLowerCase();
+            const rows = document.querySelectorAll('#availableTable tbody tr');
+
+            rows.forEach(row => {
+                const id = parseInt(row.id.replace('row-', ''));
+                const isSelected = selectedProducts.includes(id);
+
+                if (isSelected) {
+                    row.classList.add('d-none');
+                    return;
+                }
+
+                const pnText = row.cells[0].querySelector('small').innerText.toLowerCase();
+                const snText = row.cells[1].innerText.toLowerCase();
+
+                if (pnText.includes(pnValue) && snText.includes(snValue)) {
+                    row.classList.remove('d-none');
+                } else {
+                    row.classList.add('d-none');
+                }
+            });
+        }
+
         function moveRight(id, name, sn) {
             if (selectedProducts.includes(id)) return;
 
@@ -162,8 +201,8 @@
 
         function moveLeft(id) {
             selectedProducts = selectedProducts.filter(item => item !== id);
-            document.getElementById(`row-${id}`).classList.remove('d-none');
             document.getElementById(`selected-row-${id}`).remove();
+            filterTable();
         }
 
         function moveAllRight() {
