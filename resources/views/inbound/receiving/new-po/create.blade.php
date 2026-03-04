@@ -48,7 +48,7 @@
                             </select>
                         </div>
                         <div class="col-4 mb-3">
-                            <label class="form-label">PO Number</label>
+                            <label class="form-label">PO Number (Optional)</label>
                             <input type="text" class="form-control" name="po_number" id="po_number"
                                 placeholder="PO Number ...">
                         </div>
@@ -179,6 +179,7 @@
                                     <option value="Refurbished">Refurbished</option>
                                     <option value="Faulty">Faulty</option>
                                     <option value="Write-off Needed">Write-off Needed</option>
+                                    <option value="Spare Migration">Spare Migration</option>
                                 </select>
                             </div>
                         </div>
@@ -242,14 +243,16 @@
                 dropdownParent: $('#addProductModal'),
                 placeholder: "-- Choose Product Group --",
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                tags: true
             });
 
             $('#brand').select2({
                 dropdownParent: $('#addProductModal'),
                 placeholder: "-- Choose Brand --",
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                tags: true
             });
 
             $('#condition').select2({
@@ -316,11 +319,8 @@
                         const brandKey = excelBrand.toLowerCase();
 
                         // Case-insensitive Validation
-                        const masterGroupName = masterProductGroups.get(groupKey);
-                        const masterBrandName = masterBrands.get(brandKey);
-
-                        if (!masterGroupName && excelGroup) invalidGroups.add(excelGroup);
-                        if (!masterBrandName && excelBrand) invalidBrands.add(excelBrand);
+                        const groupName = masterProductGroups.get(groupKey) || excelGroup;
+                        const brandName = masterBrands.get(brandKey) || excelBrand;
 
                         existingSn.add(sn);
                         products.push({
@@ -331,8 +331,8 @@
                             partDescription: row["Part Desc"] || row["Part Description"] || row[
                                 "Material Description"] || "",
                             serialNumber: sn,
-                            productGroup: masterGroupName || "",
-                            brand: masterBrandName || "",
+                            productGroup: groupName,
+                            brand: brandName,
                             condition: row["Condition"] || "New",
                             qty: row["QTY"] || 1,
                         });
@@ -348,14 +348,6 @@
                 let message = "";
                 if (duplicates.length > 0) {
                     message += `Skipped ${duplicates.length} duplicate Serial Numbers.<br>`;
-                }
-                if (invalidGroups.size > 0) {
-                    message +=
-                        `Detected invalid Product Groups: <b>${Array.from(invalidGroups).join(', ')}</b> (Values cleared).<br>`;
-                }
-                if (invalidBrands.size > 0) {
-                    message +=
-                        `Detected invalid Brands: <b>${Array.from(invalidBrands).join(', ')}</b> (Values cleared).<br>`;
                 }
 
                 if (message) {
@@ -449,8 +441,8 @@
             const receivingNote = document.getElementById('ntt_no').value;
             const category = "New PO";
 
-            if (!poNumber || !clientId || !vendor || !receivedDate || !receivedBy) {
-                Swal.fire('Error', 'Please fill in all required fields (Client, PO Number, Vendor, Date, Received By).',
+            if (!clientId || !vendor || !receivedDate || !receivedBy) {
+                Swal.fire('Error', 'Please fill in all required fields (Client, Vendor, Date, Received By).',
                     'error');
                 return;
             }
@@ -548,6 +540,7 @@
                             <option value="Refurbished" ${product.condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
                             <option value="Faulty" ${product.condition === 'Faulty' ? 'selected' : ''}>Faulty</option>
                             <option value="Write-off Needed" ${product.condition === 'Write-off Needed' ? 'selected' : ''}>Write-off Needed</option>
+                            <option value="Spare Migration" ${product.condition === 'Spare Migration' ? 'selected' : ''}>Spare Migration</option>
                         </select>
                     </td>
                     <td>

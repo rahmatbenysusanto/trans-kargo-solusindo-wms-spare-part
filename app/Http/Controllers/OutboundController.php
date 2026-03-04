@@ -180,15 +180,22 @@ class OutboundController extends Controller
                             break;
                         case 'Spare from Loan':
                         case 'Spare to Loan':
+                        case 'Loan':
                             $inventoryStatus = 'Out for Loan';
                             break;
                         case 'Faulty':
                         case 'RMA':
+                        case 'Out for Return':
                             $inventoryStatus = 'Out for Return';
                             break;
                         case 'Write-off':
+                        case 'Spare Write Off':
                         case 'Spare Write-off':
                             $inventoryStatus = 'Write-off';
+                            break;
+                        case 'Spare Migration':
+                        case 'New PO':
+                            $inventoryStatus = 'Shipped / Outbound';
                             break;
                     }
 

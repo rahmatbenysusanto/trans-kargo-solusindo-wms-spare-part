@@ -48,7 +48,7 @@
                             </select>
                         </div>
                         <div class="col-4 mb-3">
-                            <label class="form-label">Reference Number</label>
+                            <label class="form-label">Reference Number (Optional)</label>
                             <input type="text" class="form-control" name="po_number" id="po_number"
                                 placeholder="Reference Number ...">
                         </div>
@@ -179,6 +179,7 @@
                                     <option value="Refurbished">Refurbished</option>
                                     <option value="Faulty">Faulty</option>
                                     <option value="Write-off Needed">Write-off Needed</option>
+                                    <option value="Spare Migration">Spare Migration</option>
                                 </select>
                             </div>
                         </div>
@@ -242,14 +243,16 @@
                 dropdownParent: $('#addProductModal'),
                 placeholder: "-- Choose Product Group --",
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                tags: true
             });
 
             $('#brand').select2({
                 dropdownParent: $('#addProductModal'),
                 placeholder: "-- Choose Brand --",
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                tags: true
             });
 
             $('#condition').select2({
@@ -438,9 +441,9 @@
             const receivingNote = document.getElementById('ntt_no').value;
             const category = "Relokasi";
 
-            if (!poNumber || !clientId || !vendor || !receivedDate || !receivedBy) {
+            if (!clientId || !vendor || !receivedDate || !receivedBy) {
                 Swal.fire('Error',
-                    'Please fill in all required fields (Client, Reference Number, Vendor, Date, Received By).',
+                    'Please fill in all required fields (Client, Vendor, Date, Received By).',
                     'error');
                 return;
             }
@@ -538,6 +541,7 @@
                             <option value="Refurbished" ${product.condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
                             <option value="Faulty" ${product.condition === 'Faulty' ? 'selected' : ''}>Faulty</option>
                             <option value="Write-off Needed" ${product.condition === 'Write-off Needed' ? 'selected' : ''}>Write-off Needed</option>
+                            <option value="Spare Migration" ${product.condition === 'Spare Migration' ? 'selected' : ''}>Spare Migration</option>
                         </select>
                     </td>
                     <td>

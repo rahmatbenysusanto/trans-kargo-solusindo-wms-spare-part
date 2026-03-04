@@ -91,6 +91,18 @@ class InboundController extends Controller
         );
     }
 
+    public static function generateInboundNumber(string $prefix): string
+    {
+        $date = date('ymd');
+        $lastInbound = Inbound::where('number', 'like', "$prefix-$date-%")->latest()->first();
+        $lastSerial = 0;
+        if ($lastInbound) {
+            $lastSerial = (int) substr($lastInbound->number, -3);
+        }
+        $newSerial = str_pad($lastSerial + 1, 3, '0', STR_PAD_LEFT);
+        return "$prefix-$date-$newSerial";
+    }
+
     /**
      * @throws \Throwable
      */
@@ -313,7 +325,7 @@ class InboundController extends Controller
     {
         $request->validate([
             'client_id'      => 'required',
-            'number'         => 'required',
+            'number'         => 'nullable',
             'vendor'         => 'required',
             'receivedDate'  => 'required',
             'receivedBy'    => 'required',
@@ -326,7 +338,7 @@ class InboundController extends Controller
             $inbound = Inbound::create([
                 'category'       => 'Relokasi',
                 'client_id'      => $request->post('client_id'),
-                'number'         => $request->post('number'),
+                'number'         => $request->post('number') ?? self::generateInboundNumber('REL'),
                 'receiving_note' => $request->post('receivingNote'),
                 'vendor'         => $request->post('vendor'),
                 'qty'            => count($request->post('products')),
@@ -349,7 +361,7 @@ class InboundController extends Controller
     {
         $request->validate([
             'client_id'      => 'required',
-            'number'         => 'required',
+            'number'         => 'nullable',
             'vendor'         => 'required',
             'receivedDate'  => 'required',
             'receivedBy'    => 'required',
@@ -362,7 +374,7 @@ class InboundController extends Controller
             $inbound = Inbound::create([
                 'category'       => 'New PO',
                 'client_id'      => $request->post('client_id'),
-                'number'         => $request->post('number'),
+                'number'         => $request->post('number') ?? self::generateInboundNumber('PO'),
                 'receiving_note' => $request->post('receivingNote'),
                 'vendor'         => $request->post('vendor'),
                 'qty'            => count($request->post('products')),
@@ -386,7 +398,8 @@ class InboundController extends Controller
         $request->validate([
             'category'        => 'required',
             'client_id'       => 'required',
-            'number'          => 'required', // NTT RN#
+            'number'          => 'required', // NTT RN# (Still required as it is external ref)
+            'po_number'       => 'nullable',
             'sttb'            => 'required',
             'receivedDate'   => 'required',
             'receivedBy'     => 'required',
@@ -399,7 +412,7 @@ class InboundController extends Controller
             $inbound = Inbound::create([
                 'category'              => $request->post('category'),
                 'client_id'             => $request->post('client_id'),
-                'number'                => $request->post('po_number'), // PO#
+                'number'                => $request->post('po_number') ?? self::generateInboundNumber('SPR'),
                 'receiving_note'        => $request->post('number'), // NTT RN#
                 'sttb'                  => $request->post('sttb'),
                 'courier_delivery_note' => $request->post('delivery_note'),
@@ -425,7 +438,8 @@ class InboundController extends Controller
     {
         $request->validate([
             'client_id'       => 'required',
-            'number'          => 'required', // NTT RN#
+            'number'          => 'required', // NTT RN# (Still required as it is external ref)
+            'po_number'       => 'nullable',
             'sttb'            => 'required',
             'receivedDate'   => 'required',
             'receivedBy'     => 'required',
@@ -438,7 +452,7 @@ class InboundController extends Controller
             $inbound = Inbound::create([
                 'category'              => 'Faulty',
                 'client_id'             => $request->post('client_id'),
-                'number'                => $request->post('po_number'), // PO# (optional references)
+                'number'                => $request->post('po_number') ?? self::generateInboundNumber('FLT'),
                 'receiving_note'        => $request->post('number'), // NTT RN#
                 'sttb'                  => $request->post('sttb'),
                 'courier_delivery_note' => $request->post('delivery_note'),
@@ -464,7 +478,7 @@ class InboundController extends Controller
     {
         $request->validate([
             'client_id'       => 'required',
-            'number'          => 'required', // RMA#
+            'number'          => 'nullable', // RMA#
             'receivedDate'   => 'required',
             'receivedBy'     => 'required',
             'products'       => 'required|array|min:1',
@@ -476,7 +490,7 @@ class InboundController extends Controller
             $inbound = Inbound::create([
                 'category'              => 'RMA',
                 'client_id'             => $request->post('client_id'),
-                'number'                => $request->post('number'), // RMA#
+                'number'                => $request->post('number') ?? self::generateInboundNumber('RMA'),
                 'itsm_number'           => $request->post('itsm_number'),
                 'vendor'                => $request->post('vendor') ?? 'Internal',
                 'qty'                   => count($request->post('products')),

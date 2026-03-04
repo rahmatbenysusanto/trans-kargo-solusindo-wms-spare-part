@@ -1,6 +1,72 @@
 @extends('layout.index')
 @section('title', 'Inventory List')
 
+@section('css')
+    <style>
+        .inventory-card {
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .table thead th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: #5d596c;
+            border-top: none;
+        }
+
+        .id-badge {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            color: #212529;
+            border-radius: 6px;
+            padding: 4px 8px;
+        }
+
+        .sn-text {
+            font-size: 0.85rem;
+            color: #6f6b7d;
+        }
+
+        .part-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #444050;
+            margin-bottom: 2px;
+        }
+
+        .part-meta {
+            font-size: 0.8rem;
+            color: #a19fad;
+        }
+
+        .status-badge {
+            padding: 0.5em 1em;
+            border-radius: 50rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #6f6b7d;
+            margin-bottom: 2px;
+        }
+
+        .activity-icon {
+            font-size: 1rem;
+            margin-right: 6px;
+            color: #a19fad;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="row">
         <div class="col-12">
@@ -18,56 +84,61 @@
                     </div>
                 </div>
                 <div class="card-body pt-0">
-                    <form action="{{ url()->current() }}" method="GET">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-3">
-                                <label class="form-label">Client</label>
-                                <select name="client_id" class="form-select" onchange="this.form.submit()">
-                                    <option value="">All Clients</option>
-                                    @foreach ($clients as $client)
-                                        <option value="{{ $client->id }}"
-                                            {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                            {{ $client->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Status</label>
-                                <select name="status" class="form-select" onchange="this.form.submit()">
-                                    <option value="">All Statuses</option>
-                                    @foreach ($statuses as $status)
-                                        <option value="{{ $status }}"
-                                            {{ request('status') == $status ? 'selected' : '' }}>
-                                            {{ $status }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Condition</label>
-                                <select name="condition" class="form-select" onchange="this.form.submit()">
-                                    <option value="">All Conditions</option>
-                                    @foreach ($conditions as $condition)
-                                        @if ($condition)
-                                            <option value="{{ $condition }}"
-                                                {{ request('condition') == $condition ? 'selected' : '' }}>
-                                                {{ $condition }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label">Global Search</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="search"
-                                        value="{{ request()->get('search') }}"
-                                        placeholder="Search SN, Asset#, Part Name ...">
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="ti tabler-search"></i>
-                                    </button>
+                    <form action="{{ url()->current() }}" method="GET" class="filter-row">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-10">
+                                <div class="row g-2">
+                                    <div class="col-md-3">
+                                        <div class="input-group input-group-merge">
+                                            <span class="input-group-text"><i class="ti tabler-users"></i></span>
+                                            <select name="client_id" class="form-select border-start-0"
+                                                onchange="this.form.submit()">
+                                                <option value="">All Clients</option>
+                                                @foreach ($clients as $client)
+                                                    <option value="{{ $client->id }}"
+                                                        {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                                                        {{ $client->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="status" class="form-select" onchange="this.form.submit()">
+                                            <option value="">All Statuses</option>
+                                            @foreach ($statuses as $status)
+                                                <option value="{{ $status }}"
+                                                    {{ request('status') == $status ? 'selected' : '' }}>
+                                                    {{ $status }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="condition" class="form-select" onchange="this.form.submit()">
+                                            <option value="">All Conditions</option>
+                                            @foreach ($conditions as $condition)
+                                                @if ($condition)
+                                                    <option value="{{ $condition }}"
+                                                        {{ request('condition') == $condition ? 'selected' : '' }}>
+                                                        {{ $condition }}
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="input-group input-group-merge">
+                                            <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                                            <input type="text" class="form-control border-start-0" name="search"
+                                                value="{{ request()->get('search') }}"
+                                                placeholder="Search SN, Asset#, Part Name ...">
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="col-md-2 d-grid">
+                                <button class="btn btn-primary" type="submit">Apply Filter</button>
                             </div>
                         </div>
                     </form>
@@ -77,10 +148,12 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
-                                    <th>Identifiers</th>
-                                    <th>Product Details</th>
-                                    <th>Warehouse Location</th>
-                                    <th>Status & Dates</th>
+                                    <th>Unit Info</th>
+                                    <th>Product & Specs</th>
+                                    <th>Location</th>
+                                    <th>Condition</th>
+                                    <th>Status</th>
+                                    <th>Last Activity</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -91,75 +164,83 @@
                                         </td>
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span class="text-dark fw-bold mb-1"><i
-                                                        class="ti tabler-barcode text-muted me-1"></i>{{ $item->unique_id }}</span>
-                                                <span class="badge bg-label-info w-px-150 text-start"><i
-                                                        class="ti tabler-qrcode me-1"></i>{{ $item->serial_number }}</span>
+                                                <div class="mb-1">
+                                                    <span class="id-badge"><i
+                                                            class="ti tabler-hash me-1"></i>{{ $item->unique_id }}</span>
+                                                </div>
+                                                <div class="sn-text"><i
+                                                        class="ti tabler-qrcode me-1"></i>{{ $item->serial_number }}</div>
                                                 @if ($item->parent_serial_number)
-                                                    <small class="text-muted mt-1">Parent:
+                                                    <small class="text-muted opacity-75 mt-1">P:
                                                         {{ $item->parent_serial_number }}</small>
                                                 @endif
                                             </div>
                                         </td>
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span class="fw-bold text-primary">{{ $item->part_name }}</span>
-                                                <small class="text-muted mb-1">P/N: {{ $item->part_number }}</small>
-                                                <div>
-                                                    <span
-                                                        class="badge bg-label-secondary me-1">{{ $item->product && $item->product->brand ? $item->product->brand->name : '-' }}</span>
-                                                    <span
-                                                        class="badge bg-label-secondary">{{ $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-' }}</span>
+                                                <div class="part-name">{{ $item->part_name }}</div>
+                                                <div class="part-meta mb-2">P/N: {{ $item->part_number }}</div>
+                                                <div class="d-flex gap-1">
+                                                    <span class="badge bg-label-dark p-1 px-2"
+                                                        style="font-size: 0.65rem;">{{ $item->product && $item->product->brand ? $item->product->brand->name : '-' }}</span>
+                                                    <span class="badge bg-label-secondary p-1 px-2"
+                                                        style="font-size: 0.65rem;">{{ $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-' }}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             @if ($item->storageLevel)
-                                                <div class="d-flex align-items-center">
-                                                    <div class="badge bg-label-primary p-2 me-2"><i
-                                                            class="ti tabler-map-pin"></i></div>
-                                                    <div class="d-flex flex-column">
-                                                        <span
-                                                            class="fw-bold text-dark">{{ $item->storageLevel->bin->rak->zone->name }}
-                                                            - {{ $item->storageLevel->bin->rak->name }}</span>
-                                                        <small class="text-muted">Bin: {{ $item->storageLevel->bin->name }}
-                                                            | Lvl: {{ $item->storageLevel->name }}</small>
-                                                    </div>
+                                                <div class="d-flex flex-column">
+                                                    <span
+                                                        class="fw-bold text-dark small">{{ $item->storageLevel->bin->rak->zone->name }}</span>
+                                                    <small class="text-muted">{{ $item->storageLevel->bin->rak->name }} /
+                                                        {{ $item->storageLevel->name }}</small>
                                                 </div>
                                             @else
-                                                <span class="text-muted"><i class="ti tabler-map-pin-off me-1"></i>Not
-                                                    Set</span>
+                                                <span class="badge bg-label-secondary border-0"><i
+                                                        class="ti tabler-map-pin-off me-1"></i>Unset</span>
                                             @endif
                                         </td>
                                         <td>
-                                            <div class="d-flex flex-column align-items-start">
-                                                @php
-                                                    $bgClass = 'bg-secondary';
-                                                    switch (strtolower($item->status)) {
-                                                        case 'available':
-                                                        case 'in stock':
-                                                            $bgClass = 'bg-success';
-                                                            break;
-                                                        case 'out for replacement/ support':
-                                                        case 'out for loan':
-                                                        case 'out for return':
-                                                        case 'shipped / outbound':
-                                                            $bgClass = 'bg-warning text-dark';
-                                                            break;
-                                                        case 'write-off':
-                                                        case 'faulty':
-                                                        case 'broken':
-                                                        case 'defective':
-                                                            $bgClass = 'bg-danger';
-                                                            break;
-                                                    }
-                                                @endphp
-                                                <span class="badge {{ $bgClass }} mb-1">{{ $item->status }}</span>
-                                                <small class="text-muted"><i class="ti tabler-clock me-1"></i>Appr:
-                                                    {{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/y') : '-' }}</small>
-                                                <small class="text-muted"><i
-                                                        class="ti tabler-arrows-right-left me-1"></i>Moved:
-                                                    {{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/y') : '-' }}</small>
+                                            <span
+                                                class="badge bg-label-info border-0 px-3">{{ $item->condition ?? '-' }}</span>
+                                        </td>
+                                        <td>
+                                            @php
+                                                $bgClass = 'bg-label-secondary';
+                                                $statusLower = strtolower($item->status);
+                                                switch ($statusLower) {
+                                                    case 'available':
+                                                    case 'in stock':
+                                                        $bgClass = 'bg-label-success';
+                                                        break;
+                                                    case 'out for replacement/ support':
+                                                    case 'out for loan':
+                                                    case 'out for return':
+                                                    case 'shipped / outbound':
+                                                        $bgClass = 'bg-label-warning';
+                                                        break;
+                                                    case 'write-off':
+                                                    case 'faulty':
+                                                    case 'broken':
+                                                    case 'defective':
+                                                        $bgClass = 'bg-label-danger';
+                                                        break;
+                                                }
+                                            @endphp
+                                            <span
+                                                class="badge {{ $bgClass }} status-badge border-0">{{ $item->status }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="activity-item">
+                                                    <i class="ti tabler-circle-check activity-icon"></i>
+                                                    {{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/Y') : '-' }}
+                                                </div>
+                                                <div class="activity-item">
+                                                    <i class="ti tabler-replace activity-icon"></i>
+                                                    {{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/Y') : '-' }}
+                                                </div>
                                             </div>
                                         </td>
                                         <td>
@@ -178,7 +259,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-5">
+                                        <td colspan="8" class="text-center py-5">
                                             <div class="d-flex flex-column align-items-center justify-content-center">
                                                 <i class="ti tabler-box-off text-muted mb-2" style="font-size: 3rem;"></i>
                                                 <p class="text-muted mb-0">No inventory records found.</p>
