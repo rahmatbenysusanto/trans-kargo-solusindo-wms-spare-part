@@ -132,7 +132,7 @@
         const search = document.getElementById('inventorySearch').value;
         const tbody = document.getElementById('inventoryListBody');
 
-        if (!clientId) {
+        if (!clientId || clientId === "") {
             tbody.innerHTML =
                 '<tr><td colspan="6" class="text-center py-5"><div class="badge bg-label-danger fs-6 rounded-pill px-4 py-2 mb-2"><i class="ti tabler-alert-triangle me-1"></i> Selection Required</div><p class="text-muted mb-0">Please choose a Client first to load inventory data.</p></td></tr>';
             return;
@@ -145,16 +145,22 @@
         const keys = ['outbound_products', 'outbound_f_products', 'outbound_rma_products', 'outbound_products_wo'];
         let excludeIds = [];
         keys.forEach(k => {
-            const items = JSON.parse(localStorage.getItem(k)) ?? [];
-            items.forEach(i => {
-                if (i.product_id) excludeIds.push(i.product_id)
-            });
+            try {
+                const items = JSON.parse(localStorage.getItem(k)) ?? [];
+                items.forEach(i => {
+                    if (i.product_id) excludeIds.push(i.product_id)
+                });
+            } catch (e) {}
         });
 
-        fetch(
-                `{{ route('outbound.get.inventory') }}?client_id=${clientId}&search=${search}&exclude_ids=${excludeIds.join(',')}`
-                )
-            .then(r => r.json())
+        const url =
+            `{{ route('outbound.get.inventory') }}?client_id=${clientId}&search=${search}&exclude_ids=${excludeIds.join(',')}`;
+
+        fetch(url)
+            .then(r => {
+                if (!r.ok) throw new Error('Server responded with ' + r.status);
+                return r.json();
+            })
             .then(data => {
                 tbody.innerHTML = '';
                 document.getElementById('inventoryResultCount').innerText = `Found ${data.length} available items`;
@@ -185,6 +191,11 @@
                         </tr>
                     `;
                 });
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                tbody.innerHTML =
+                    `<tr><td colspan="6" class="text-center py-5"><div class="badge bg-label-danger fs-6 rounded-pill px-4 py-2 mb-2"><i class="ti tabler-alert-circle me-1"></i> Error</div><p class="text-muted mb-0">Failed to load inventory: ${error.message}</p></td></tr>`;
             });
     }
 

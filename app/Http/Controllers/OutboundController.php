@@ -264,51 +264,64 @@ class OutboundController extends Controller
 
     public function getInventory(Request $request)
     {
-        $clientId = $request->get('client_id');
-        $query = \App\Models\Inventory::with(['storageLevel.bin.rak.zone'])
-            ->where('qty', '>', 0)
-            ->whereNotIn('status', [
-                'Shipped / Outbound',
-                'Out for Replacement/ Support',
-                'Out for Loan',
-                'Out for Return',
-                'Write-off'
-            ]);
+        try {
+            $clientId = $request->get('client_id');
+            $query = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'brand', 'productGroup'])
+                ->where('qty', '>', 0)
+                ->whereNotIn('status', [
+                    'Shipped / Outbound',
+                    'Out for Replacement/ Support',
+                    'Out for Loan',
+                    'Out for Return',
+                    'Write-off'
+                ]);
 
-        if ($clientId) {
-            $query->where('client_id', $clientId);
-        }
+            if ($clientId) {
+                $query->where('client_id', $clientId);
+            }
 
-        if ($request->search) {
-            $s = $request->search;
-            $query->where(function ($q) use ($s) {
-                $q->where('unique_id', 'like', "%$s%")
-                    ->orWhere('serial_number', 'like', "%$s%")
-                    ->orWhere('part_name', 'like', "%$s%")
-                    ->orWhere('part_number', 'like', "%$s%");
+            if ($request->search) {
+                $s = $request->search;
+                $query->where(function ($q) use ($s) {
+                    $q->where('unique_id', 'like', "%$s%")
+                        ->orWhere('serial_number', 'like', "%$s%")
+                        ->orWhere('part_name', 'like', "%$s%")
+                        ->orWhere('part_number', 'like', "%$s%");
+                });
+            }
+
+            if ($request->exclude_ids && $request->exclude_ids !== '') {
+                $excludeIds = explode(',', $request->exclude_ids);
+                $query->whereNotIn('id', $excludeIds);
+            }
+
+            $data = $query->latest()->limit(50)->get()->map(function ($item) {
+                $location = 'N/A';
+                if ($item->storageLevel && $item->storageLevel->bin && $item->storageLevel->bin->rak && $item->storageLevel->bin->rak->zone) {
+                    $location = $item->storageLevel->bin->rak->zone->name . ' - ' . $item->storageLevel->name;
+                }
+
+                return [
+                    'id' => $item->id,
+                    'unique_id' => $item->unique_id,
+                    'part_name' => $item->part_name,
+                    'part_number' => $item->part_number,
+                    'part_description' => $item->part_description,
+                    'serial_number' => $item->serial_number,
+                    'brand' => ($item->brand ? $item->brand->name : '-'),
+                    'product_group' => ($item->productGroup ? $item->productGroup->name : '-'),
+                    'condition' => $item->condition,
+                    'location' => $location
+                ];
             });
+
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
+            ], 500);
         }
-
-        if ($request->exclude_ids) {
-            $excludeIds = explode(',', $request->exclude_ids);
-            $query->whereNotIn('id', $excludeIds);
-        }
-
-        $data = $query->latest()->limit(50)->get()->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'unique_id' => $item->unique_id,
-                'part_name' => $item->part_name,
-                'part_number' => $item->part_number,
-                'part_description' => $item->description,
-                'serial_number' => $item->serial_number,
-                'brand' => $item->brand,
-                'product_group' => $item->product_group,
-                'condition' => $item->condition,
-                'location' => $item->storageLevel ? $item->storageLevel->bin->rak->zone->name . ' - ' . $item->storageLevel->name : 'N/A'
-            ];
-        });
-
-        return response()->json($data);
     }
 }

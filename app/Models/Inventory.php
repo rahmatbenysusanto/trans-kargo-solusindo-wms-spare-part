@@ -51,4 +51,14 @@ class Inventory extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class, 'brand_id');
+    }
+
+    public function productGroup(): BelongsTo
+    {
+        return $this->belongsTo(ProductGroup::class, 'product_group_id');
+    }
 }
