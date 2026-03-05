@@ -101,7 +101,7 @@
             }
 
             const data = {
-                category: 'Spare Write Off',
+                category: 'Write-off',
                 client_id: client_id,
                 outbound_date: document.getElementById('date').value,
                 outbound_by: document.getElementById('outbound_by').value,

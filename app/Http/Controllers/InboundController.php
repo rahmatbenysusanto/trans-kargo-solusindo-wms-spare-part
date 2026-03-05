@@ -128,7 +128,8 @@ class InboundController extends Controller
                         'storage_level_id'  => $storageLevelId,
                         'qty'               => 1,
                         'status'            => 'available',
-                        'condition'         => $inboundDetail->condition
+                        'condition'         => $inboundDetail->condition,
+                        'parent_serial_number' => $inboundDetail->old_serial_number ?? $checkInventory->parent_serial_number
                     ]);
                 } else {
                     $brand = Brand::find($inboundDetail->brand_id);
@@ -146,6 +147,7 @@ class InboundController extends Controller
                         'part_number'       => $inboundDetail->part_number,
                         'part_description'  => $inboundDetail->part_description,
                         'serial_number'     => $inboundDetail->serial_number,
+                        'parent_serial_number' => $inboundDetail->old_serial_number,
                         'status'            => 'available',
                         'condition'         => $inboundDetail->condition,
                     ]);
@@ -551,7 +553,7 @@ class InboundController extends Controller
                 'type' => 'Inbound',
                 'category' => $inbound->category,
                 'reference_number' => $inbound->number,
-                'description' => "Received item via {$inbound->category} (Ref: {$inbound->number})",
+                'description' => "Received item via {$inbound->category} (Ref: {$inbound->number})" . (isset($product['oldSerialNumber']) && $product['oldSerialNumber'] ? " - Linked to SN: {$product['oldSerialNumber']}" : ""),
                 'user' => $inbound->received_by,
             ]);
         }

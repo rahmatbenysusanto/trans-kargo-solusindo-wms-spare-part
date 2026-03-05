@@ -172,8 +172,10 @@ class InventoryController extends Controller
 
         $sn = $inventory->serial_number;
 
-        // Fetch unified history from the dedicated table
+        // Fetch unified history for this SN and its parent link
         $history = \App\Models\InventoryHistory::where('serial_number', $sn)
+            ->orWhere('serial_number', $inventory->parent_serial_number)
+            ->orWhere('description', 'like', '%' . $sn . '%')
             ->latest()
             ->get()
             ->map(function ($item) {
@@ -185,7 +187,8 @@ class InventoryController extends Controller
                     'description' => $item->description,
                     'user' => $item->user,
                     'from_location' => $item->from_location,
-                    'to_location' => $item->to_location
+                    'to_location' => $item->to_location,
+                    'sn' => $item->serial_number // Added to distinguish if it's from another SN
                 ];
             });
 

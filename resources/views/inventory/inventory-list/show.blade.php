@@ -40,7 +40,13 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold text-muted small uppercase">Serial Number (SN)</label>
-                            <p class="mb-0"><span class="badge bg-label-info">{{ $inventory->serial_number }}</span></p>
+                            <p class="mb-0">
+                                <span class="badge bg-label-info">{{ $inventory->serial_number }}</span>
+                                @if ($inventory->parent_serial_number)
+                                    <br><small class="text-muted">Replaces/Linked to: <span
+                                            class="fw-bold">{{ $inventory->parent_serial_number }}</span></small>
+                                @endif
+                            </p>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold text-muted small uppercase">Current Status</label>
@@ -115,6 +121,11 @@
                                             @else
                                                 <span class="badge bg-label-primary text-primary"><i
                                                         class="ti tabler-arrows-diff me-1"></i> MOVEMENT</span>
+                                            @endif
+
+                                            @if ($h['sn'] != $inventory->serial_number)
+                                                <br><small class="badge bg-label-warning text-dark p-1 mt-1"
+                                                    style="font-size: 0.6rem;">Linked SN: {{ $h['sn'] }}</small>
                                             @endif
                                         </td>
                                         <td><span class="badge bg-label-secondary">{{ $h['category'] }}</span></td>

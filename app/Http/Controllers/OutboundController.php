@@ -17,7 +17,6 @@ class OutboundController extends Controller
     {
         $title = 'Outbound';
         $data = Outbound::with('client')
-            ->where('category', '!=', 'Write-off')
             ->when($request->client_id, function ($query) use ($request) {
                 return $query->where('client_id', $request->client_id);
             })
@@ -38,7 +37,7 @@ class OutboundController extends Controller
             ->paginate(15);
 
         $clients = Client::all();
-        $categories = Outbound::where('category', '!=', 'Write-off')->select('category')->distinct()->pluck('category');
+        $categories = ['Replacement', 'Loan', 'Spare Migration', 'Faulty', 'RMA', 'Write-off'];
 
         return view('outbound.index', compact('title', 'data', 'clients', 'categories'));
     }
@@ -165,7 +164,7 @@ class OutboundController extends Controller
                     'type' => 'Outbound',
                     'category' => $outbound->category,
                     'reference_number' => $outbound->number ?? $outbound->tks_dn_number,
-                    'description' => "Item shipped out via {$outbound->category} to " . ($outbound->client->name ?? 'Client'),
+                    'description' => "Item shipped out via {$outbound->category} to " . ($outbound->client->name ?? 'Client') . (isset($product['oldSerialNumber']) && $product['oldSerialNumber'] ? " - Replacing SN: {$product['oldSerialNumber']}" : ""),
                     'user' => $outbound->outbound_by,
                 ]);
 
@@ -174,6 +173,7 @@ class OutboundController extends Controller
                     $inventoryStatus = 'Shipped / Outbound'; // Default fallback
 
                     switch ($outbound->category) {
+                        case 'Replacement':
                         case 'Spare from Replacement':
                         case 'Spare to Replacement':
                             $inventoryStatus = 'Out for Replacement/ Support';

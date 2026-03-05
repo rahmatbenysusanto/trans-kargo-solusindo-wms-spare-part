@@ -222,8 +222,8 @@
                                     <label class="form-label text-dark fw-bold mb-1">Outbound Category <span
                                             class="text-danger">*</span></label>
                                     <select class="form-select border-0 bg-light-subtle" name="category" id="category">
+                                        <option>Replacement</option>
                                         <option>Loan</option>
-                                        <option>New PO</option>
                                         <option>Spare Migration</option>
                                     </select>
                                 </div>
