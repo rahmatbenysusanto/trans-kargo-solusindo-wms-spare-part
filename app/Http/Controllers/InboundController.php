@@ -81,14 +81,9 @@ class InboundController extends Controller
         return strtoupper(substr(Str::slug($text, ''), 0, $length));
     }
 
-    public static function generateUniqueId(string $brand, string $group): string
+    public static function generateUniqueId(): string
     {
-        return sprintf(
-            '%s-%s-%s',
-            self::makeCode($brand),
-            self::makeCode($group),
-            strtoupper(Str::random(5))
-        );
+        return date('YmdHi') . str_pad(mt_rand(0, 999), 3, '0', STR_PAD_LEFT);
     }
 
     public static function generateInboundNumber(string $prefix): string
@@ -136,7 +131,7 @@ class InboundController extends Controller
                     $productGroup = ProductGroup::find($inboundDetail->product_group_id);
 
                     $createInventory = Inventory::create([
-                        'unique_id'         => $this->generateUniqueId($brand->name, $productGroup->name),
+                        'unique_id'         => $this->generateUniqueId(),
                         'client_id'         => $inbound->client_id,
                         'storage_level_id'  => $storageLevelId,
                         'product_id'        => $inboundDetail->product_id,
