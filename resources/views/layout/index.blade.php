@@ -209,7 +209,7 @@
                     </li>
 
                     <li
-                        class="menu-item {{ in_array($title, ['Inventory List', 'Stock Movement', 'Product Movement', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
+                        class="menu-item {{ in_array($title, ['Inventory List', 'Inventory Product', 'Stock Movement', 'Product Movement', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon icon-base ti tabler-truck-loading"></i>
                             <div data-i18n="Inventory">Inventory</div>
@@ -218,6 +218,11 @@
                             <li class="menu-item {{ $title == 'Inventory List' ? 'active' : '' }}">
                                 <a href="{{ route('inventory.index') }}" class="menu-link">
                                     <div data-i18n="Inventory List">Inventory List</div>
+                                </a>
+                            </li>
+                            <li class="menu-item {{ $title == 'Inventory Product' ? 'active' : '' }}">
+                                <a href="{{ route('inventory.product.summary') }}" class="menu-link">
+                                    <div data-i18n="Inventory Product">Inventory Product</div>
                                 </a>
                             </li>
                             <li class="menu-item {{ $title == 'Stock Movement' ? 'active' : '' }}">

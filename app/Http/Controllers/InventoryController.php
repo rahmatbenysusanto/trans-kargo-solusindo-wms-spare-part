@@ -275,4 +275,51 @@ class InventoryController extends Controller
             return response()->json(['status' => false, 'message' => $err->getMessage()]);
         }
     }
+    public function productSummary(Request $request): View
+    {
+        $title = 'Inventory Product';
+        $query = \App\Models\Inventory::select(
+            'part_name',
+            'part_number',
+            \Illuminate\Support\Facades\DB::raw('COUNT(*) as total_in'),
+            \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty > 0 THEN 1 ELSE 0 END) as in_inventory'),
+            \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty = 0 THEN 1 ELSE 0 END) as total_out')
+        )
+            ->when($request->search, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('part_name', 'like', '%' . $request->search . '%')
+                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->groupBy('part_name', 'part_number')
+            ->orderBy('part_name');
+
+        $data = $query->paginate(15);
+
+        return view('inventory.product-summary', compact('title', 'data'));
+    }
+
+    public function productSummaryDetail(Request $request)
+    {
+        $partName = $request->part_name;
+        $partNumber = $request->part_number;
+
+        $details = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client'])
+            ->where('part_name', $partName)
+            ->where('part_number', $partNumber)
+            ->get()
+            ->map(function ($item) {
+                $storage = $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : "-";
+                return [
+                    'unique_id' => $item->unique_id,
+                    'serial_number' => $item->serial_number,
+                    'status' => $item->status,
+                    'condition' => $item->condition,
+                    'client' => $item->client->name ?? '-',
+                    'storage' => $storage
+                ];
+            });
+
+        return response()->json($details);
+    }
 }

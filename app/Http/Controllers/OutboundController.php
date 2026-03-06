@@ -37,7 +37,7 @@ class OutboundController extends Controller
             ->paginate(15);
 
         $clients = Client::all();
-        $categories = ['Replacement', 'Loan', 'Spare Migration', 'Faulty', 'RMA', 'Write-off'];
+        $categories = ['Replacement', 'Loan', 'Spare Migration', 'Faulty', 'RMA', 'Write-off', 'Out for Replacement/ Support', 'Out for Loan', 'Out for Return'];
 
         return view('outbound.index', compact('title', 'data', 'clients', 'categories'));
     }

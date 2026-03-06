@@ -74,6 +74,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/product-movement', 'productMovementIndex')->name('inventory.product.movement');
         Route::get('/product-movement/process', 'productMovementProcess')->name('inventory.product.movement.process');
         Route::post('/product-movement/update', 'productMovementUpdate')->name('inventory.product.movement.update');
+        Route::get('/product-summary', 'productSummary')->name('inventory.product.summary');
+        Route::get('/product-summary/detail', 'productSummaryDetail')->name('inventory.product.summary.detail');
     });
 
     Route::get('/inventory/cycle-count', [\App\Http\Controllers\CycleCountController::class, 'index'])->name('inventory.cycle-count');
