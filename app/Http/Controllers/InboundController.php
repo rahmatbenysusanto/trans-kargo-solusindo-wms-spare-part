@@ -166,7 +166,7 @@ class InboundController extends Controller
 
                 // Record to Unified History
                 $storage = \App\Models\StorageLevel::with('bin.rak.zone')->find($storageLevelId);
-                $locationName = $storage ? $storage->bin->rak->zone->name . ' - ' . $storage->name : 'N/A';
+                $locationName = $storage ? "{$storage->bin->rak->zone->name}-{$storage->bin->rak->name}-{$storage->bin->name}-{$storage->name}" : 'N/A';
 
                 \App\Models\InventoryHistory::create([
                     'inventory_id' => $inventoryId,

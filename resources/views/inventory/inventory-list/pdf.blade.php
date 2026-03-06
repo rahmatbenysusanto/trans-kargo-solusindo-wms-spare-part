@@ -39,10 +39,7 @@
                                     <th>Asset ID</th>
                                     <th>Product Details</th>
                                     <th>Serial Number</th>
-                                    <th>Zone</th>
-                                    <th>Rack</th>
-                                    <th>Bin</th>
-                                    <th>Level</th>
+                                    <th>Storage</th>
                                     <th>Status</th>
                                     <th class="text-center">Condition</th>
                                 </tr>
@@ -57,16 +54,14 @@
                                             <small class="text-muted">P/N: {{ $item->part_number }}</small>
                                         </td>
                                         <td>{{ $item->serial_number }}</td>
-                                        <td>{{ $item->storageLevel ? $item->storageLevel->bin->rak->zone->name : '-' }}</td>
-                                        <td>{{ $item->storageLevel ? $item->storageLevel->bin->rak->name : '-' }}</td>
-                                        <td>{{ $item->storageLevel ? $item->storageLevel->bin->name : '-' }}</td>
-                                        <td>{{ $item->storageLevel ? $item->storageLevel->name : '-' }}</td>
+                                        <td>{{ $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : '-' }}
+                                        </td>
                                         <td>{{ $item->status }}</td>
                                         <td class="text-center">{{ $item->condition }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center text-muted">No inventory items found.</td>
+                                        <td colspan="7" class="text-center text-muted">No inventory items found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

@@ -111,11 +111,8 @@
             </div>
             <div>
                 @if ($inventory->storageLevel)
-                    <p class="font-bold text-gray-800">{{ $inventory->storageLevel->bin->rak->zone->name }} -
-                        {{ $inventory->storageLevel->bin->rak->name }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Bin: <span
-                            class="font-medium text-gray-700">{{ $inventory->storageLevel->bin->name }}</span> | Level:
-                        <span class="font-medium text-gray-700">{{ $inventory->storageLevel->name }}</span>
+                    <p class="font-bold text-gray-800">
+                        {{ $inventory->storageLevel->bin->rak->zone->name }}-{{ $inventory->storageLevel->bin->rak->name }}-{{ $inventory->storageLevel->bin->name }}-{{ $inventory->storageLevel->name }}
                     </p>
                 @else
                     <p class="font-bold text-gray-800 italic">Not Set</p>

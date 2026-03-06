@@ -120,10 +120,7 @@ class InventoryController extends Controller
         echo "<th>Serial Number</th>";
         echo "<th>Brand</th>";
         echo "<th>Product Group</th>";
-        echo "<th>Zone</th>";
-        echo "<th>Rack</th>";
-        echo "<th>Bin</th>";
-        echo "<th>Level</th>";
+        echo "<th>Storage</th>";
         echo "<th>Status</th>";
         echo "<th>Condition</th>";
         echo "<th>Last Movement</th>";
@@ -148,10 +145,8 @@ class InventoryController extends Controller
             echo "<td>'{$item->serial_number}</td>"; // Prefix with ' to force string in Excel
             echo "<td>{$brand}</td>";
             echo "<td>{$group}</td>";
-            echo "<td>{$zone}</td>";
-            echo "<td>{$rack}</td>";
-            echo "<td>{$bin}</td>";
-            echo "<td>{$level}</td>";
+            $storage = $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : "-";
+            echo "<td>{$storage}</td>";
             echo "<td>{$item->status}</td>";
             echo "<td>{$item->condition}</td>";
             echo "<td>" . ($item->last_movement_date ?? '-') . "</td>";
@@ -255,10 +250,10 @@ class InventoryController extends Controller
 
                 // Record Unified History
                 $toStorage = \App\Models\StorageLevel::with('bin.rak.zone')->find($request->storage_level_id);
-                $toName = $toStorage ? $toStorage->bin->rak->zone->name . ' - ' . $toStorage->name : 'N/A';
+                $toName = $toStorage ? "{$toStorage->bin->rak->zone->name}-{$toStorage->bin->rak->name}-{$toStorage->bin->name}-{$toStorage->name}" : 'N/A';
 
                 $fromStorage = \App\Models\StorageLevel::with('bin.rak.zone')->find($oldStorageLevelId);
-                $fromName = $fromStorage ? $fromStorage->bin->rak->zone->name . ' - ' . $fromStorage->name : 'N/A';
+                $fromName = $fromStorage ? "{$fromStorage->bin->rak->zone->name}-{$fromStorage->bin->rak->name}-{$fromStorage->bin->name}-{$fromStorage->name}" : 'N/A';
 
                 \App\Models\InventoryHistory::create([
                     'inventory_id' => $id,

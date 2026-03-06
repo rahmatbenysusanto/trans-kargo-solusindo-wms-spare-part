@@ -64,9 +64,7 @@
                             <label class="form-label fw-bold text-muted small uppercase">Warehouse Location</label>
                             <p class="mb-0 text-primary fw-bold">
                                 @if ($inventory->storageLevel)
-                                    {{ $inventory->storageLevel->bin->rak->zone->name }} /
-                                    {{ $inventory->storageLevel->bin->rak->name }} /
-                                    {{ $inventory->storageLevel->bin->name }} / {{ $inventory->storageLevel->name }}
+                                    {{ $inventory->storageLevel->bin->rak->zone->name }}-{{ $inventory->storageLevel->bin->rak->name }}-{{ $inventory->storageLevel->bin->name }}-{{ $inventory->storageLevel->name }}
                                 @else
                                     <span class="text-muted">Not Set</span>
                                 @endif

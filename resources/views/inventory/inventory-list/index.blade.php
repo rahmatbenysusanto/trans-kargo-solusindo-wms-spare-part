@@ -150,10 +150,7 @@
                                     <th>#</th>
                                     <th>Unit Info</th>
                                     <th>Product & Specs</th>
-                                    <th>Zone</th>
-                                    <th>Rack</th>
-                                    <th>Bin</th>
-                                    <th>Level</th>
+                                    <th>Storage</th>
                                     <th>Condition</th>
                                     <th>Status</th>
                                     <th>Last Activity</th>
@@ -193,30 +190,9 @@
                                         </td>
                                         <td>
                                             @if ($item->storageLevel)
-                                                <span
-                                                    class="fw-bold text-dark small">{{ $item->storageLevel->bin->rak->zone->name }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($item->storageLevel)
-                                                <span
-                                                    class="text-muted small">{{ $item->storageLevel->bin->rak->name }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($item->storageLevel)
-                                                <span class="text-muted small">{{ $item->storageLevel->bin->name }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($item->storageLevel)
-                                                <span class="text-muted small">{{ $item->storageLevel->name }}</span>
+                                                <span class="text-muted small">
+                                                    {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
+                                                </span>
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif
@@ -279,7 +255,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="11" class="text-center py-5">
+                                        <td colspan="8" class="text-center py-5">
                                             <div class="d-flex flex-column align-items-center justify-content-center">
                                                 <i class="ti tabler-box-off text-muted mb-2" style="font-size: 3rem;"></i>
                                                 <p class="text-muted mb-0">No inventory records found.</p>

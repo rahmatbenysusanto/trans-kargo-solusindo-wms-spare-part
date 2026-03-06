@@ -34,19 +34,13 @@
                                         </td>
                                         <td>
                                             @if ($item->fromStorageLevel)
-                                                <small>{{ $item->fromStorageLevel->bin->rak->zone->name }} /
-                                                    {{ $item->fromStorageLevel->bin->rak->name }} /
-                                                    {{ $item->fromStorageLevel->bin->name }} /
-                                                    {{ $item->fromStorageLevel->name }}</small>
+                                                <small>{{ $item->fromStorageLevel->bin->rak->zone->name }}-{{ $item->fromStorageLevel->bin->rak->name }}-{{ $item->fromStorageLevel->bin->name }}-{{ $item->fromStorageLevel->name }}</small>
                                             @else
                                                 <span class="badge bg-label-secondary">Initial / Staging</span>
                                             @endif
                                         </td>
                                         <td>
-                                            <small>{{ $item->toStorageLevel->bin->rak->zone->name }} /
-                                                {{ $item->toStorageLevel->bin->rak->name }} /
-                                                {{ $item->toStorageLevel->bin->name }} /
-                                                {{ $item->toStorageLevel->name }}</small>
+                                            <small>{{ $item->toStorageLevel->bin->rak->zone->name }}-{{ $item->toStorageLevel->bin->rak->name }}-{{ $item->toStorageLevel->bin->name }}-{{ $item->toStorageLevel->name }}</small>
                                         </td>
                                         <td>{{ $item->created_at->format('d M Y H:i') }}</td>
                                         <td>{{ $item->user->name }}</td>
