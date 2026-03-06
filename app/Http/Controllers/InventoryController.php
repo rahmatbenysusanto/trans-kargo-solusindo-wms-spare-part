@@ -120,7 +120,10 @@ class InventoryController extends Controller
         echo "<th>Serial Number</th>";
         echo "<th>Brand</th>";
         echo "<th>Product Group</th>";
-        echo "<th>Location</th>";
+        echo "<th>Zone</th>";
+        echo "<th>Rack</th>";
+        echo "<th>Bin</th>";
+        echo "<th>Level</th>";
         echo "<th>Status</th>";
         echo "<th>Condition</th>";
         echo "<th>Last Movement</th>";
@@ -129,7 +132,10 @@ class InventoryController extends Controller
         echo "<tbody>";
 
         foreach ($inventory as $index => $item) {
-            $location = $item->storageLevel ? $item->storageLevel->bin->rak->zone->name . " - " . $item->storageLevel->name : 'N/A';
+            $zone = $item->storageLevel ? ($item->storageLevel->bin->rak->zone->name ?? '-') : '-';
+            $rack = $item->storageLevel ? ($item->storageLevel->bin->rak->name ?? '-') : '-';
+            $bin = $item->storageLevel ? ($item->storageLevel->bin->name ?? '-') : '-';
+            $level = $item->storageLevel ? ($item->storageLevel->name ?? '-') : '-';
             $brand = $item->product && $item->product->brand ? $item->product->brand->name : '-';
             $group = $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-';
 
@@ -142,7 +148,10 @@ class InventoryController extends Controller
             echo "<td>'{$item->serial_number}</td>"; // Prefix with ' to force string in Excel
             echo "<td>{$brand}</td>";
             echo "<td>{$group}</td>";
-            echo "<td>{$location}</td>";
+            echo "<td>{$zone}</td>";
+            echo "<td>{$rack}</td>";
+            echo "<td>{$bin}</td>";
+            echo "<td>{$level}</td>";
             echo "<td>{$item->status}</td>";
             echo "<td>{$item->condition}</td>";
             echo "<td>" . ($item->last_movement_date ?? '-') . "</td>";

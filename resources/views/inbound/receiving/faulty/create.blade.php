@@ -450,6 +450,20 @@
             }
         }
 
+        function bulkUpdateCondition(newCondition) {
+            if (!newCondition) return;
+
+            const products = JSON.parse(localStorage.getItem('products')) ?? [];
+            if (products.length === 0) return;
+
+            products.forEach(product => {
+                product.condition = newCondition;
+            });
+
+            localStorage.setItem('products', JSON.stringify(products));
+            renderProducts();
+        }
+
         function resetForm() {
             document.getElementById('partName').value = '';
             document.getElementById('partNumber').value = '';
@@ -562,7 +576,18 @@
                                     <th>Part Description</th>
 
                                     <th>Serial Number</th>
-                                    <th>Condition</th>
+                                    <th>
+                                        Condition
+                                        <select class="form-control form-control-sm mt-1"
+                                            onchange="bulkUpdateCondition(this.value)">
+                                            <option value="">Bulk Update</option>
+                                            <option value="New">New</option>
+                                            <option value="Refurbished">Refurbished</option>
+                                            <option value="Faulty">Faulty</option>
+                                            <option value="Write-off Needed">Write-off Needed</option>
+                                            <option value="Spare Migration">Spare Migration</option>
+                                        </select>
+                                    </th>
                                     <th>Action</th>
                                 </tr>
                             </thead>

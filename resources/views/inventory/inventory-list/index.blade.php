@@ -150,7 +150,10 @@
                                     <th>#</th>
                                     <th>Unit Info</th>
                                     <th>Product & Specs</th>
-                                    <th>Location</th>
+                                    <th>Zone</th>
+                                    <th>Rack</th>
+                                    <th>Bin</th>
+                                    <th>Level</th>
                                     <th>Condition</th>
                                     <th>Status</th>
                                     <th>Last Activity</th>
@@ -190,15 +193,32 @@
                                         </td>
                                         <td>
                                             @if ($item->storageLevel)
-                                                <div class="d-flex flex-column">
-                                                    <span
-                                                        class="fw-bold text-dark small">{{ $item->storageLevel->bin->rak->zone->name }}</span>
-                                                    <small class="text-muted">{{ $item->storageLevel->bin->rak->name }} /
-                                                        {{ $item->storageLevel->name }}</small>
-                                                </div>
+                                                <span
+                                                    class="fw-bold text-dark small">{{ $item->storageLevel->bin->rak->zone->name }}</span>
                                             @else
-                                                <span class="badge bg-label-secondary border-0"><i
-                                                        class="ti tabler-map-pin-off me-1"></i>Unset</span>
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($item->storageLevel)
+                                                <span
+                                                    class="text-muted small">{{ $item->storageLevel->bin->rak->name }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($item->storageLevel)
+                                                <span class="text-muted small">{{ $item->storageLevel->bin->name }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($item->storageLevel)
+                                                <span class="text-muted small">{{ $item->storageLevel->name }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
                                             @endif
                                         </td>
                                         <td>
@@ -259,7 +279,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-5">
+                                        <td colspan="11" class="text-center py-5">
                                             <div class="d-flex flex-column align-items-center justify-content-center">
                                                 <i class="ti tabler-box-off text-muted mb-2" style="font-size: 3rem;"></i>
                                                 <p class="text-muted mb-0">No inventory records found.</p>
