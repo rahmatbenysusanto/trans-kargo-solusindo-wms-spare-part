@@ -32,6 +32,11 @@ class Outbound extends Model
         return $this->hasMany(OutboundDetail::class, 'outbound_id');
     }
 
+    public function invoices(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->morphToMany(Invoice::class, 'linkable', 'invoice_links');
+    }
+
     public function client()
     {
         return $this->belongsTo(Client::class, 'client_id');

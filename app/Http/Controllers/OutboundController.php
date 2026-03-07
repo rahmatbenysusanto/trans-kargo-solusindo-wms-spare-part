@@ -80,7 +80,7 @@ class OutboundController extends Controller
 
     public function show($id): View
     {
-        $outbound = Outbound::with(['client', 'details'])->findOrFail($id);
+        $outbound = Outbound::with(['client', 'details', 'invoices'])->findOrFail($id);
         $title = 'Outbound Detail';
         return view('outbound.show', compact('title', 'outbound'));
     }
@@ -273,7 +273,8 @@ class OutboundController extends Controller
                     'Out for Replacement/ Support',
                     'Out for Loan',
                     'Out for Return',
-                    'Write-off'
+                    'Write-off',
+                    'staging'
                 ]);
 
             if ($clientId) {

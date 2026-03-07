@@ -3,66 +3,29 @@
 
 @section('css')
     <style>
-        .inventory-card {
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-
         .table thead th {
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             letter-spacing: 0.5px;
             font-weight: 700;
             color: #5d596c;
-            border-top: none;
+            white-space: nowrap;
         }
 
-        .id-badge {
+        .table-compact td {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.6rem !important;
+        }
+
+        .badge-status {
+            font-size: 0.65rem;
+            padding: 0.4em 0.8em;
+            border-radius: 4px;
+        }
+
+        .text-mono {
             font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 0.8rem;
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            color: #212529;
-            border-radius: 6px;
-            padding: 4px 8px;
-        }
-
-        .sn-text {
-            font-size: 0.85rem;
-            color: #6f6b7d;
-        }
-
-        .part-name {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #444050;
-            margin-bottom: 2px;
-        }
-
-        .part-meta {
-            font-size: 0.8rem;
-            color: #a19fad;
-        }
-
-        .status-badge {
-            padding: 0.5em 1em;
-            border-radius: 50rem;
-            font-weight: 600;
             font-size: 0.75rem;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            font-size: 0.8rem;
-            color: #6f6b7d;
-            margin-bottom: 2px;
-        }
-
-        .activity-icon {
-            font-size: 1rem;
-            margin-right: 6px;
-            color: #a19fad;
         }
     </style>
 @endsection
@@ -70,91 +33,95 @@
 @section('content')
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center border-bottom mb-3">
-                    <h5 class="card-title mb-0">Inventory Data</h5>
+            <div class="card shadow-sm border-0">
+                <div class="card-header d-flex justify-content-between align-items-center border-bottom py-3">
+                    <h5 class="card-title mb-0 fw-bold"><i class="ti tabler-box me-2 text-primary"></i>Inventory Data</h5>
                     <div class="d-flex gap-2">
                         <a href="{{ route('inventory.export.pdf', request()->all()) }}" target="_blank"
-                            class="btn btn-label-secondary">
-                            <i class="ti tabler-file-type-pdf me-1"></i> Export PDF
+                            class="btn btn-sm btn-label-secondary">
+                            <i class="ti tabler-file-type-pdf me-1"></i> PDF Export
                         </a>
-                        <a href="{{ route('inventory.export.excel', request()->all()) }}" class="btn btn-label-success">
-                            <i class="ti tabler-file-spreadsheet me-1"></i> Export Excel
+                        <a href="{{ route('inventory.export.excel', request()->all()) }}"
+                            class="btn btn-sm btn-label-success">
+                            <i class="ti tabler-file-spreadsheet me-1"></i> Excel Export
                         </a>
                     </div>
                 </div>
-                <div class="card-body pt-0">
-                    <form action="{{ url()->current() }}" method="GET" class="filter-row">
-                        <div class="row g-2 align-items-center">
-                            <div class="col-md-10">
-                                <div class="row g-2">
-                                    <div class="col-md-3">
-                                        <div class="input-group input-group-merge">
-                                            <span class="input-group-text"><i class="ti tabler-users"></i></span>
-                                            <select name="client_id" class="form-select border-start-0"
-                                                onchange="this.form.submit()">
-                                                <option value="">All Clients</option>
-                                                @foreach ($clients as $client)
-                                                    <option value="{{ $client->id }}"
-                                                        {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                                        {{ $client->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <select name="status" class="form-select" onchange="this.form.submit()">
-                                            <option value="">All Statuses</option>
-                                            @foreach ($statuses as $status)
-                                                <option value="{{ $status }}"
-                                                    {{ request('status') == $status ? 'selected' : '' }}>
-                                                    {{ $status }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <select name="condition" class="form-select" onchange="this.form.submit()">
-                                            <option value="">All Conditions</option>
-                                            @foreach ($conditions as $condition)
-                                                @if ($condition)
-                                                    <option value="{{ $condition }}"
-                                                        {{ request('condition') == $condition ? 'selected' : '' }}>
-                                                        {{ $condition }}
-                                                    </option>
-                                                @endif
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-5">
-                                        <div class="input-group input-group-merge">
-                                            <span class="input-group-text"><i class="ti tabler-search"></i></span>
-                                            <input type="text" class="form-control border-start-0" name="search"
-                                                value="{{ request()->get('search') }}"
-                                                placeholder="Search SN, Asset#, Part Name ...">
-                                        </div>
-                                    </div>
+                <div class="card-body pt-3">
+                    <form action="{{ url()->current() }}" method="GET">
+                        <div class="row g-2">
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Client</label>
+                                <select name="client_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="">All Clients</option>
+                                    @foreach ($clients as $client)
+                                        <option value="{{ $client->id }}"
+                                            {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                                            {{ $client->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Status</label>
+                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="">All Statuses</option>
+                                    @foreach ($statuses as $status)
+                                        <option value="{{ $status }}"
+                                            {{ request('status') == $status ? 'selected' : '' }}>
+                                            {{ $status }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Condition</label>
+                                <select name="condition" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="">All Conditions</option>
+                                    @foreach ($conditions as $condition)
+                                        @if ($condition)
+                                            <option value="{{ $condition }}"
+                                                {{ request('condition') == $condition ? 'selected' : '' }}>
+                                                {{ $condition }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Search (SN, Asset#, Part Name)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" name="search"
+                                        value="{{ request('search') }}" placeholder="Enter keyword...">
+                                    <button class="btn btn-primary" type="submit">Filter</button>
                                 </div>
                             </div>
-                            <div class="col-md-2 d-grid">
-                                <button class="btn btn-primary" type="submit">Apply Filter</button>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <a href="{{ url()->current() }}" class="btn btn-sm btn-label-secondary w-100">Reset</a>
                             </div>
                         </div>
                     </form>
-                    <hr class="my-4">
+
+                    <hr class="my-3">
+
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
+                        <table class="table table-hover table-striped table-compact table-sm text-nowrap align-middle">
+                            <thead class="table-light border-top">
                                 <tr>
-                                    <th>#</th>
-                                    <th>Unit Info</th>
-                                    <th>Product & Specs</th>
-                                    <th>Storage</th>
+                                    <th width="30">#</th>
+                                    <th>Client / Owner</th>
+                                    <th>Asset ID</th>
+                                    <th>Serial Number</th>
+                                    <th>Part Name</th>
+                                    <th>Part Number</th>
+                                    <th>Brand</th>
+                                    <th>Group</th>
+                                    <th>Location</th>
                                     <th>Condition</th>
                                     <th>Status</th>
-                                    <th>Last Activity</th>
-                                    <th>Action</th>
+                                    <th>Check Date</th>
+                                    <th>Activity</th>
+                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -162,105 +129,76 @@
                                     <tr>
                                         <td>{{ $loop->iteration + ($inventory->currentPage() - 1) * $inventory->perPage() }}
                                         </td>
-                                        <td>
-                                            <div class="d-flex flex-column">
-                                                <div class="mb-1">
-                                                    <span class="id-badge"><i
-                                                            class="ti tabler-hash me-1"></i>{{ $item->unique_id }}</span>
-                                                </div>
-                                                <div class="sn-text"><i
-                                                        class="ti tabler-qrcode me-1"></i>{{ $item->serial_number }}</div>
-                                                @if ($item->parent_serial_number)
-                                                    <small class="text-muted opacity-75 mt-1">P:
-                                                        {{ $item->parent_serial_number }}</small>
-                                                @endif
-                                            </div>
+                                        <td><span class="small fw-medium text-dark">{{ $item->client->name ?? '-' }}</span>
                                         </td>
-                                        <td>
-                                            <div class="d-flex flex-column">
-                                                <div class="part-name">{{ $item->part_name }}</div>
-                                                <div class="part-meta mb-2">P/N: {{ $item->part_number }}</div>
-                                                <div class="d-flex gap-1">
-                                                    <span class="badge bg-label-dark p-1 px-2"
-                                                        style="font-size: 0.65rem;">{{ $item->product && $item->product->brand ? $item->product->brand->name : '-' }}</span>
-                                                    <span class="badge bg-label-secondary p-1 px-2"
-                                                        style="font-size: 0.65rem;">{{ $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-' }}</span>
-                                                </div>
-                                            </div>
+                                        <td><span class="text-mono fw-bold text-primary">{{ $item->unique_id }}</span></td>
+                                        <td><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span>
+                                        </td>
+                                        <td style="max-width: 200px; white-space: normal;"><span
+                                                class="fw-medium">{{ $item->part_name }}</span></td>
+                                        <td>{{ $item->part_number }}</td>
+                                        <td><span class="badge bg-label-dark"
+                                                style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
+                                        <td><span class="badge bg-label-secondary"
+                                                style="font-size: 0.65rem;">{{ $item->productGroup->name ?? '-' }}</span>
                                         </td>
                                         <td>
                                             @if ($item->storageLevel)
-                                                <span class="text-muted small">
+                                                <span class="text-muted" style="font-size: 0.72rem;">
                                                     {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
                                                 </span>
                                             @else
-                                                <span class="text-muted">-</span>
+                                                <span class="text-muted small">Not Assigned</span>
                                             @endif
                                         </td>
-                                        <td>
-                                            <span
-                                                class="badge bg-label-info border-0 px-3">{{ $item->condition ?? '-' }}</span>
+                                        <td><span
+                                                class="badge {{ $item->condition == 'New' ? 'bg-label-info' : 'bg-label-secondary' }} badge-status">{{ $item->condition ?? '-' }}</span>
                                         </td>
                                         <td>
                                             @php
                                                 $bgClass = 'bg-label-secondary';
-                                                $statusLower = strtolower($item->status);
-                                                switch ($statusLower) {
+                                                switch (strtolower($item->status)) {
                                                     case 'available':
-                                                    case 'in stock':
                                                         $bgClass = 'bg-label-success';
                                                         break;
-                                                    case 'out for replacement/ support':
-                                                    case 'out for loan':
-                                                    case 'out for return':
+                                                    case 'staging':
+                                                        $bgClass = 'bg-label-info';
+                                                        break;
                                                     case 'shipped / outbound':
                                                         $bgClass = 'bg-label-warning';
                                                         break;
                                                     case 'write-off':
                                                     case 'faulty':
-                                                    case 'broken':
-                                                    case 'defective':
                                                         $bgClass = 'bg-label-danger';
                                                         break;
                                                 }
                                             @endphp
                                             <span
-                                                class="badge {{ $bgClass }} status-badge border-0">{{ $item->status }}</span>
+                                                class="badge {{ $bgClass }} badge-status">{{ strtoupper($item->status) }}</span>
+                                        </td>
+                                        <td><small
+                                                class="text-muted">{{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/Y') : '-' }}</small>
+                                        </td>
+                                        <td><small
+                                                class="text-muted">{{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/Y') : '-' }}</small>
                                         </td>
                                         <td>
-                                            <div class="d-flex flex-column">
-                                                <div class="activity-item">
-                                                    <i class="ti tabler-circle-check activity-icon"></i>
-                                                    {{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/Y') : '-' }}
-                                                </div>
-                                                <div class="activity-item">
-                                                    <i class="ti tabler-replace activity-icon"></i>
-                                                    {{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/Y') : '-' }}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex gap-2">
+                                            <div class="d-flex gap-1 justify-content-center">
                                                 <a href="{{ route('inventory.show', $item->id) }}"
-                                                    class="btn btn-primary btn-sm d-flex align-items-center justify-content-center">
-                                                    <i class="icon-base ti tabler-info-circle me-1"></i> Detail
+                                                    class="btn btn-icon btn-sm btn-label-primary">
+                                                    <i class="ti tabler-info-circle fs-6"></i>
                                                 </a>
-                                                <button type="button"
+                                                <button
                                                     onclick="printBarcode('{{ $item->unique_id }}', '{{ $item->part_number }}', '{{ $item->serial_number }}')"
-                                                    class="btn btn-info btn-sm d-flex align-items-center justify-content-center">
-                                                    <i class="icon-base ti tabler-printer me-1"></i> Print
+                                                    class="btn btn-icon btn-sm btn-label-info">
+                                                    <i class="ti tabler-printer fs-6"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-5">
-                                            <div class="d-flex flex-column align-items-center justify-content-center">
-                                                <i class="ti tabler-box-off text-muted mb-2" style="font-size: 3rem;"></i>
-                                                <p class="text-muted mb-0">No inventory records found.</p>
-                                            </div>
-                                        </td>
+                                        <td colspan="14" class="text-center py-5">No records found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -285,70 +223,28 @@
                     <head>
                         <title>Print QR Code - ${uniqueId}</title>
                         <style>
-                            @page {
-                                margin: 0;
-                                size: 50mm 40mm; /* Adjusted for QR Code */
-                            }
-                            body {
-                                margin: 0;
-                                padding: 5px;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                justify-content: center;
-                                font-family: 'Public Sans', -apple-system, sans-serif;
-                                height: 100vh;
-                                box-sizing: border-box;
-                            }
-                            #qrcode {
-                                margin-bottom: 5px;
-                            }
-                            #qrcode img {
-                                margin: 0 auto;
-                            }
-                            .unique-id {
-                                font-size: 11px;
-                                font-weight: 700;
-                                margin-bottom: 3px;
-                                color: #000;
-                            }
-                            .details {
-                                font-size: 9px;
-                                line-height: 1.2;
-                                font-weight: 600;
-                                text-align: center;
-                                width: 100%;
-                            }
-                            .label-text {
-                                color: #555;
-                                font-weight: 400;
-                            }
+                            @page { margin: 0; size: 50mm 40mm; }
+                            body { margin: 0; padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; height: 100vh; }
+                            #qrcode { margin-bottom: 5px; }
+                            .unique-id { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+                            .details { font-size: 9px; text-align: center; }
                         </style>
                     </head>
                     <body>
                         <div class="unique-id">${uniqueId}</div>
                         <div id="qrcode"></div>
                         <div class="details">
-                            <div><span class="label-text">P/N:</span> ${partNumber}</div>
-                            <div><span class="label-text">S/N:</span> ${serialNumber}</div>
+                            <div>P/N: ${partNumber}</div>
+                            <div>S/N: ${serialNumber}</div>
                         </div>
-
                         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
                         <script>
                             window.onload = function() {
-                                const scanUrl = "{{ url('/scan') }}/" + "${uniqueId}";
                                 new QRCode(document.getElementById("qrcode"), {
-                                    text: scanUrl,
-                                    width: 100,
-                                    height: 100,
-                                    colorDark : "#000000",
-                                    colorLight : "#ffffff",
-                                    correctLevel : QRCode.CorrectLevel.H
+                                    text: "{{ url('/scan') }}/" + "${uniqueId}",
+                                    width: 100, height: 100
                                 });
-                                setTimeout(() => {
-                                    window.print();
-                                    window.close();
-                                }, 400);
+                                setTimeout(() => { window.print(); window.close(); }, 400);
                             };
                         <\/script>
                     </body>

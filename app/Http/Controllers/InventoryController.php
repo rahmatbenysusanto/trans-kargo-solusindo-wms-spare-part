@@ -171,7 +171,13 @@ class InventoryController extends Controller
     public function show($id): View
     {
         $title = 'Inventory Detail';
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
+        $inventory = \App\Models\Inventory::with([
+            'storageLevel.bin.rak.zone',
+            'client',
+            'product.brand',
+            'product.productGroup',
+            'details.inboundDetail.inbound'
+        ])
             ->findOrFail($id);
 
         $sn = $inventory->serial_number;
@@ -192,9 +198,31 @@ class InventoryController extends Controller
                     'user' => $item->user,
                     'from_location' => $item->from_location,
                     'to_location' => $item->to_location,
-                    'sn' => $item->serial_number // Added to distinguish if it's from another SN
+                    'sn' => $item->serial_number, // Added to distinguish if it's from another SN
+                    'parent_sn' => null // Default for InventoryHistory
                 ];
             });
+
+        // Add inbound details to history
+        foreach ($inventory->details as $detail) {
+            if ($detail->inboundDetail) {
+                $history->push([
+                    'date' => $detail->inboundDetail->created_at,
+                    'type' => 'Inbound',
+                    'category' => 'Receiving',
+                    'reference' => $detail->inboundDetail->inbound->number ?? '-',
+                    'description' => 'Received unit into warehouse.',
+                    'user' => $detail->inboundDetail->inbound->received_by,
+                    'from_location' => $detail->inboundDetail->vendor ?: 'Supplier',
+                    'to_location' => 'Inbound Staging',
+                    'sn' => $sn, // The SN of the current inventory item
+                    'parent_sn' => $detail->inboundDetail->parent_sn ?? $detail->inboundDetail->old_serial_number
+                ]);
+            }
+        }
+
+        // Sort the combined history by date
+        $history = $history->sortByDesc('date')->values();
 
         return view('inventory.inventory-list.show', compact('title', 'inventory', 'history'));
     }

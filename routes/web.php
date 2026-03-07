@@ -5,12 +5,14 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InboundController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OutboundController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RMAController;
+use App\Http\Controllers\StagingController;
 use App\Http\Controllers\StorageController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WriteOffController;
@@ -37,6 +39,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
     Route::prefix('/inbound')->controller(InboundController::class)->group(function () {
         Route::prefix('/receiving')->group(function () {
             Route::get('/', 'receiving')->name('receiving');
+            Route::get('/create', 'create')->name('receiving.create');
+            Route::post('/store', 'store')->name('receiving.store');
             Route::get('/{id}', 'show')->name('receiving.show');
             Route::post('/approve', 'approve')->name('receiving.approve');
             Route::post('/cancel', 'cancel')->name('receiving.cancel');
@@ -58,6 +62,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
         Route::prefix('/put-away')->group(function () {
             Route::get('/', 'putAway')->name('receiving.put.away');
+            Route::get('/show/{id}', 'showPutAway')->name('receiving.put.away.show');
             Route::get('/process/{id}', 'processPutAway')->name('receiving.put.away.process');
             Route::post('/update', 'updatePutAway')->name('receiving.put.away.update');
             Route::post('/cancel', 'cancelPutAway')->name('receiving.put.away.cancel');
@@ -108,10 +113,27 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/', 'index')->name('write-off.index');
     });
 
+    Route::prefix('/staging')->controller(StagingController::class)->group(function () {
+        Route::get('/', 'index')->name('staging.index');
+        Route::get('/search-available', 'searchAvailable')->name('staging.search-available');
+        Route::post('/start', 'startStaging')->name('staging.start');
+        Route::post('/finish', 'finishStaging')->name('staging.finish');
+    });
+
     Route::prefix('/reporting')->controller(ReportingController::class)->group(function () {
         Route::get('/stock-on-hand', 'stockOnHand')->name('reporting.stock-on-hand');
         Route::get('/movement-history', 'movementHistory')->name('reporting.movement-history');
         Route::get('/utilization', 'utilizationReport')->name('reporting.utilization');
+    });
+
+    Route::prefix('/invoice')->controller(InvoiceController::class)->group(function () {
+        Route::get('/', 'index')->name('invoice.index');
+        Route::get('/create', 'create')->name('invoice.create');
+        Route::post('/store', 'store')->name('invoice.store');
+        Route::get('/export-excel', 'exportExcel')->name('invoice.export-excel');
+        Route::get('/print/{id}', 'printPdf')->name('invoice.print');
+        Route::get('/search-reference', 'searchReference')->name('invoice.search-reference');
+        Route::delete('/{id}', 'destroy')->name('invoice.destroy');
     });
 
     Route::prefix('/storage')->controller(StorageController::class)->group(function () {

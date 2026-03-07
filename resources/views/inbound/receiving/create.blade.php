@@ -75,7 +75,7 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Part Number", "Part Desc", "Brand", "Brand Group", "Serial Number",
+                ["Part Name", "Part Number", "Part Desc", "Brand", "Brand Group", "Serial Number", "Parent SN",
                     "Condition"
                 ]
             ];
@@ -138,9 +138,14 @@
                             partDescription: row["Part Desc"] || row["Part Description"] || row[
                                 "Material Description"] || "",
                             serialNumber: sn,
+                            parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
+                            whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
+                                "Asset#"] || "",
                             productGroup: groupName,
                             brand: brandName,
                             condition: row["Condition"] || "New",
+                            stockStatus: row["Stock Status"] || row["Status"] || "Available",
+                            stagingDate: row["Staging Date"] || "",
                             qty: row["QTY"] || 1,
                         });
                     }
@@ -189,11 +194,12 @@
             const sn = document.getElementById('serialNumber').value.trim();
             const brand = document.getElementById('brand').value.trim();
             const productGroup = document.getElementById('productGroup').value.trim();
+            const parentSn = document.getElementById('parentSn').value.trim();
 
             if (!sn || !brand || !productGroup) {
                 Swal.fire({
                     title: 'Error',
-                    text: 'Serial Number, Brand, and Product Group are required',
+                    text: 'Serial Number, Brand, and Product Group are required!',
                     icon: 'error'
                 });
                 return;
@@ -215,10 +221,10 @@
                 partNumber: document.getElementById('partNumber').value,
                 partDescription: document.getElementById('partDescription').value,
                 serialNumber: sn,
-                parentSn: document.getElementById('parentSn').value,
+                parentSn: parentSn,
                 whAssetNumber: document.getElementById('whAssetNumber').value,
-                productGroup: document.getElementById('productGroup').value,
-                brand: document.getElementById('brand').value,
+                productGroup: productGroup,
+                brand: brand,
                 condition: document.getElementById('condition').value,
                 stockStatus: document.getElementById('stockStatus').value,
                 stagingDate: document.getElementById('stagingDate').value,
@@ -237,7 +243,7 @@
             resetForm();
         }
 
-        function submitPO() {
+        async function submitPO() {
             const products = JSON.parse(localStorage.getItem('products')) ?? [];
             if (products.length === 0) {
                 Swal.fire('Error', 'Please add at least one product before creating.', 'error');
@@ -269,7 +275,7 @@
                 received_by: document.getElementById('received_by').value,
             };
 
-            if (!data.pi_no || !data.client_id || !data.date || !data.received_by || !data.sttb) {
+            if (!data.category || !data.client_id || !data.date || !data.received_by || !data.sttb || !data.number) {
                 Swal.fire('Error',
                     'Please fill in all required fields (Category, STTB, NTT RN#, Client, Date, Received By).',
                     'error');
@@ -278,13 +284,13 @@
 
             Swal.fire({
                 title: 'Are you sure?',
-                text: "Do you want to create this Receiving Spare?",
+                text: "Do you want to create this Receiving transaction?",
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Yes, create it!'
-            }).then((result) => {
+            }).then(async (result) => {
                 if (result.isConfirmed) {
                     Swal.fire({
                         title: 'Processing...',
@@ -294,7 +300,8 @@
                         }
                     });
 
-                    fetch('{{ route('receiving.store.spare') }}', {
+                    try {
+                        const response = await fetch('{{ route('receiving.store') }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -306,27 +313,27 @@
                                 receivedBy: data.received_by,
                                 products
                             })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status) {
-                                localStorage.removeItem('products');
-                                Swal.fire({
-                                    title: 'Success!',
-                                    text: 'Your Receiving Spare has been created successfully.',
-                                    icon: 'success'
-                                }).then(() => {
-                                    window.location.href = '{{ route('receiving') }}';
-                                });
-                            } else {
-                                Swal.fire('Error', data.message || 'Failed to create Receiving Spare.',
-                                    'error');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            Swal.fire('Error', 'An unexpected error occurred.', 'error');
                         });
+
+                        const resultData = await response.json();
+
+                        if (resultData.status) {
+                            localStorage.removeItem('products');
+                            Swal.fire({
+                                title: 'Success!',
+                                text: 'The Receiving transaction has been created successfully.',
+                                icon: 'success'
+                            }).then(() => {
+                                window.location.href = '{{ route('receiving') }}';
+                            });
+                        } else {
+                            Swal.fire('Error', resultData.message || 'Failed to create receiving.',
+                                'error');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                    }
                 }
             });
         }
@@ -352,15 +359,16 @@
                 const index = start + i;
                 html += `
                 <tr>
-                    <td>${index + 1}</td>
-                    <td>${product.partName}</td>
-                    <td>${product.partNumber}</td>
-                    <td>${product.brand}</td>
-                    <td>${product.productGroup}</td>
-                    <td>${product.partDescription}</td>
-                    <td>${product.serialNumber}</td>
-                    <td>
-                        <select class="form-control form-control-sm" onchange="updateProductCondition(${index}, this.value)">
+                    <td class="py-1">${index + 1}</td>
+                    <td class="py-1">${product.partName}</td>
+                    <td class="py-1">${product.partNumber}</td>
+                    <td class="py-1">${product.brand}</td>
+                    <td class="py-1">${product.productGroup}</td>
+                    <td class="py-1">${product.partDescription}</td>
+                    <td class="py-1"><span class="fw-bold text-dark">${product.serialNumber}</span></td>
+                    <td class="py-1 text-muted small">${product.parentSn || '-'}</td>
+                    <td class="py-1">
+                        <select class="form-select form-select-sm py-0" style="font-size: 0.75rem;" onchange="updateProductCondition(${index}, this.value)">
                             <option value="New" ${product.condition === 'New' ? 'selected' : ''}>New</option>
                             <option value="Refurbished" ${product.condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
                             <option value="Faulty" ${product.condition === 'Faulty' ? 'selected' : ''}>Faulty</option>
@@ -368,9 +376,15 @@
                             <option value="Spare Migration" ${product.condition === 'Spare Migration' ? 'selected' : ''}>Spare Migration</option>
                         </select>
                     </td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="editProduct(${index})">Edit</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${index})">Delete</button>
+                    <td class="py-1">
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-xs btn-label-warning p-1" onclick="editProduct(${index})" title="Edit">
+                                <i class="ti tabler-edit fs-6"></i>
+                            </button>
+                            <button class="btn btn-xs btn-label-danger p-1" onclick="deleteProduct(${index})" title="Delete">
+                                <i class="ti tabler-trash fs-6"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -543,8 +557,11 @@
 
 @section('content')
     <div class="row">
-        <div class="d-flex justify-content-end mb-3">
-            <a class="btn btn-primary btn-sm text-white" onclick="submitPO()">Create Spare</a>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0">Create Receiving</h4>
+            <a class="btn btn-primary text-white" onclick="submitPO()">
+                <i class="ti tabler-device-floppy me-1"></i> Create Receiving
+            </a>
         </div>
 
         <div class="col-12">
@@ -693,32 +710,34 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom bg-light d-flex justify-content-end align-items-center gap-2">
+                        <small class="fw-bold text-muted">Bulk Update Condition:</small>
+                        <select class="form-select form-select-sm w-auto" style="min-width: 150px;"
+                            onchange="bulkUpdateCondition(this.value)">
+                            <option value="">-- Select Condition --</option>
+                            <option value="New">New</option>
+                            <option value="Refurbished">Refurbished</option>
+                            <option value="Faulty">Faulty</option>
+                            <option value="Write-off Needed">Write-off Needed</option>
+                            <option value="Spare Migration">Spare Migration</option>
+                        </select>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-striped align-middle">
-                            <thead>
+                        <table class="table table-hover table-sm align-middle text-nowrap mb-0"
+                            style="font-size: 0.85rem;">
+                            <thead class="bg-primary">
                                 <tr>
-                                    <th>#</th>
-                                    <th>Part Name</th>
-                                    <th>Part Number/SKU</th>
-                                    <th>Brand</th>
-                                    <th>Group</th>
-                                    <th>Part Description</th>
-
-                                    <th>Serial Number</th>
-                                    <th>
-                                        Condition
-                                        <select class="form-control form-control-sm mt-1"
-                                            onchange="bulkUpdateCondition(this.value)">
-                                            <option value="">Bulk Update</option>
-                                            <option value="New">New</option>
-                                            <option value="Refurbished">Refurbished</option>
-                                            <option value="Faulty">Faulty</option>
-                                            <option value="Write-off Needed">Write-off Needed</option>
-                                            <option value="Spare Migration">Spare Migration</option>
-                                        </select>
-                                    </th>
-                                    <th>Action</th>
+                                    <th class="px-3 text-white py-2">#</th>
+                                    <th class="text-white">Part Name</th>
+                                    <th class="text-white">Part Number/SKU</th>
+                                    <th class="text-white">Brand</th>
+                                    <th class="text-white">Group</th>
+                                    <th class="text-white">Part Description</th>
+                                    <th class="text-white">Serial Number</th>
+                                    <th class="text-white">Old SN / Parent SN</th>
+                                    <th class="text-white" width="130">Condition</th>
+                                    <th class="text-white text-center" width="80">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="productTableBody">
@@ -726,12 +745,19 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer d-flex justify-content-between align-items-center">
-                    <div id="paginationInfo">Showing 0 to 0 of 0 products</div>
-                    <nav>
-                        <ul class="pagination pagination-sm mb-0" id="paginationControls">
-                        </ul>
-                    </nav>
+                <div class="card-footer d-flex justify-content-between align-items-center py-3 bg-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div id="paginationInfo" class="text-muted small">Showing 0 to 0 of 0 products</div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="paginationControls">
+                            </ul>
+                        </nav>
+                    </div>
+                    <div>
+                        <a class="btn btn-primary px-4" onclick="submitPO()">
+                            <i class="ti tabler-device-floppy me-1"></i> Create Receiving
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

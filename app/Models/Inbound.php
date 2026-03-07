@@ -14,7 +14,12 @@ class Inbound extends Model
 
     protected $fillable = [
         'category',
+        'request_type',
+        'ntt_requestor',
+        'request_date',
         'client_id',
+        'client_contact',
+        'pickup_address',
         'number',
         'reff_number',
         'receiving_note',
@@ -23,15 +28,33 @@ class Inbound extends Model
         'courier_invoice',
         'rma_number',
         'itsm_number',
+        'ecapex_number',
+        'sap_po_number',
+        'vendor_dn_number',
+        'tks_dn_number',
+        'tks_invoice_number',
+        'ntt_dn_number',
+        'delivery_date',
         'vendor',
         'qty',
         'received_date',
         'received_by',
-        'status'
+        'status',
+        'shipment_status'
     ];
 
     public function details(): HasMany
     {
         return $this->hasMany(InboundDetail::class, 'inbound_id');
+    }
+
+    public function invoices(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->morphToMany(Invoice::class, 'linkable', 'invoice_links');
+    }
+
+    public function client(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Client::class, 'client_id');
     }
 }

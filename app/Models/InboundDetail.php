@@ -19,10 +19,14 @@ class InboundDetail extends Model
         'part_number',
         'description',
         'qty',
+        'wh_asset_number',
         'serial_number',
         'old_serial_number',
+        'parent_sn',
         'condition',
+        'stock_status',
         'storage_level_id',
+        'staging_date',
         'brand_id',
         'product_group_id'
     ];
@@ -30,5 +34,15 @@ class InboundDetail extends Model
     public function inbound(): BelongsTo
     {
         return $this->belongsTo(Inbound::class, 'inbound_id');
+    }
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class, 'brand_id');
+    }
+
+    public function storageLevel(): BelongsTo
+    {
+        return $this->belongsTo(StorageLevel::class, 'storage_level_id');
     }
 }

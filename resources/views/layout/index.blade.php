@@ -78,6 +78,9 @@
 
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/animate-css/animate.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.css') }}" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
     <style>
         .pagination {
@@ -189,7 +192,8 @@
                         <span class="menu-header-text" data-i18n="Main Menu">Main Menu</span>
                     </li>
 
-                    <li class="menu-item {{ in_array($title, ['Receiving', 'Put Away']) ? 'show open' : '' }}">
+                    <li
+                        class="menu-item {{ in_array($title, ['Receiving', 'Staging Management', 'Put Away']) ? 'show open' : '' }}">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon icon-base ti tabler-archive"></i>
                             <div data-i18n="Inbound">Inbound</div>
@@ -198,6 +202,11 @@
                             <li class="menu-item {{ $title == 'Receiving' ? 'active' : '' }}">
                                 <a href="{{ route('receiving') }}" class="menu-link">
                                     <div data-i18n="Receiving">Receiving</div>
+                                </a>
+                            </li>
+                            <li class="menu-item {{ $title == 'Staging Management' ? 'active' : '' }}">
+                                <a href="{{ route('staging.index') }}" class="menu-link">
+                                    <div data-i18n="Staging">Staging (Testing)</div>
                                 </a>
                             </li>
                             <li class="menu-item {{ $title == 'Put Away' ? 'active' : '' }}">
@@ -252,6 +261,13 @@
                         <a href="{{ route('outbound.index') }}" class="menu-link">
                             <i class="menu-icon icon-base ti tabler-truck-delivery"></i>
                             <div data-i18n="Outbound">Outbound</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ $title == 'Invoice Management' ? 'active' : '' }}">
+                        <a href="{{ route('invoice.index') }}" class="menu-link">
+                            <i class="menu-icon icon-base ti tabler-file-invoice"></i>
+                            <div data-i18n="Invoices">Manage Invoices</div>
                         </a>
                     </li>
 
@@ -495,6 +511,7 @@
 
     <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
     <script src="{{ asset('assets/js/extended-ui-sweetalert2.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     @yield('js')
 
