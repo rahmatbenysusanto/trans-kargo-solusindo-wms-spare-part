@@ -242,7 +242,7 @@ class InboundController extends Controller
                 \App\Models\InventoryHistory::create([
                     'inventory_id' => $inventoryId,
                     'serial_number' => $inboundDetail->serial_number,
-                    'type' => 'Movement',
+                    'type' => 'Inbound',
                     'category' => 'Put Away',
                     'reference_number' => $inbound->number,
                     'description' => 'Item moved from Receiving Staging to ' . $locationName,
@@ -488,7 +488,7 @@ class InboundController extends Controller
             \App\Models\InventoryHistory::create([
                 'inventory_id' => null, // Linked later during Put Away
                 'serial_number' => $product['serialNumber'],
-                'type' => 'Inbound',
+                'type' => 'Receiving',
                 'category' => $inbound->category,
                 'reference_number' => $inbound->number,
                 'description' => "Received item via {$inbound->category} (Ref: {$inbound->number})" . (isset($product['oldSerialNumber']) && $product['oldSerialNumber'] ? " - Linked to SN: {$product['oldSerialNumber']}" : ""),

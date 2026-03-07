@@ -223,11 +223,37 @@
                     <head>
                         <title>Print QR Code - ${uniqueId}</title>
                         <style>
-                            @page { margin: 0; size: 50mm 40mm; }
-                            body { margin: 0; padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; height: 100vh; }
-                            #qrcode { margin-bottom: 5px; }
-                            .unique-id { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
-                            .details { font-size: 9px; text-align: center; }
+                            @page { 
+                                margin: 0; 
+                                size: 50mm 40mm; 
+                            }
+                            body { 
+                                margin: 0; 
+                                padding: 5px; 
+                                display: flex; 
+                                flex-direction: column; 
+                                align-items: center; 
+                                justify-content: center; 
+                                font-family: sans-serif; 
+                                height: 40mm; 
+                                width: 50mm;
+                                background-color: white;
+                                overflow: hidden;
+                            }
+                            .unique-id { 
+                                font-size: 13px; 
+                                font-weight: bold; 
+                                margin-bottom: 2px; 
+                                letter-spacing: 0.5px;
+                            }
+                            #qrcode { 
+                                margin-bottom: 2px; 
+                            }
+                            .details { 
+                                font-size: 9px; 
+                                text-align: center; 
+                                line-height: 1.2;
+                            }
                         </style>
                     </head>
                     <body>
@@ -242,9 +268,10 @@
                             window.onload = function() {
                                 new QRCode(document.getElementById("qrcode"), {
                                     text: "{{ url('/scan') }}/" + "${uniqueId}",
-                                    width: 100, height: 100
+                                    width: 80, 
+                                    height: 80
                                 });
-                                setTimeout(() => { window.print(); window.close(); }, 400);
+                                setTimeout(() => { window.print(); window.close(); }, 500);
                             };
                         <\/script>
                     </body>

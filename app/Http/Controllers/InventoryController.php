@@ -350,4 +350,68 @@ class InventoryController extends Controller
 
         return response()->json($details);
     }
+
+    public function stockStatement(Request $request): View
+    {
+        $title = 'Inventory Stock Statement';
+        $clients = \App\Models\Client::all();
+        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
+        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
+
+        // Core query for Inbound Details - Only show PA'd items or Outbounded items
+        $inboundData = \App\Models\InboundDetail::with(['inbound.client', 'brand', 'storageLevel.bin.rak.zone', 'productGroup'])
+            ->select('inbound_detail.*')
+            ->join('inbound', 'inbound_detail.inbound_id', '=', 'inbound.id')
+            ->where(function ($q) {
+                $q->whereNotNull('inbound_detail.storage_level_id')
+                    ->orWhereExists(function ($query) {
+                        $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('outbound_detail')
+                            ->whereColumn('outbound_detail.serial_number', 'inbound_detail.serial_number');
+                    });
+            })
+            ->when($request->client_id, function ($query) use ($request) {
+                return $query->where('inbound.client_id', $request->client_id);
+            })
+            ->when($request->category, function ($query) use ($request) {
+                return $query->where('inbound.category', $request->category);
+            })
+            ->when($request->request_type, function ($query) use ($request) {
+                return $query->where('inbound.request_type', $request->request_type);
+            })
+            ->when($request->search, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('inbound_detail.serial_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('inbound_detail.part_name', 'like', '%' . $request->search . '%')
+                        ->orWhere('inbound.number', 'like', '%' . $request->search . '%')
+                        ->orWhere('inbound.receiving_note', 'like', '%' . $request->search . '%')
+                        ->orWhereExists(function ($query) use ($request) {
+                            $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                                ->from('inventory')
+                                ->whereColumn('inventory.serial_number', 'inbound_detail.serial_number')
+                                ->where('inventory.unique_id', 'like', '%' . $request->search . '%');
+                        });
+                });
+            })
+            ->latest()
+            ->paginate(50);
+
+        // Optimize by fetching all relevant inventory and outbound details at once
+        $sns = $inboundData->pluck('serial_number')->toArray();
+        $inventories = \App\Models\Inventory::with('storageLevel.bin.rak.zone')->whereIn('serial_number', $sns)->where('qty', '>', 0)->get()->keyBy('serial_number');
+        $outbounds = \App\Models\OutboundDetail::with('outbound')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+
+        foreach ($inboundData as $item) {
+            $inventory = $inventories->get($item->serial_number);
+            $outbound = $outbounds->get($item->serial_number);
+
+            // Logic Movement Category
+            $item->is_outbound = (bool)$outbound;
+            $item->is_in_stock = (bool)$inventory;
+            $item->current_inventory = $inventory;
+            $item->outbound_detail = $outbound;
+        }
+
+        return view('inventory.stock-statement.index', compact('title', 'inboundData', 'clients', 'categories', 'requestTypes'));
+    }
 }

@@ -45,4 +45,14 @@ class InboundDetail extends Model
     {
         return $this->belongsTo(StorageLevel::class, 'storage_level_id');
     }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function productGroup(): BelongsTo
+    {
+        return $this->belongsTo(ProductGroup::class, 'product_group_id');
+    }
 }
