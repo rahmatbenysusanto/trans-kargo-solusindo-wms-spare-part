@@ -20,6 +20,14 @@
         .select2-container--default .select2-selection--single .select2-selection__arrow {
             height: 36px !important;
         }
+
+        .w-fit {
+            width: fit-content;
+        }
+
+        .x-small {
+            font-size: 0.65rem;
+        }
     </style>
 @endsection
 
@@ -148,119 +156,101 @@
                         </div>
                     </form>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm text-nowrap">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="30">#</th>
+                                <th>Date</th>
+                                <th>Client</th>
+                                <th>Category & Request Type</th>
+                                <th>SAP PO#</th>
+                                <th>TKS DN / Ref#</th>
+                                <th class="text-center">Qty</th>
+                                <th>Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($data as $item)
                                 <tr>
-                                    <th width="30">#</th>
-                                    <th>Client & Category</th>
-                                    <th>Reference Numbers</th>
-                                    <th>Summary</th>
-                                    <th>Status & Dates</th>
-                                    <th class="text-center">Action</th>
+                                    <td>{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span
+                                                class="fw-bold text-dark">{{ $item->outbound_date ? \Carbon\Carbon::parse($item->outbound_date)->format('d/m/Y') : '-' }}</span>
+                                            <small class="text-muted" style="font-size: 0.65rem;">By:
+                                                {{ $item->outbound_by }}</small>
+                                        </div>
+                                    </td>
+                                    <td><span class="fw-bold text-dark">{{ $item->client->name ?? '-' }}</span></td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-label-info w-fit"
+                                                style="font-size: 0.7rem;">{{ $item->category }}</span>
+                                            @if ($item->request_type)
+                                                <span class="text-muted x-small" style="font-size: 0.7rem;"><i
+                                                        class="ti tabler-point me-1"></i>{{ $item->request_type }}</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-primary fw-bold">{{ $item->sap_po_number ?? '-' }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold text-dark">{{ $item->tks_dn_number ?? '-' }}</span>
+                                            @if ($item->number)
+                                                <small class="text-muted" style="font-size: 0.65rem;">PO:
+                                                    {{ $item->number }}</small>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-label-secondary fw-bold px-2">{{ $item->qty }}</span>
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge {{ $item->status == 'cancel' ? 'bg-label-danger' : 'bg-label-success' }}">{{ strtoupper($item->status) }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1 justify-content-center">
+                                            <a href="{{ route('outbound.show', $item->id) }}"
+                                                class="btn btn-icon btn-sm btn-label-primary" title="View Detail">
+                                                <i class="ti tabler-eye fs-5"></i>
+                                            </a>
+                                            <a href="{{ route('outbound.print', $item->id) }}" target="_blank"
+                                                class="btn btn-icon btn-sm btn-label-secondary" title="Print PDF">
+                                                <i class="ti tabler-printer fs-5"></i>
+                                            </a>
+                                            @if ($item->status !== 'cancel')
+                                                <button type="button" class="btn btn-icon btn-sm btn-label-danger"
+                                                    onclick="cancelOutbound({{ $item->id }}, '{{ $item->number ?? $item->tks_dn_number }}')"
+                                                    title="Cancel Outbound">
+                                                    <i class="ti tabler-x fs-5"></i>
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($data as $item)
-                                    <tr>
-                                        <td>{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
-                                        <td>
-                                            <div class="d-flex flex-column">
-                                                <span
-                                                    class="text-dark fw-bold mb-1">{{ $item->client->name ?? '-' }}</span>
-                                                <span class="badge bg-label-info w-px-100">{{ $item->category }}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex flex-column gap-1">
-                                                @if ($item->number)
-                                                    <small class="text-muted">PO#: <span
-                                                            class="text-dark fw-bold">{{ $item->number }}</span></small>
-                                                @endif
-                                                @if ($item->ntt_dn_number)
-                                                    <small class="text-muted">NTT DN: <span
-                                                            class="text-dark fw-bold">{{ $item->ntt_dn_number }}</span></small>
-                                                @endif
-                                                @if ($item->tks_dn_number)
-                                                    <small class="text-muted">TKS DN: <span
-                                                            class="text-dark fw-bold">{{ $item->tks_dn_number }}</span></small>
-                                                @endif
-                                                @if ($item->tks_invoice_number)
-                                                    <small class="text-muted">INV: <span
-                                                            class="text-dark fw-bold">{{ $item->tks_invoice_number }}</span></small>
-                                                @endif
-                                                @if ($item->rma_number)
-                                                    <small class="text-muted">RMA: <span
-                                                            class="text-dark fw-bold">{{ $item->rma_number }}</span></small>
-                                                @endif
-                                                @if ($item->itsm_number)
-                                                    <small class="text-muted">ITSM: <span
-                                                            class="text-dark fw-bold">{{ $item->itsm_number }}</span></small>
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar avatar-sm me-2">
-                                                    <span class="avatar-initial rounded bg-label-secondary">
-                                                        <i class="ti tabler-box"></i>
-                                                    </span>
-                                                </div>
-                                                <span class="fw-bold">{{ $item->qty }} Item(s)</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex flex-column align-items-start">
-                                                <span
-                                                    class="badge {{ $item->status == 'cancel' ? 'bg-label-danger' : 'bg-label-success' }} mb-1">{{ $item->status }}</span>
-                                                <small class="text-muted"><i class="ti tabler-calendar me-1"></i>
-                                                    {{ $item->outbound_date ? \Carbon\Carbon::parse($item->outbound_date)->format('d/m/Y') : '-' }}</small>
-                                                <small class="text-muted"><i class="ti tabler-user me-1"></i>
-                                                    {{ $item->outbound_by }}</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex gap-2 justify-content-center">
-                                                <a href="{{ route('outbound.show', $item->id) }}"
-                                                    class="btn btn-primary btn-sm d-flex align-items-center"
-                                                    title="View Detail">
-                                                    <i class="ti tabler-eye me-1"></i> Detail
-                                                </a>
-                                                <a href="{{ route('outbound.print', $item->id) }}" target="_blank"
-                                                    class="btn btn-label-secondary btn-sm d-flex align-items-center"
-                                                    title="Print PDF">
-                                                    <i class="ti tabler-printer me-1"></i> Print
-                                                </a>
-                                                @if ($item->status !== 'cancel')
-                                                    <button type="button"
-                                                        class="btn btn-label-danger btn-sm d-flex align-items-center"
-                                                        onclick="cancelOutbound({{ $item->id }}, '{{ $item->number ?? $item->tks_dn_number }}')"
-                                                        title="Cancel Outbound">
-                                                        <i class="ti tabler-x me-1"></i> Cancel
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center py-5">
-                                            <div class="d-flex flex-column align-items-center justify-content-center">
-                                                <i class="ti tabler-box-off text-muted mb-2" style="font-size: 3rem;"></i>
-                                                <p class="text-muted mb-0">No outbound records found.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3">
-                        {{ $data->links() }}
-                    </div>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center py-5">
+                                        <div class="d-flex flex-column align-items-center justify-content-center">
+                                            <i class="ti tabler-box-off text-muted mb-2" style="font-size: 3rem;"></i>
+                                            <p class="text-muted mb-0">No outbound records found.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    {{ $data->links() }}
                 </div>
             </div>
         </div>
+    </div>
     </div>
 @endsection

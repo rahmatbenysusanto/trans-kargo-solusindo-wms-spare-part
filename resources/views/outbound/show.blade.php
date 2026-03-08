@@ -37,21 +37,47 @@
                             <tbody>
                                 <tr>
                                     <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Client Name</th>
-                                    <td class="fw-bold py-2 px-3 text-dark small" colspan="3">
-                                        {{ $outbound->client->name ?? '-' }}</td>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->client->name ?? '-' }}</td>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Category</th>
+                                    <td class="py-2 px-3 small">
+                                        <span class="badge bg-label-primary">{{ $outbound->category }}</span>
+                                        @if ($outbound->request_type)
+                                            <span class="badge bg-label-info">{{ $outbound->request_type }}</span>
+                                        @endif
+                                    </td>
                                 </tr>
                                 <tr>
-                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">PO/SO Number</th>
-                                    <td class="fw-bold py-2 px-3 text-primary small">{{ $outbound->number ?? '-' }}</td>
-                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Category</th>
-                                    <td class="py-2 px-3 small"><span
-                                            class="badge bg-label-primary">{{ $outbound->category }}</span></td>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">NTT Requestor</th>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->ntt_requestor ?? '-' }}</td>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Request Date</th>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->request_date ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Client Contact
+                                    </th>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->client_contact ?? '-' }}
+                                    </td>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">SAP PO#</th>
+                                    <td class="fw-bold py-2 px-3 text-primary small">{{ $outbound->sap_po_number ?? '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">PO/SO (Ref)</th>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->number ?? '-' }}</td>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Shipment Status
+                                    </th>
+                                    <td class="fw-bold py-2 px-3 text-dark small">
+                                        <span
+                                            class="badge bg-label-secondary">{{ $outbound->shipment_status ?? 'Pending' }}</span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">NTT DN#</th>
-                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->ntt_dn_number ?? '-' }}</td>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->ntt_dn_number ?? '-' }}
+                                    </td>
                                     <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">TKS DN#</th>
-                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->tks_dn_number ?? '-' }}</td>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->tks_dn_number ?? '-' }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">RMA#</th>
@@ -64,6 +90,12 @@
                                     <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->outbound_date }}</td>
                                     <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Outbound By</th>
                                     <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->outbound_by ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Shipment Address
+                                    </th>
+                                    <td class="fw-bold py-2 px-3 text-dark small" colspan="3">
+                                        {{ $outbound->pickup_address ?? '-' }}</td>
                                 </tr>
                             </tbody>
                         </table>

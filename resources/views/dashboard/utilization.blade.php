@@ -2,6 +2,22 @@
 @section('title', 'Utilization by Client')
 
 @section('content')
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Utilization by Client</h4>
+            <form action="{{ route('utilizationByClient') }}" method="GET" class="d-flex">
+                <select name="client_id" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+                    <option value="">All Clients</option>
+                    @foreach ($clients as $client)
+                        <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                            {{ $client->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+            </form>
+        </div>
+    </div>
     <div class="row">
         <div class="col-xl-12 mb-4">
             <div class="card border-0 shadow-sm">

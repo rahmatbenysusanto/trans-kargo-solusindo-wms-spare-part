@@ -2,117 +2,178 @@
 @section('title', 'Print Outbound Report')
 
 @section('content')
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <a href="{{ route('outbound.index') }}" class="btn btn-label-secondary fw-bold px-3">
+            <i class="ti tabler-arrow-left me-1"></i> Back to Documents
+        </a>
+        <button onclick="window.print()" class="btn btn-primary fw-bold px-4 shadow-sm">
+            <i class="ti tabler-printer me-1"></i> Finalize & Print
+        </button>
+    </div>
+
     <div class="row" id="print-area">
         <div class="col-12 mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-                <a href="{{ route('outbound.index') }}" class="btn btn-secondary">
-                    <i class="ti tabler-arrow-left me-1"></i> Back to List
-                </a>
-                <button onclick="window.print()" class="btn btn-primary">
-                    <i class="ti tabler-printer me-1"></i> Print Report
-                </button>
+            <!-- Header (Logo / Branding) -->
+            <div class="row border-bottom border-3 border-primary pb-3 mb-4 align-items-center">
+                <div class="col-sm-6">
+                    <h2 class="text-primary fw-bold mb-0" style="letter-spacing: -1px;">OUTBOUND REPORT</h2>
+                    <span class="badge bg-label-primary px-3 py-1 rounded-pill fw-bold">{{ $outbound->number }}</span>
+                </div>
+                <div class="col-sm-6 text-sm-end">
+                    <h4 class="mb-1 fw-bold text-dark">TRANS KARGO SOLUSINDO</h4>
+                    <p class="text-muted mb-0 small text-uppercase fw-medium ls-1">WMS Spare Part & Fulfillment Center</p>
+                </div>
             </div>
 
-            <div class="card pdf-card shadow-none">
-                <div class="card-body p-5">
-                    <!-- Report Header -->
-                    <div class="row border-bottom pb-4 mb-4 align-items-center">
-                        <div class="col-sm-6">
-                            <h2 class="text-primary fw-bold mb-1">OUTBOUND REPORT</h2>
-                            <p class="text-muted mb-0">Document Number: <strong>{{ $outbound->number ?? 'N/A' }}</strong>
-                            </p>
+            <!-- Transaction Grid -->
+            <div class="row mb-4">
+                <div class="col-md-4 border-end">
+                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-3">Transaction Details</h6>
+                    <table class="table table-borderless table-sm mb-0">
+                        <tr>
+                            <td class="ps-0 text-muted">Stock Category:</td>
+                            <td class="fw-bold text-dark">{{ $outbound->category }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">Request Type:</td>
+                            <td class="fw-bold text-primary">{{ $outbound->request_type }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">Outbound date:</td>
+                            <td class="fw-bold text-dark">{{ $outbound->outbound_date }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">Outbound by:</td>
+                            <td class="fw-bold text-dark">{{ $outbound->outbound_by }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-4 border-end">
+                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-3">Client Information</h6>
+                    <table class="table table-borderless table-sm mb-0">
+                        <tr>
+                            <td class="ps-0 text-muted">Client:</td>
+                            <td class="fw-bold text-dark text-truncate d-inline-block" style="max-width: 150px;">
+                                {{ $outbound->client->name ?? 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">Requestor:</td>
+                            <td class="fw-bold text-dark">{{ $outbound->ntt_requestor ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">Request Date:</td>
+                            <td class="fw-bold text-dark">{{ $outbound->request_date ?? '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-3">Reference Numbers</h6>
+                    <table class="table table-borderless table-sm mb-0">
+                        <tr>
+                            <td class="ps-0 text-muted">SAP PO #:</td>
+                            <td class="fw-bold text-dark">{{ $outbound->sap_po_number ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">TKS DN / Ref#:</td>
+                            <td class="fw-bold text-primary">{{ $outbound->tks_dn_number ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">TKS Inv #:</td>
+                            <td class="fw-bold text-dark">{{ $outbound->tks_invoice_number ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-0 text-muted">RMA / ITSM #:</td>
+                            <td class="fw-bold text-dark small">{{ $outbound->rma_number ?? '-' }} /
+                                {{ $outbound->itsm_number ?? '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Product Table -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered border-dark printable-table">
+                    <thead class="bg-light-subtle">
+                        <tr class="text-center align-middle">
+                            <th style="width: 4%">#</th>
+                            <th style="width: 25%">Product / Part Name</th>
+                            <th style="width: 15%">Part Number (SKU)</th>
+                            <th style="width: 15%">Serial Number (SN)</th>
+                            <th style="width: 15%">WH Asset #</th>
+                            <th style="width: 10%">Condition</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($outbound->details as $detail)
+                            <tr class="align-middle">
+                                <td class="text-center fw-bold">{{ $loop->iteration }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ $detail->part_name }}</div>
+                                </td>
+                                <td class="text-center">{{ $detail->part_number }}</td>
+                                <td class="text-center fw-bold text-primary font-monospace">{{ $detail->serial_number }}
+                                </td>
+                                <td class="text-center small">{{ $detail->inventory->unique_id ?? '-' }}</td>
+                                <td class="text-center">
+                                    <span class="badge border border-dark text-dark fw-bold"
+                                        style="font-size: 0.65rem;">{{ strtoupper($detail->condition) }}</span>
+                                </td>
+                                <td class="small">{{ $detail->description ?? '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center py-4">No records found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Total & Signature Grid -->
+            <div class="row mt-5">
+                <div class="col-md-6 border rounded p-3">
+                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-2">Shipment Summary</h6>
+                    <div class="d-flex justify-content-between align-items-end">
+                        <div>
+                            <p class="mb-1 text-muted">Total Quantity Dispatched:</p>
+                            <h2 class="mb-0 fw-bold">{{ $outbound->qty }} <small class="text-muted fs-6">Items</small></h2>
                         </div>
-                        <div class="col-sm-6 text-sm-end">
-                            <h4 class="mb-1 fw-bold text-dark">TRANS KARGO SOLUSINDO</h4>
-                            <p class="text-muted mb-0 small">
-                                Warehouse Management System<br>
-                                Report Generated: {{ date('F d, Y h:i A') }}
-                            </p>
+                        <div class="text-end">
+                            <p class="mb-1 text-muted">Current Status:</p>
+                            <span class="badge bg-primary px-3 py-1">{{ strtoupper($outbound->status) }}</span>
                         </div>
                     </div>
-
-                    <!-- General Info -->
-                    <div class="row align-items-start mb-4">
-                        <div class="col-sm-6">
-                            <h6 class="text-uppercase text-muted fw-bold mb-3 ls-1">Client Information</h6>
-                            <h5 class="fw-bold text-dark mb-1">{{ $outbound->client->name ?? 'N/A' }}</h5>
-                            <p class="mb-1"><span class="text-muted">Category:</span> {{ $outbound->category }}</p>
-                            <p class="mb-1"><span class="text-muted">Outbound By:</span>
-                                {{ $outbound->outbound_by ?? '-' }}</p>
-                            <p class="mb-0"><span class="text-muted">Outbound Date:</span> {{ $outbound->outbound_date }}
-                            </p>
-                        </div>
-                        <div class="col-sm-6 text-sm-end">
-                            <h6 class="text-uppercase text-muted fw-bold mb-3 ls-1">Reference Details</h6>
-                            <p class="mb-1"><span class="text-muted">NTT DN Number:</span>
-                                {{ $outbound->ntt_dn_number ?? '-' }}</p>
-                            <p class="mb-1"><span class="text-muted">TKS DN Number:</span>
-                                {{ $outbound->tks_dn_number ?? '-' }}</p>
-                            <p class="mb-1"><span class="text-muted">TKS Invoice:</span>
-                                {{ $outbound->tks_invoice_number ?? '-' }}</p>
-                            <p class="mb-1"><span class="text-muted">RMA / ITSM:</span>
-                                {{ $outbound->rma_number ?? '-' }} / {{ $outbound->itsm_number ?? '-' }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Table -->
-                    <div class="table-responsive mb-4">
-                        <h6 class="text-uppercase text-muted fw-bold mb-3 ls-1">Product Items</h6>
-                        <table class="table table-bordered border-dark printable-table">
-                            <thead class="table-light border-dark">
-                                <tr>
-                                    <th class="text-center" style="width: 5%">#</th>
-                                    <th style="width: 25%">Part Name</th>
-                                    <th style="width: 20%">Part Number</th>
-                                    <th style="width: 20%">Serial Number</th>
-                                    <th class="text-center" style="width: 10%">Condition</th>
-                                    <th style="width: 20%">Description</th>
-                                </tr>
-                            </thead>
-                            <tbody class="border-dark">
-                                @forelse ($outbound->details as $detail)
-                                    <tr>
-                                        <td class="text-center">{{ $loop->iteration }}</td>
-                                        <td>{{ $detail->part_name }}</td>
-                                        <td><strong>{{ $detail->part_number }}</strong></td>
-                                        <td>{{ $detail->serial_number }}</td>
-                                        <td class="text-center">{{ $detail->condition }}</td>
-                                        <td>{{ $detail->description ?? '-' }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted">No details found.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Summary & Signature -->
-                    <div class="row pt-4">
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-light rounded shadow-sm border">
-                                <h6 class="text-uppercase fw-bold mb-2 ls-1">Summary</h6>
-                                <p class="mb-1"><strong>Total Quantity:</strong> {{ $outbound->qty }} Items</p>
-                                <p class="mb-0"><strong>Status:</strong> <span
-                                        class="badge bg-secondary">{{ $outbound->status }}</span></p>
+                </div>
+                <div class="col-md-6 pt-4 text-center">
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-5 small text-muted">Issued By (Warehouse)</p>
+                            <div class="mx-auto border-top border-dark d-inline-block pt-1 fw-bold" style="width: 150px;">
+                                {{ $outbound->outbound_by }}
                             </div>
                         </div>
-                        <div class="col-sm-6 text-center mt-4 mt-sm-0 pt-3">
-                            <p class="mb-5 text-muted">Authorized Signature</p>
-                            <p class="fw-bold text-dark border-top border-dark d-inline-block pt-1" style="width: 200px;">
-                                {{ $outbound->outbound_by ?? 'Warehouse Manager' }}
-                            </p>
+                        <div class="col-6">
+                            <p class="mb-5 small text-muted">Received By / Carrier</p>
+                            <div class="mx-auto border-top border-dark d-inline-block pt-1 fw-bold" style="width: 150px;">
+                                (Signature / Stamp)
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Page Numbering container (fixed bottom right for each page via CSS) -->
-            <div id="pageFooter" class="d-none">
-                Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+            <div class="text-center mt-5 pt-5 opacity-25">
+                <small class="text-muted">Generated by TKS WMS - System Auto-Generated Report</small>
             </div>
         </div>
+    </div>
+
+    <!-- Page Numbering container (fixed bottom right for each page via CSS) -->
+    <div id="pageFooter" class="d-none">
+        Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+    </div>
+    </div>
     </div>
 
     <style>

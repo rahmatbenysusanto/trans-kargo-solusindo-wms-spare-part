@@ -119,14 +119,38 @@
 
             const data = {
                 category: 'RMA',
+                request_type: 'RMA',
+                ntt_requestor: document.getElementById('ntt_requestor') ? document.getElementById('ntt_requestor')
+                    .value : '',
+                request_date: document.getElementById('request_date') ? document.getElementById('request_date').value :
+                    '',
+                sap_po_number: document.getElementById('sap_po_number') ? document.getElementById('sap_po_number')
+                    .value : '',
                 rma_number: rmaNo,
                 itsm_number: itsmNo,
                 number: rmaNo,
                 client_id: clientId,
+                client_contact: document.getElementById('client_contact') ? document.getElementById('client_contact')
+                    .value : '',
+                pickup_address: document.getElementById('pickup_address') ? document.getElementById('pickup_address')
+                    .value : '',
                 outbound_date: document.getElementById('date').value,
                 outbound_by: document.getElementById('outbound_by').value,
                 products
             };
+
+            if (!data.client_id || !data.outbound_date || !data.outbound_by) {
+                Swal.fire({
+                    title: 'Incomplete Form',
+                    text: 'Please fill in all required fields marked with *',
+                    icon: 'warning',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+                return;
+            }
 
             Swal.fire({
                 title: 'Process RMA Outbound?',
@@ -214,38 +238,135 @@
             <div class="col-12">
                 <div class="card mb-4 border-0 shadow-sm"
                     style="border-radius: 12px; border-left: 5px solid #ff9f43 !important;">
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">Client *</label>
-                                <select class="form-select border-0 bg-light-subtle fw-bold" id="client_id">
-                                    <option value="">-- Select Client --</option>
-                                    @foreach ($client as $item)
-                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                    @endforeach
-                                </select>
+                    <div class="card-body p-4 bg-white">
+                        <div class="row g-4 pt-2">
+                            <!-- Left Column: Primary Transaction Info -->
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm bg-white p-3 h-100"
+                                    style="border-radius: 12px; border: 1px solid rgba(115, 103, 240, 0.08) !important;">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center text-primary">
+                                        <i class="ti tabler-refresh me-2"></i> Transaction Detail
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Outbound Category</label>
+                                        <input type="text"
+                                            class="form-control fw-bold text-warning border-warning-subtle" value="RMA"
+                                            readonly id="category"
+                                            style="background-color: rgba(255, 159, 67, 0.05) !important;">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Request Type</label>
+                                        <select class="form-select border-light-subtle" name="request_type"
+                                            id="request_type">
+                                            <option value="New PO">New PO</option>
+                                            <option value="RMA" selected>RMA</option>
+                                            <option value="Loan">Loan</option>
+                                            <option value="Spare Write Off">Spare Write Off</option>
+                                            <option value="Spare Migration">Spare Migration</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Client <span
+                                                class="text-danger">*</span></label>
+                                        <select class="form-select border-light-subtle select2" id="client_id">
+                                            <option value="">-- Choose Client --</option>
+                                            @foreach ($client as $item)
+                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold text-dark">Client Contact</label>
+                                        <input type="text" class="form-control border-light-subtle" name="client_contact"
+                                            id="client_contact" placeholder="Contact person/Dept">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">RMA Case Number *</label>
-                                <input type="text"
-                                    class="form-control border-0 bg-light-subtle fw-bold placeholder-light" id="rma_number"
-                                    placeholder="Enter RMA#">
+
+                            <!-- Middle Column: Request & PO Info -->
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm bg-white p-3 h-100"
+                                    style="border-radius: 12px; border: 1px solid rgba(115, 103, 240, 0.08) !important;">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center text-primary">
+                                        <i class="ti tabler-file-analytics me-2"></i> Request & PO
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">NTT Requestor</label>
+                                        <input type="text" class="form-control border-light-subtle" name="ntt_requestor"
+                                            id="ntt_requestor" placeholder="Name/Dept">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Request Date</label>
+                                        <input type="date" class="form-control border-light-subtle" name="request_date"
+                                            id="request_date" value="{{ date('Y-m-d') }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">SAP PO#</label>
+                                        <input type="text" class="form-control border-light-subtle fw-bold text-primary"
+                                            name="sap_po_number" id="sap_po_number" placeholder="Enter SAP PO">
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold text-dark">PO# (System Ref)</label>
+                                        <input type="text" class="form-control border-light-subtle" name="po_number"
+                                            id="po_number" placeholder="Enter Reference">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">ITSM Ticket ID *</label>
-                                <input type="text"
-                                    class="form-control border-0 bg-light-subtle fw-bold placeholder-light" id="itsm_number"
-                                    placeholder="Enter ITSM#">
+
+                            <!-- Right Column: Shipping & Logs -->
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm bg-white p-3 h-100"
+                                    style="border-radius: 12px; border: 1px solid rgba(115, 103, 240, 0.08) !important;">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center text-primary">
+                                        <i class="ti tabler-truck me-2"></i> Dispatch & Shipping
+                                    </h6>
+                                    <div class="row g-2">
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label small fw-bold text-dark">NTT DN#</label>
+                                            <input type="text" class="form-control form-control-sm border-light-subtle"
+                                                name="ntt_dn_number" id="ntt_dn_number" placeholder="NTT DN">
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label small fw-bold text-dark">TKS DN#</label>
+                                            <input type="text" class="form-control form-control-sm border-light-subtle"
+                                                name="tks_dn_number" id="tks_dn_number" placeholder="TKS DN">
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label small fw-bold text-dark">RMA#</label>
+                                            <input type="text"
+                                                class="form-control form-control-sm border-light-subtle fw-bold"
+                                                id="rma_number" placeholder="RMA#">
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label small fw-bold text-dark">ITSM#</label>
+                                            <input type="text" class="form-control form-control-sm border-light-subtle"
+                                                id="itsm_number" placeholder="ITSM#">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold text-primary">Delivery Date *</label>
+                                        <input type="date"
+                                            class="form-control form-control-sm border-primary-subtle fw-bold"
+                                            name="date" id="date" value="{{ date('Y-m-d') }}">
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold text-primary">Processed By *</label>
+                                        <input type="text"
+                                            class="form-control form-control-sm border-primary-subtle fw-bold"
+                                            name="outbound_by" id="outbound_by" placeholder="Person in charge">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">Outbound Date</label>
-                                <input type="date" class="form-control border-0 bg-light-subtle fw-bold" id="date"
-                                    value="{{ date('Y-m-d') }}">
-                            </div>
-                            <div class="col-md-3 mt-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">Outbound By</label>
-                                <input type="text" class="form-control border-0 bg-light-subtle" id="outbound_by"
-                                    placeholder="Assignee name">
+
+                            <div class="col-12 mt-4">
+                                <div class="card border-0 shadow-sm p-3"
+                                    style="border-radius: 12px; background: rgba(115, 103, 240, 0.03); border: 1px dashed rgba(115, 103, 240, 0.2) !important;">
+                                    <label class="form-label small fw-bold text-primary d-flex align-items-center">
+                                        <i class="ti tabler-map-pin me-2"></i> Pick up / Shipment Address
+                                    </label>
+                                    <textarea class="form-control border-0 bg-transparent p-1" name="pickup_address" id="pickup_address" rows="2"
+                                        placeholder="Write full delivery address here..."></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -253,41 +374,36 @@
             </div>
 
             <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+                <div class="card border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
                     <div
-                        class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
-                        <h5 class="mb-0 fw-bold d-flex align-items-center">
-                            <span class="badge bg-label-warning rounded p-2 me-2 shadow-xs"><i
-                                    class="ti tabler-box-margin text-warning"></i></span>
-                            Units to Return
-                        </h5>
-                        <button class="btn btn-label-primary shadow-none btn-sm fw-bold px-3 py-2 waves-effect"
+                        class="card-header bg-white py-4 px-4 d-flex justify-content-between align-items-center border-bottom">
+                        <div>
+                            <h5 class="mb-1 fw-bold text-dark">
+                                <i class="ti tabler-clipboard-check me-2 text-warning"></i> RMA Unit Selection
+                            </h5>
+                            <p class="text-muted small mb-0">Total items: <span id="totalItemsCount"
+                                    class="fw-bold text-primary">0</span></p>
+                        </div>
+                        <button class="btn btn-primary shadow-sm fw-bold px-4 py-2"
                             onclick="$('#selectInventoryModal').modal('show'); fetchInventory();">
-                            <i class="ti tabler-barcode me-1 fs-5"></i> Scan Inventory
+                            <i class="ti tabler-cube-plus me-2"></i> Browse RMA Units
                         </button>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle custom-table mb-0">
-                                <thead class="bg-light text-uppercase fs-tiny fw-bold border-top-0">
+                                <thead class="bg-label-warning text-uppercase small fw-bold">
                                     <tr>
-                                        <th class="text-center" style="width: 50px;">#</th>
-                                        <th>Asset ID</th>
-                                        <th>Unit Details</th>
-                                        <th>Old Serial</th>
-                                        <th>ITSM Replace SN</th>
-                                        <th>From Location</th>
+                                        <th class="text-center" style="width: 60px;">#</th>
+                                        <th>Asset Info</th>
+                                        <th>Specification</th>
+                                        <th>Serial Number</th>
+                                        <th>Location</th>
                                         <th class="text-center" style="width: 100px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="productTableBody"></tbody>
                             </table>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-white border-top py-3 px-4 d-flex justify-content-end align-items-center">
-                        <div class="small fw-bold text-muted d-flex align-items-center">
-                            Total Units for RMA: <span id="totalItemsCount"
-                                class="text-warning fs-5 ms-2 animate__animated animate__pulse animate__infinite">0</span>
                         </div>
                     </div>
                 </div>
@@ -297,32 +413,51 @@
 
     <style>
         .custom-table thead th {
-            font-size: 0.65rem;
-            letter-spacing: 1px;
-            color: #5d596c;
-            padding: 1rem 1.25rem;
-        }
-
-        .bg-light-subtle {
-            background-color: #f7f8f9 !important;
-        }
-
-        .placeholder-light::placeholder {
-            color: #d0d2d5;
-            font-weight: 300;
-        }
-
-        .table> :not(caption)>*>* {
-            padding: 1rem 1.25rem;
-        }
-
-        .ls-sm {
-            letter-spacing: 0.5px;
+            font-size: 0.75rem;
+            letter-spacing: 0.8px;
+            color: #ff9f43;
+            background: rgba(255, 159, 67, 0.05);
+            border-bottom: 2px solid rgba(255, 159, 67, 0.1);
+            padding: 1.2rem;
         }
 
         .avatar-initial {
-            background-color: rgba(255, 159, 67, 0.1) !important;
-            color: #ff9f43 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            box-shadow: 0 0 15px rgba(115, 103, 240, 0.1) !important;
+            border-color: #7367f0 !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7367f0 0%, #4834d4 100%);
+            border: none;
+        }
+
+        .table> :not(caption)>*>* {
+            padding: 1.1rem 1.2rem;
+        }
+
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05) !important;
         }
     </style>
 

@@ -33,4 +33,9 @@ class OutboundDetail extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+
+    public function inventory(): BelongsTo
+    {
+        return $this->belongsTo(Inventory::class, 'serial_number', 'serial_number');
+    }
 }

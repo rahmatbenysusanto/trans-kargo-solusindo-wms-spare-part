@@ -129,7 +129,14 @@
                                         <td class="py-2 px-3">
                                             {{ $loop->iteration + ($inbound->currentPage() - 1) * $inbound->perPage() }}
                                         </td>
-                                        <td class="py-2 px-3"><span class="fw-bold text-dark">{{ $item->number }}</span>
+                                        <td class="py-2 px-3">
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold text-dark">{{ $item->number }}</span>
+                                                @if ($item->sap_po_number)
+                                                    <small class="text-primary fw-bold" style="font-size: 0.7rem;">SAP:
+                                                        {{ $item->sap_po_number }}</small>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="py-2 px-3">
                                             <span class="badge bg-label-info badge-sm"

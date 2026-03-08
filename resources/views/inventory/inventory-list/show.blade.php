@@ -122,11 +122,8 @@
                             <span class="detail-label">Storage Location</span>
                             @if ($inventory->storageLevel)
                                 <div class="p-2 bg-label-secondary rounded border border-light">
-                                    <div class="small fw-bold text-dark">
-                                        {{ $inventory->storageLevel->bin->rak->zone->name }}</div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">
-                                        {{ $inventory->storageLevel->bin->rak->name }} >
-                                        {{ $inventory->storageLevel->bin->name }} > {{ $inventory->storageLevel->name }}
+                                    <div class="small fw-bold text-dark font-monospace">
+                                        {{ $inventory->storageLevel->bin->rak->zone->name }}-{{ $inventory->storageLevel->bin->rak->name }}-{{ $inventory->storageLevel->bin->name }}-{{ $inventory->storageLevel->name }}
                                     </div>
                                 </div>
                             @else

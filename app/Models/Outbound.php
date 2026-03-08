@@ -14,7 +14,13 @@ class Outbound extends Model
 
     protected $fillable = [
         'category',
+        'request_type',
+        'ntt_requestor',
+        'request_date',
+        'sap_po_number',
         'client_id',
+        'client_contact',
+        'pickup_address',
         'number',
         'ntt_dn_number',
         'tks_dn_number',
@@ -23,6 +29,7 @@ class Outbound extends Model
         'itsm_number',
         'qty',
         'status',
+        'shipment_status',
         'outbound_date',
         'outbound_by'
     ];

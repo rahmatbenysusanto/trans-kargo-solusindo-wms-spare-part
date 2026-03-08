@@ -26,6 +26,7 @@ class OutboundController extends Controller
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
                     $q->where('number', 'like', '%' . $request->search . '%')
+                        ->orWhere('sap_po_number', 'like', '%' . $request->search . '%')
                         ->orWhere('ntt_dn_number', 'like', '%' . $request->search . '%')
                         ->orWhere('tks_dn_number', 'like', '%' . $request->search . '%')
                         ->orWhere('tks_invoice_number', 'like', '%' . $request->search . '%')
@@ -37,7 +38,7 @@ class OutboundController extends Controller
             ->paginate(15);
 
         $clients = Client::all();
-        $categories = ['Replacement', 'Loan', 'Spare Migration', 'Faulty', 'RMA', 'Write-off', 'Out for Replacement/ Support', 'Out for Loan', 'Out for Return'];
+        $categories = ['Spare to Replacement', 'Spare from Replacement', 'Spare to Loan', 'Spare from Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
 
         return view('outbound.index', compact('title', 'data', 'clients', 'categories'));
     }
@@ -87,7 +88,7 @@ class OutboundController extends Controller
 
     public function printPdf($id): View
     {
-        $outbound = Outbound::with(['client', 'details'])->findOrFail($id);
+        $outbound = Outbound::with(['client', 'details.inventory'])->findOrFail($id);
         // We will just render a view for printing
         $title = 'Outbound Report';
         return view('outbound.pdf', compact('title', 'outbound'));
@@ -127,8 +128,14 @@ class OutboundController extends Controller
 
             $outbound = Outbound::create([
                 'category' => $request->post('category') ?? $defaultCategory,
+                'request_type' => $request->post('request_type'),
+                'ntt_requestor' => $request->post('ntt_requestor'),
+                'request_date' => $request->post('request_date'),
+                'sap_po_number' => $request->post('sap_po_number'),
                 'client_id' => $request->post('client_id'),
-                'number' => $request->post('number'), // PO#
+                'client_contact' => $request->post('client_contact'),
+                'pickup_address' => $request->post('pickup_address'),
+                'number' => $request->post('number'), // PO# system ref
                 'ntt_dn_number' => $request->post('ntt_dn_number'),
                 'tks_dn_number' => $request->post('tks_dn_number'),
                 'tks_invoice_number' => $request->post('tks_invoice_number'),
@@ -299,7 +306,10 @@ class OutboundController extends Controller
             $data = $query->latest()->limit(50)->get()->map(function ($item) {
                 $location = 'N/A';
                 if ($item->storageLevel && $item->storageLevel->bin && $item->storageLevel->bin->rak && $item->storageLevel->bin->rak->zone) {
-                    $location = $item->storageLevel->bin->rak->zone->name . ' - ' . $item->storageLevel->name;
+                    $location = $item->storageLevel->bin->rak->zone->name . '-' .
+                        $item->storageLevel->bin->rak->name . '-' .
+                        $item->storageLevel->bin->name . '-' .
+                        $item->storageLevel->name;
                 }
 
                 return [

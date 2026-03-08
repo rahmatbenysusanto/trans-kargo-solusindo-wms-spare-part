@@ -102,7 +102,18 @@
 
             const data = {
                 category: 'Write-off',
+                request_type: 'Spare Write Off',
+                ntt_requestor: document.getElementById('ntt_requestor') ? document.getElementById('ntt_requestor')
+                    .value : '',
+                request_date: document.getElementById('request_date') ? document.getElementById('request_date').value :
+                    '',
+                sap_po_number: document.getElementById('sap_po_number') ? document.getElementById('sap_po_number')
+                    .value : '',
                 client_id: client_id,
+                client_contact: document.getElementById('client_contact') ? document.getElementById('client_contact')
+                    .value : '',
+                pickup_address: document.getElementById('pickup_address') ? document.getElementById('pickup_address')
+                    .value : '',
                 outbound_date: document.getElementById('date').value,
                 outbound_by: document.getElementById('outbound_by').value,
                 products: products.map(p => ({
@@ -110,6 +121,19 @@
                     condition: 'Scrap'
                 }))
             };
+
+            if (!data.client_id || !data.outbound_date || !data.outbound_by) {
+                Swal.fire({
+                    title: 'Incomplete Form',
+                    text: 'Please fill in all required fields marked with *',
+                    icon: 'warning',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+                return;
+            }
 
             Swal.fire({
                 title: 'Permanent Write-off?',
@@ -198,71 +222,151 @@
             <div class="col-12">
                 <div class="card mb-4 border-0 shadow-sm"
                     style="border-radius: 12px; background: linear-gradient(135deg, #fff 0%, #fafafa 100%);">
-                    <div class="card-body p-4">
-                        <div class="row g-4 pt-1 align-items-end">
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">Target Client *</label>
-                                <select class="form-select border-0 bg-white shadow-xs fw-bold py-2" id="client_id">
-                                    <option value="">-- Choose Client --</option>
-                                    @foreach ($client as $item)
-                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                    @endforeach
-                                </select>
+                    <div class="card-body p-4 bg-white">
+                        <div class="row g-4 pt-2">
+                            <!-- Left Column: Primary Transaction Info -->
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm bg-white p-3 h-100"
+                                    style="border-radius: 12px; border: 1px solid rgba(130, 134, 139, 0.1) !important;">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center text-secondary">
+                                        <i class="ti tabler-trash me-2"></i> Transaction Detail
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Outbound Category</label>
+                                        <input type="text"
+                                            class="form-control fw-bold text-dark border-light-subtle bg-light-subtle"
+                                            value="Spare Write-off" readonly id="category">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Request Type</label>
+                                        <select class="form-select border-light-subtle" name="request_type"
+                                            id="request_type">
+                                            <option value="Spare Write Off" selected>Spare Write Off</option>
+                                            <option value="New PO">New PO</option>
+                                            <option value="RMA">RMA</option>
+                                            <option value="Loan">Loan</option>
+                                            <option value="Spare Migration">Spare Migration</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Client <span
+                                                class="text-danger">*</span></label>
+                                        <select class="form-select border-light-subtle select2" id="client_id">
+                                            <option value="">-- Choose Client --</option>
+                                            @foreach ($client as $item)
+                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold text-dark">Client Contact</label>
+                                        <input type="text" class="form-control border-light-subtle" name="client_contact"
+                                            id="client_contact" placeholder="Contact person/Dept">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">Disposal Date</label>
-                                <input type="date" class="form-control border-0 bg-white shadow-xs fw-bold py-2"
-                                    id="date" value="{{ date('Y-m-d') }}">
+
+                            <!-- Middle Column: Request & PO Info -->
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm bg-white p-3 h-100"
+                                    style="border-radius: 12px; border: 1px solid rgba(115, 103, 240, 0.08) !important;">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center text-primary">
+                                        <i class="ti tabler-file-description me-2"></i> Request Info
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">NTT Requestor</label>
+                                        <input type="text" class="form-control border-light-subtle" name="ntt_requestor"
+                                            id="ntt_requestor" placeholder="Name/Dept">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">Request Date</label>
+                                        <input type="date" class="form-control border-light-subtle" name="request_date"
+                                            id="request_date" value="{{ date('Y-m-d') }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-dark">SAP PO# (Optional)</label>
+                                        <input type="text" class="form-control border-light-subtle" name="sap_po_number"
+                                            id="sap_po_number" placeholder="Enter SAP PO">
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small fw-bold text-dark">PO# (System Ref)</label>
+                                        <input type="text" class="form-control border-light-subtle" name="po_number"
+                                            id="po_number" placeholder="Enter Reference">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small text-muted text-uppercase fw-bold">Authorized By</label>
-                                <input type="text" class="form-control border-0 bg-white shadow-xs py-2 fw-medium"
-                                    id="outbound_by" placeholder="Name of authorize person">
+
+                            <!-- Right Column: Shipping & Logs -->
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm bg-white p-3 h-100"
+                                    style="border-radius: 12px; border: 1px solid rgba(115, 103, 240, 0.08) !important;">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center text-primary">
+                                        <i class="ti tabler-calendar-event me-2"></i> Processing Info
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-primary">Write-off Date *</label>
+                                        <input type="date" class="form-control border-primary-subtle fw-bold"
+                                            name="date" id="date" value="{{ date('Y-m-d') }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-primary">Processed By *</label>
+                                        <input type="text" class="form-control border-primary-subtle fw-bold"
+                                            name="outbound_by" id="outbound_by" placeholder="PIC Name">
+                                    </div>
+                                    <div class="mb-0">
+                                        <p class="small text-muted mb-0">Note: Items in write-off will be removed from
+                                            active inventory permanently.</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3 text-end">
-                                <img src="https://img.icons8.com/isometric/100/trash.png" alt="trash"
-                                    style="width: 60px; opacity: 0.6;">
+
+                            <div class="col-12 mt-4">
+                                <div class="card border-0 shadow-sm p-3"
+                                    style="border-radius: 12px; background: rgba(130, 134, 139, 0.03); border: 1px dashed rgba(130, 134, 139, 0.2) !important;">
+                                    <label class="form-label small fw-bold text-secondary d-flex align-items-center">
+                                        <i class="ti tabler-message-dots me-2"></i> Write-off Remarks / Reason
+                                    </label>
+                                    <textarea class="form-control border-0 bg-transparent p-1" name="pickup_address" id="pickup_address" rows="2"
+                                        placeholder="Explain the reason for disposal/write-off..."></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Unit List Section -->
             <div class="col-12">
-                <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+                <div class="card border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
                     <div
-                        class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
-                        <h5 class="mb-0 fw-bold d-flex align-items-center">
-                            <span class="badge bg-label-secondary rounded p-2 me-2 shadow-xs"><i
-                                    class="ti tabler-list-check text-dark"></i></span>
-                            Disposal Queue
-                        </h5>
-                        <button class="btn btn-label-dark shadow-none btn-sm fw-bold px-4 py-2 waves-effect border"
+                        class="card-header bg-white py-4 px-4 d-flex justify-content-between align-items-center border-bottom">
+                        <div>
+                            <h5 class="mb-1 fw-bold text-dark">
+                                <i class="ti tabler-package-off me-2 text-secondary"></i> Items to Write-off
+                            </h5>
+                            <p class="text-muted small mb-0">Total items: <span id="totalItemsCount"
+                                    class="fw-bold text-primary">0</span></p>
+                        </div>
+                        <button class="btn btn-primary shadow-sm fw-bold px-4 py-2"
                             onclick="$('#selectInventoryModal').modal('show'); fetchInventory();">
-                            <i class="ti tabler-package-export me-1 fs-5"></i> Select Units
+                            <i class="ti tabler-search me-2"></i> Find Items
                         </button>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle custom-table mb-0">
-                                <thead class="bg-light text-uppercase fs-tiny fw-bold border-top-0">
+                                <thead class="bg-label-secondary text-uppercase small fw-bold">
                                     <tr>
-                                        <th class="text-center" style="width: 50px;">#</th>
-                                        <th>Asset ID</th>
-                                        <th>Unit Specification</th>
+                                        <th class="text-center" style="width: 60px;">#</th>
+                                        <th>Asset Info</th>
+                                        <th>Specification/Condition</th>
                                         <th>Serial Number</th>
-                                        <th>Last Location</th>
-                                        <th>Action Category</th>
+                                        <th>Location</th>
                                         <th class="text-center" style="width: 100px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="productTableBody"></tbody>
                             </table>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-white border-top py-3 px-4 d-flex justify-content-end align-items-center">
-                        <div class="small fw-bold text-muted d-flex align-items-center">
-                            Total Units for Disposal: <span id="totalItemsCount" class="text-danger fs-4 ms-2">0</span>
                         </div>
                     </div>
                 </div>
@@ -272,32 +376,13 @@
 
     <style>
         .custom-table thead th {
-            font-size: 0.65rem;
-            letter-spacing: 1px;
+            font-size: 0.75rem;
+            letter-spacing: 0.8px;
             color: #82868b;
-            padding: 1rem 1.25rem;
-        }
 
-        .ls-1 {
-            letter-spacing: 1px;
-        }
-
-        .shadow-xs {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .placeholder-light::placeholder {
-            color: #d0d2d5;
-            font-weight: 300;
-        }
-
-        .table> :not(caption)>*>* {
-            padding: 1rem 1.25rem;
-        }
-
-        .fs-tiny {
-            font-size: 0.7rem;
-        }
+            .fs-tiny {
+                font-size: 0.7rem;
+            }
     </style>
 
     @include('outbound.modals')

@@ -276,13 +276,11 @@
                                             @if ($detail->storageLevel)
                                                 @php
                                                     $location = collect([
-                                                        $detail->storageLevel->zone->name ?? null,
-                                                        $detail->storageLevel->rak->name ?? null,
-                                                        $detail->storageLevel->bin->name ?? null,
-                                                        $detail->storageLevel->name ?? null,
-                                                    ])
-                                                        ->filter()
-                                                        ->implode(' - ');
+                                                        $detail->storageLevel->zone->name ?? '-',
+                                                        $detail->storageLevel->rak->name ?? '-',
+                                                        $detail->storageLevel->bin->name ?? '-',
+                                                        $detail->storageLevel->name ?? '-',
+                                                    ])->implode('-');
                                                 @endphp
                                                 <small class="text-dark fw-medium">
                                                     {{ $location }}
