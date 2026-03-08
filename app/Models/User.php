@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Menu::class, 'user_has_menu', 'user_id', 'menu_id');
     }
+
+    public function hasMenu($menuName)
+    {
+        return $this->menus()->where('name', $menuName)->exists();
+    }
 }

@@ -61,9 +61,9 @@
                                     </td>
                                     <td>
                                         @if ($item->storageLevel)
-                                            <span
-                                                class="badge bg-label-secondary small">{{ $item->storageLevel->zone->name }}
-                                                - {{ $item->storageLevel->name }}</span>
+                                            <span class="badge bg-label-secondary small">
+                                                {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
+                                            </span>
                                         @else
                                             <span class="text-muted">N/A</span>
                                         @endif
@@ -182,7 +182,7 @@
 
             $('#inventorySearchResult').html(
                 '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm text-primary"></div> Searching...</td></tr>'
-                );
+            );
 
             fetch(`{{ route('staging.search-available') }}?search=${query}`)
                 .then(res => res.json())
@@ -193,6 +193,12 @@
                             '<tr><td colspan="4" class="text-center text-muted py-3">No matching items found.</td></tr>';
                     } else {
                         data.forEach(item => {
+                            let loc = 'N/A';
+                            if (item.storage_level && item.storage_level.bin && item.storage_level.bin.rak &&
+                                item.storage_level.bin.rak.zone) {
+                                loc =
+                                    `${item.storage_level.bin.rak.zone.name}-${item.storage_level.bin.rak.name}-${item.storage_level.bin.name}-${item.storage_level.name}`;
+                            }
                             html += `
                             <tr>
                                 <td class="text-center">
@@ -200,12 +206,18 @@
                                 </td>
                                 <td><div class="fw-bold small text-dark">${item.serial_number}</div></td>
                                 <td><div class="small">${item.part_name}</div></td>
-                                <td><span class="badge bg-label-secondary x-small">${item.storage_level ? item.storage_level.zone.name + ' - ' + item.storage_level.name : 'N/A'}</span></td>
+                                <td><span class="badge bg-label-secondary x-small">${loc}</span></td>
                             </tr>
                         `;
                         });
                     }
                     $('#inventorySearchResult').html(html);
+                })
+                .catch(err => {
+                    console.error('Error searching inventory:', err);
+                    $('#inventorySearchResult').html(
+                        '<tr><td colspan="4" class="text-center text-danger py-3">Failed to fetch data. Please try again.</td></tr>'
+                    );
                 });
         }
 

@@ -153,210 +153,326 @@
                 <div class="menu-inner-shadow"></div>
 
                 <ul class="menu-inner py-1">
-                    <li
-                        class="menu-item {{ in_array($title, ['Stock Overview', 'utilizationByClient', 'rmaMonitoring', 'inboundReturn', 'stockMonitoring']) ? 'show open' : '' }}">
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <i class="menu-icon icon-base ti tabler-chart-pie"></i>
-                            <div data-i18n="Dashboards">Dashboards</div>
-                        </a>
-                        <ul class="menu-sub">
-                            <li class="menu-item {{ $title == 'Stock Overview' ? 'active' : '' }}">
-                                <a href="{{ route('dashboard') }}" class="menu-link">
-                                    <div data-i18n="Stock Overview">Stock Overview</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'utilizationByClient' ? 'active' : '' }}">
-                                <a href="{{ route('utilizationByClient') }}" class="menu-link">
-                                    <div data-i18n="Utilization By Client">Utilization By Client</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'rmaMonitoring' ? 'active' : '' }}">
-                                <a href="{{ route('rmaMonitoring') }}" class="menu-link">
-                                    <div data-i18n="RMA Monitoring">RMA Monitoring</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'inboundReturn' ? 'active' : '' }}">
-                                <a href="{{ route('inboundReturn') }}" class="menu-link">
-                                    <div data-i18n="Inbound vs Return Trend">Inbound vs Return Trend</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'stockMonitoring' ? 'active' : '' }}">
-                                <a href="{{ route('stockMonitoring') }}" class="menu-link">
-                                    <div data-i18n="Stock Monitoring">Stock Monitoring</div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                    @php
+                        $hasDashboard =
+                            Auth::user()->hasMenu('Dashboard: Stock Overview') ||
+                            Auth::user()->hasMenu('Dashboard: Utilization By Client') ||
+                            Auth::user()->hasMenu('Dashboard: RMA Monitoring') ||
+                            Auth::user()->hasMenu('Dashboard: Inbound vs Return Trend') ||
+                            Auth::user()->hasMenu('Dashboard: Stock Monitoring');
+                    @endphp
 
-                    <li class="menu-header small">
-                        <span class="menu-header-text" data-i18n="Main Menu">Main Menu</span>
-                    </li>
+                    @if ($hasDashboard)
+                        <li
+                            class="menu-item {{ in_array($title, ['Stock Overview', 'utilizationByClient', 'rmaMonitoring', 'inboundReturn', 'stockMonitoring']) ? 'show open' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <i class="menu-icon icon-base ti tabler-chart-pie"></i>
+                                <div data-i18n="Dashboards">Dashboards</div>
+                            </a>
+                            <ul class="menu-sub">
+                                @if (Auth::user()->hasMenu('Dashboard: Stock Overview'))
+                                    <li class="menu-item {{ $title == 'Stock Overview' ? 'active' : '' }}">
+                                        <a href="{{ route('dashboard') }}" class="menu-link">
+                                            <div data-i18n="Stock Overview">Stock Overview</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Dashboard: Utilization By Client'))
+                                    <li class="menu-item {{ $title == 'utilizationByClient' ? 'active' : '' }}">
+                                        <a href="{{ route('utilizationByClient') }}" class="menu-link">
+                                            <div data-i18n="Utilization By Client">Utilization By Client</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Dashboard: RMA Monitoring'))
+                                    <li class="menu-item {{ $title == 'rmaMonitoring' ? 'active' : '' }}">
+                                        <a href="{{ route('rmaMonitoring') }}" class="menu-link">
+                                            <div data-i18n="RMA Monitoring">RMA Monitoring</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Dashboard: Inbound vs Return Trend'))
+                                    <li class="menu-item {{ $title == 'inboundReturn' ? 'active' : '' }}">
+                                        <a href="{{ route('inboundReturn') }}" class="menu-link">
+                                            <div data-i18n="Inbound vs Return Trend">Inbound vs Return Trend</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Dashboard: Stock Monitoring'))
+                                    <li class="menu-item {{ $title == 'stockMonitoring' ? 'active' : '' }}">
+                                        <a href="{{ route('stockMonitoring') }}" class="menu-link">
+                                            <div data-i18n="Stock Monitoring">Stock Monitoring</div>
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </li>
+                    @endif
 
-                    <li
-                        class="menu-item {{ in_array($title, ['Receiving', 'Staging Management', 'Put Away']) ? 'show open' : '' }}">
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <i class="menu-icon icon-base ti tabler-archive"></i>
-                            <div data-i18n="Inbound">Inbound</div>
-                        </a>
-                        <ul class="menu-sub">
-                            <li class="menu-item {{ $title == 'Receiving' ? 'active' : '' }}">
-                                <a href="{{ route('receiving') }}" class="menu-link">
-                                    <div data-i18n="Receiving">Receiving</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Staging Management' ? 'active' : '' }}">
-                                <a href="{{ route('staging.index') }}" class="menu-link">
-                                    <div data-i18n="Staging">Staging (Testing)</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Put Away' ? 'active' : '' }}">
-                                <a href="{{ route('receiving.put.away') }}" class="menu-link">
-                                    <div data-i18n="Put Away">Put Away</div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                    @php
+                        $hasInbound =
+                            Auth::user()->hasMenu('Inbound: Receiving') ||
+                            Auth::user()->hasMenu('Inbound: Staging (Testing)') ||
+                            Auth::user()->hasMenu('Inbound: Put Away');
 
-                    <li
-                        class="menu-item {{ in_array($title, ['Inventory List', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <i class="menu-icon icon-base ti tabler-truck-loading"></i>
-                            <div data-i18n="Inventory">Inventory</div>
-                        </a>
-                        <ul class="menu-sub">
-                            <li class="menu-item {{ $title == 'Inventory List' ? 'active' : '' }}">
-                                <a href="{{ route('inventory.index') }}" class="menu-link">
-                                    <div data-i18n="Inventory List">Inventory List</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Inventory Product' ? 'active' : '' }}">
-                                <a href="{{ route('inventory.product.summary') }}" class="menu-link">
-                                    <div data-i18n="Inventory Product">Inventory Product</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Inventory Stock Statement' ? 'active' : '' }}">
-                                <a href="{{ route('inventory.stock.statement') }}" class="menu-link">
-                                    <div data-i18n="Inventory Stock Statement">Stock Statement (Master Data)</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Product Movement' ? 'active' : '' }}">
-                                <a href="{{ route('inventory.product.movement') }}" class="menu-link">
-                                    <div data-i18n="Product Movement">Product Movement</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Write Off' ? 'active' : '' }}">
-                                <a href="{{ route('write-off.index') }}" class="menu-link">
-                                    <div data-i18n="Write-off">Write-off</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Cycle Count' ? 'active' : '' }}">
-                                <a href="{{ route('inventory.cycle-count') }}" class="menu-link text-warning">
-                                    <div data-i18n="Cycle Count">Cycle Count</div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                        $hasInventory =
+                            Auth::user()->hasMenu('Inventory: List') ||
+                            Auth::user()->hasMenu('Inventory: Product Summary') ||
+                            Auth::user()->hasMenu('Inventory: Stock Statement') ||
+                            Auth::user()->hasMenu('Inventory: Product Movement') ||
+                            Auth::user()->hasMenu('Inventory: Write-off') ||
+                            Auth::user()->hasMenu('Inventory: Cycle Count');
 
-                    <li class="menu-item {{ $title == 'Outbound' ? 'active' : '' }}">
-                        <a href="{{ route('outbound.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-truck-delivery"></i>
-                            <div data-i18n="Outbound">Outbound</div>
-                        </a>
-                    </li>
+                        $hasOutbound = Auth::user()->hasMenu('Outbound');
+                        $hasInvoices = Auth::user()->hasMenu('Invoices');
 
-                    <li class="menu-item {{ $title == 'Invoice Management' ? 'active' : '' }}">
-                        <a href="{{ route('invoice.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-file-invoice"></i>
-                            <div data-i18n="Invoices">Manage Invoices</div>
-                        </a>
-                    </li>
+                        $hasAudit =
+                            Auth::user()->hasMenu('Report: Stock on Hand') ||
+                            Auth::user()->hasMenu('Report: Movement History') ||
+                            Auth::user()->hasMenu('Report: Utilization');
+                    @endphp
+
+                    @if ($hasInbound || $hasInventory || $hasOutbound || $hasInvoices || $hasAudit)
+                        <li class="menu-header small">
+                            <span class="menu-header-text" data-i18n="Main Menu">Main Menu</span>
+                        </li>
+                    @endif
+
+                    @if ($hasInbound)
+                        <li
+                            class="menu-item {{ in_array($title, ['Receiving', 'Staging Management', 'Put Away']) ? 'show open' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <i class="menu-icon icon-base ti tabler-archive"></i>
+                                <div data-i18n="Inbound">Inbound</div>
+                            </a>
+                            <ul class="menu-sub">
+                                @if (Auth::user()->hasMenu('Inbound: Receiving'))
+                                    <li class="menu-item {{ $title == 'Receiving' ? 'active' : '' }}">
+                                        <a href="{{ route('receiving') }}" class="menu-link">
+                                            <div data-i18n="Receiving">Receiving</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inbound: Staging (Testing)'))
+                                    <li class="menu-item {{ $title == 'Staging Management' ? 'active' : '' }}">
+                                        <a href="{{ route('staging.index') }}" class="menu-link">
+                                            <div data-i18n="Staging">Staging (Testing)</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inbound: Put Away'))
+                                    <li class="menu-item {{ $title == 'Put Away' ? 'active' : '' }}">
+                                        <a href="{{ route('receiving.put.away') }}" class="menu-link">
+                                            <div data-i18n="Put Away">Put Away</div>
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </li>
+                    @endif
+
+                    @if ($hasInventory)
+                        <li
+                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <i class="menu-icon icon-base ti tabler-truck-loading"></i>
+                                <div data-i18n="Inventory">Inventory</div>
+                            </a>
+                            <ul class="menu-sub">
+                                @if (Auth::user()->hasMenu('Inventory: List'))
+                                    <li class="menu-item {{ $title == 'Inventory List' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.index') }}" class="menu-link">
+                                            <div data-i18n="Inventory List">Inventory List</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Product Summary'))
+                                    <li class="menu-item {{ $title == 'Inventory Product' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.product.summary') }}" class="menu-link">
+                                            <div data-i18n="Inventory Product">Inventory Product</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Stock Statement'))
+                                    <li class="menu-item {{ $title == 'Inventory Stock Statement' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.stock.statement') }}" class="menu-link">
+                                            <div data-i18n="Inventory Stock Statement">Stock Statement (Master Data)
+                                            </div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Product Movement'))
+                                    <li class="menu-item {{ $title == 'Product Movement' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.product.movement') }}" class="menu-link">
+                                            <div data-i18n="Product Movement">Product Movement</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Write-off'))
+                                    <li class="menu-item {{ $title == 'Write Off' ? 'active' : '' }}">
+                                        <a href="{{ route('write-off.index') }}" class="menu-link">
+                                            <div data-i18n="Write-off">Write-off</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Cycle Count'))
+                                    <li class="menu-item {{ $title == 'Cycle Count' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.cycle-count') }}"
+                                            class="menu-link text-warning">
+                                            <div data-i18n="Cycle Count">Cycle Count</div>
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </li>
+                    @endif
+
+                    @if ($hasOutbound)
+                        <li class="menu-item {{ $title == 'Outbound' ? 'active' : '' }}">
+                            <a href="{{ route('outbound.index') }}" class="menu-link">
+                                <i class="menu-icon icon-base ti tabler-truck-delivery"></i>
+                                <div data-i18n="Outbound">Outbound</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($hasInvoices)
+                        <li class="menu-item {{ $title == 'Invoice Management' ? 'active' : '' }}">
+                            <a href="{{ route('invoice.index') }}" class="menu-link">
+                                <i class="menu-icon icon-base ti tabler-file-invoice"></i>
+                                <div data-i18n="Invoices">Manage Invoices</div>
+                            </a>
+                        </li>
+                    @endif
 
 
-                    <li
-                        class="menu-item {{ in_array($title, ['Stock on Hand', 'Movement History', 'Utilization Report']) ? 'show open' : '' }}">
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <i class="menu-icon icon-base ti tabler-report"></i>
-                            <div data-i18n="Audit & Reporting">Audit & Reporting</div>
-                        </a>
-                        <ul class="menu-sub">
-                            <li class="menu-item {{ $title == 'Stock on Hand' ? 'active' : '' }}">
-                                <a href="{{ route('reporting.stock-on-hand') }}" class="menu-link">
-                                    <div data-i18n="Stock on Hand">Stock on Hand</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Movement History' ? 'active' : '' }}">
-                                <a href="{{ route('reporting.movement-history') }}" class="menu-link">
-                                    <div data-i18n="Movement History">Movement History</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Utilization Report' ? 'active' : '' }}">
-                                <a href="{{ route('reporting.utilization') }}" class="menu-link">
-                                    <div data-i18n="Utilization Report">Utilization Report</div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                    @if ($hasAudit)
+                        <li
+                            class="menu-item {{ in_array($title, ['Stock on Hand', 'Movement History', 'Utilization Report']) ? 'show open' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <i class="menu-icon icon-base ti tabler-report"></i>
+                                <div data-i18n="Audit & Reporting">Audit & Reporting</div>
+                            </a>
+                            <ul class="menu-sub">
+                                @if (Auth::user()->hasMenu('Report: Stock on Hand'))
+                                    <li class="menu-item {{ $title == 'Stock on Hand' ? 'active' : '' }}">
+                                        <a href="{{ route('reporting.stock-on-hand') }}" class="menu-link">
+                                            <div data-i18n="Stock on Hand">Stock on Hand</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Report: Movement History'))
+                                    <li class="menu-item {{ $title == 'Movement History' ? 'active' : '' }}">
+                                        <a href="{{ route('reporting.movement-history') }}" class="menu-link">
+                                            <div data-i18n="Movement History">Movement History</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Report: Utilization'))
+                                    <li class="menu-item {{ $title == 'Utilization Report' ? 'active' : '' }}">
+                                        <a href="{{ route('reporting.utilization') }}" class="menu-link">
+                                            <div data-i18n="Utilization Report">Utilization Report</div>
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </li>
+                    @endif
 
-                    <li class="menu-header small">
-                        <span class="menu-header-text" data-i18n="Warehouse">Warehouse</span>
-                    </li>
+                    @php
+                        $hasStorage =
+                            Auth::user()->hasMenu('Storage: Zone') ||
+                            Auth::user()->hasMenu('Storage: Rak') ||
+                            Auth::user()->hasMenu('Storage: Bin') ||
+                            Auth::user()->hasMenu('Storage: Level');
 
-                    <li class="menu-item {{ in_array($title, ['Zone', 'Rak', 'Bin', 'Level']) ? 'show open' : '' }}">
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <i class="menu-icon icon-base ti tabler-server"></i>
-                            <div data-i18n="Storage">Storage</div>
-                        </a>
-                        <ul class="menu-sub">
-                            <li class="menu-item {{ $title == 'Zone' ? 'active' : '' }}">
-                                <a href="{{ route('storage.zone') }}" class="menu-link">
-                                    <div data-i18n="Zone">Zone</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Rak' ? 'active' : '' }}">
-                                <a href="{{ route('storage.rak') }}" class="menu-link">
-                                    <div data-i18n="Rak">Rak</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Bin' ? 'active' : '' }}">
-                                <a href="{{ route('storage.bin') }}" class="menu-link">
-                                    <div data-i18n="Bin">Bin</div>
-                                </a>
-                            </li>
-                            <li class="menu-item {{ $title == 'Level' ? 'active' : '' }}">
-                                <a href="{{ route('storage.level') }}" class="menu-link">
-                                    <div data-i18n="Level">Level</div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                        $hasBrand = Auth::user()->hasMenu('Brand');
+                        $hasProductGroup = Auth::user()->hasMenu('Product Group');
+                        $hasClient = Auth::user()->hasMenu('Client');
+                        $hasUser = Auth::user()->hasMenu('User Management');
+                    @endphp
 
-                    <li class="menu-item {{ $title == 'Brand' ? 'active' : '' }}">
-                        <a href="{{ route('brand.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-brand-flutter"></i>
-                            <div data-i18n="Brand">Brand</div>
-                        </a>
-                    </li>
+                    @if ($hasStorage || $hasBrand || $hasProductGroup || $hasClient || $hasUser)
+                        <li class="menu-header small">
+                            <span class="menu-header-text" data-i18n="Warehouse">Warehouse</span>
+                        </li>
+                    @endif
 
-                    <li class="menu-item {{ $title == 'Product Group' ? 'active' : '' }}">
-                        <a href="{{ route('product.group.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-barcode"></i>
-                            <div data-i18n="Product Group">Product Group</div>
-                        </a>
-                    </li>
+                    @if ($hasStorage)
+                        <li
+                            class="menu-item {{ in_array($title, ['Zone', 'Rak', 'Bin', 'Level']) ? 'show open' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <i class="menu-icon icon-base ti tabler-server"></i>
+                                <div data-i18n="Storage">Storage</div>
+                            </a>
+                            <ul class="menu-sub">
+                                @if (Auth::user()->hasMenu('Storage: Zone'))
+                                    <li class="menu-item {{ $title == 'Zone' ? 'active' : '' }}">
+                                        <a href="{{ route('storage.zone') }}" class="menu-link">
+                                            <div data-i18n="Zone">Zone</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Storage: Rak'))
+                                    <li class="menu-item {{ $title == 'Rak' ? 'active' : '' }}">
+                                        <a href="{{ route('storage.rak') }}" class="menu-link">
+                                            <div data-i18n="Rak">Rak</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Storage: Bin'))
+                                    <li class="menu-item {{ $title == 'Bin' ? 'active' : '' }}">
+                                        <a href="{{ route('storage.bin') }}" class="menu-link">
+                                            <div data-i18n="Bin">Bin</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Storage: Level'))
+                                    <li class="menu-item {{ $title == 'Level' ? 'active' : '' }}">
+                                        <a href="{{ route('storage.level') }}" class="menu-link">
+                                            <div data-i18n="Level">Level</div>
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </li>
+                    @endif
 
-                    <li class="menu-item {{ $title == 'Client' ? 'active' : '' }}">
-                        <a href="{{ route('client.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-user-check"></i>
-                            <div data-i18n="Client">Client</div>
-                        </a>
-                    </li>
+                    @if ($hasBrand)
+                        <li class="menu-item {{ $title == 'Brand' ? 'active' : '' }}">
+                            <a href="{{ route('brand.index') }}" class="menu-link">
+                                <i class="menu-icon icon-base ti tabler-brand-flutter"></i>
+                                <div data-i18n="Brand">Brand</div>
+                            </a>
+                        </li>
+                    @endif
 
-                    <li class="menu-item {{ $title == 'User' ? 'active' : '' }}">
-                        <a href="{{ route('user.index') }}" class="menu-link">
-                            <i class="menu-icon icon-base ti tabler-user"></i>
-                            <div data-i18n="User">User</div>
-                        </a>
-                    </li>
+                    @if ($hasProductGroup)
+                        <li class="menu-item {{ $title == 'Product Group' ? 'active' : '' }}">
+                            <a href="{{ route('product.group.index') }}" class="menu-link">
+                                <i class="menu-icon icon-base ti tabler-barcode"></i>
+                                <div data-i18n="Product Group">Product Group</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($hasClient)
+                        <li class="menu-item {{ $title == 'Client' ? 'active' : '' }}">
+                            <a href="{{ route('client.index') }}" class="menu-link">
+                                <i class="menu-icon icon-base ti tabler-user-check"></i>
+                                <div data-i18n="Client">Client</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($hasUser)
+                        <li class="menu-item {{ $title == 'User' ? 'active' : '' }}">
+                            <a href="{{ route('user.index') }}" class="menu-link">
+                                <i class="menu-icon icon-base ti tabler-user"></i>
+                                <div data-i18n="User Management">User Management</div>
+                            </a>
+                        </li>
+                    @endif
                 </ul>
 
 

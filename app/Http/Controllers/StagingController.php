@@ -32,7 +32,6 @@ class StagingController extends Controller
     }
 
     /**
-     * Search available inventory to pick for staging.
      */
     public function searchAvailable(Request $request)
     {
@@ -62,14 +61,18 @@ class StagingController extends Controller
 
         DB::beginTransaction();
         try {
-            $items = Inventory::whereIn('id', $request->inventory_ids)->get();
+            $items = Inventory::with(['storageLevel.bin.rak.zone'])->whereIn('id', $request->inventory_ids)->get();
 
             foreach ($items as $item) {
                 if ($item->status != 'available') {
                     throw new \Exception("Item {$item->serial_number} is not available for staging.");
                 }
 
-                $oldLocation = $item->storageLevel ? $item->storageLevel->zone->name . ' - ' . $item->storageLevel->name : 'N/A';
+                $oldLocation = $item->storageLevel ?
+                    $item->storageLevel->bin->rak->zone->name . '-' .
+                    $item->storageLevel->bin->rak->name . '-' .
+                    $item->storageLevel->bin->name . '-' .
+                    $item->storageLevel->name : 'N/A';
 
                 $item->update([
                     'status' => 'staging',
@@ -120,7 +123,11 @@ class StagingController extends Controller
                     'condition' => $request->condition
                 ]);
 
-                $locationName = $item->storageLevel ? $item->storageLevel->zone->name . ' - ' . $item->storageLevel->name : 'N/A';
+                $locationName = $item->storageLevel ?
+                    $item->storageLevel->bin->rak->zone->name . '-' .
+                    $item->storageLevel->bin->rak->name . '-' .
+                    $item->storageLevel->bin->name . '-' .
+                    $item->storageLevel->name : 'N/A';
 
                 InventoryHistory::create([
                     'inventory_id' => $item->id,
