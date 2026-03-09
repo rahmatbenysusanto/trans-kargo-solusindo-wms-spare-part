@@ -75,7 +75,7 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Part Number", "Part Desc", "Brand", "Brand Group", "Serial Number", "Parent SN",
+                ["Part Name", "Product Number", "Part Desc", "Brand", "Brand Group", "Serial Number", "Parent SN",
                     "Condition"
                 ]
             ];
@@ -136,7 +136,8 @@
                     products.push({
                         partName: row["Part Name"] || row["Material Description"] || row[
                             "Material"] || row["Product Number (SKU)"] || "",
-                        partNumber: row["Part Number"] || row["Part Number/SKU"] || row[
+                        partNumber: row["Product Number"] || row["Part Number"] || row[
+                            "Part Number/SKU"] || row[
                             "Material"] || row["Product Number (SKU)"] || "",
                         partDescription: row["Part Desc"] || row["Part Description"] || row[
                             "Material Description"] || row["Product Description"] || "",
@@ -370,7 +371,6 @@
                 html += `
                 <tr class="${isDuplicate ? 'table-danger' : ''}">
                     <td class="py-1">${index + 1}</td>
-                    <td class="py-1">${product.partName}</td>
                     <td class="py-1">${product.partNumber}</td>
                     <td class="py-1">${product.brand}</td>
                     <td class="py-1">${product.productGroup}</td>
@@ -740,8 +740,7 @@
                             <thead class="bg-primary">
                                 <tr>
                                     <th class="px-3 text-white py-2">#</th>
-                                    <th class="text-white">Part Name</th>
-                                    <th class="text-white">Part Number/SKU</th>
+                                    <th class="text-white">Product Number/SKU</th>
                                     <th class="text-white">Brand</th>
                                     <th class="text-white">Group</th>
                                     <th class="text-white">Part Description</th>
@@ -807,7 +806,7 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-6">
-                            <div class="mb-3">
+                            <div class="mb-3" style="display: none;">
                                 <label class="form-label">Part Name</label>
                                 <input type="text" class="form-control" id="partName" placeholder="Part Name ...">
                             </div>
@@ -838,9 +837,9 @@
                         </div>
                         <div class="col-6">
                             <div class="mb-3">
-                                <label class="form-label">Part Number</label>
+                                <label class="form-label">Product Number</label>
                                 <input type="text" class="form-control" id="partNumber"
-                                    placeholder="Part Number ...">
+                                    placeholder="Product Number ...">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Serial Number</label>
