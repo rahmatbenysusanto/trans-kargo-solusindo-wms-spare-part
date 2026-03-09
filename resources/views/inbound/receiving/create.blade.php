@@ -112,15 +112,17 @@
                 let invalidBrands = new Set();
 
                 jsonData.forEach(row => {
-                    const sn = String(row["Serial Number"] || "").trim();
+                    const sn = String(row["Serial Number"] || row["Serial Number (SN)"] || "").trim();
                     if (!sn) return;
 
                     if (existingSn.has(sn)) {
                         duplicates.push(sn);
                     } else {
-                        const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || "")
+                        const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || row[
+                                "Product Group"] || "")
                             .trim();
-                        const excelBrand = (row["Brand"] || row["Manufacturer"] || "").trim();
+                        const excelBrand = (row["Brand"] || row["Manufacturer"] || row["Brand (Brand)"] || "")
+                            .trim();
 
                         const groupKey = excelGroup.toLowerCase();
                         const brandKey = excelBrand.toLowerCase();
@@ -132,11 +134,11 @@
                         existingSn.add(sn);
                         products.push({
                             partName: row["Part Name"] || row["Material Description"] || row[
-                                "Material"] || "",
+                                "Material"] || row["Product Number (SKU)"] || "",
                             partNumber: row["Part Number"] || row["Part Number/SKU"] || row[
-                                "Material"] || "",
+                                "Material"] || row["Product Number (SKU)"] || "",
                             partDescription: row["Part Desc"] || row["Part Description"] || row[
-                                "Material Description"] || "",
+                                "Material Description"] || row["Product Description"] || "",
                             serialNumber: sn,
                             parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
                             whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
@@ -367,6 +369,7 @@
                     <td class="py-1">${product.partDescription}</td>
                     <td class="py-1"><span class="fw-bold text-dark">${product.serialNumber}</span></td>
                     <td class="py-1 text-muted small">${product.parentSn || '-'}</td>
+                    <td class="py-1 text-center">1</td>
                     <td class="py-1">
                         <select class="form-select form-select-sm py-0" style="font-size: 0.75rem;" onchange="updateProductCondition(${index}, this.value)">
                             <option value="New" ${product.condition === 'New' ? 'selected' : ''}>New</option>
@@ -735,7 +738,8 @@
                                     <th class="text-white">Group</th>
                                     <th class="text-white">Part Description</th>
                                     <th class="text-white">Serial Number</th>
-                                    <th class="text-white">Old SN / Parent SN</th>
+                                    <th class="text-white">Parent SN</th>
+                                    <th class="text-white text-center">Qty</th>
                                     <th class="text-white" width="130">Condition</th>
                                     <th class="text-white text-center" width="80">Action</th>
                                 </tr>
