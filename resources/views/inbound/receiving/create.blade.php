@@ -117,40 +117,40 @@
 
                     if (existingSn.has(sn)) {
                         duplicates.push(sn);
-                    } else {
-                        const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || row[
-                                "Product Group"] || "")
-                            .trim();
-                        const excelBrand = (row["Brand"] || row["Manufacturer"] || row["Brand (Brand)"] || "")
-                            .trim();
-
-                        const groupKey = excelGroup.toLowerCase();
-                        const brandKey = excelBrand.toLowerCase();
-
-                        // Case-insensitive Validation
-                        const groupName = masterProductGroups.get(groupKey) || excelGroup;
-                        const brandName = masterBrands.get(brandKey) || excelBrand;
-
-                        existingSn.add(sn);
-                        products.push({
-                            partName: row["Part Name"] || row["Material Description"] || row[
-                                "Material"] || row["Product Number (SKU)"] || "",
-                            partNumber: row["Part Number"] || row["Part Number/SKU"] || row[
-                                "Material"] || row["Product Number (SKU)"] || "",
-                            partDescription: row["Part Desc"] || row["Part Description"] || row[
-                                "Material Description"] || row["Product Description"] || "",
-                            serialNumber: sn,
-                            parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
-                            whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
-                                "Asset#"] || "",
-                            productGroup: groupName,
-                            brand: brandName,
-                            condition: row["Condition"] || "New",
-                            stockStatus: row["Stock Status"] || row["Status"] || "Available",
-                            stagingDate: row["Staging Date"] || "",
-                            qty: row["QTY"] || 1,
-                        });
                     }
+
+                    const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || row[
+                            "Product Group"] || "")
+                        .trim();
+                    const excelBrand = (row["Brand"] || row["Manufacturer"] || row["Brand (Brand)"] || "")
+                        .trim();
+
+                    const groupKey = excelGroup.toLowerCase();
+                    const brandKey = excelBrand.toLowerCase();
+
+                    // Case-insensitive Validation
+                    const groupName = masterProductGroups.get(groupKey) || excelGroup;
+                    const brandName = masterBrands.get(brandKey) || excelBrand;
+
+                    existingSn.add(sn);
+                    products.push({
+                        partName: row["Part Name"] || row["Material Description"] || row[
+                            "Material"] || row["Product Number (SKU)"] || "",
+                        partNumber: row["Part Number"] || row["Part Number/SKU"] || row[
+                            "Material"] || row["Product Number (SKU)"] || "",
+                        partDescription: row["Part Desc"] || row["Part Description"] || row[
+                            "Material Description"] || row["Product Description"] || "",
+                        serialNumber: sn,
+                        parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
+                        whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
+                            "Asset#"] || "",
+                        productGroup: groupName,
+                        brand: brandName,
+                        condition: row["Condition"] || "New",
+                        stockStatus: row["Stock Status"] || row["Status"] || "Available",
+                        stagingDate: row["Staging Date"] || "",
+                        qty: row["QTY"] || 1,
+                    });
                 });
 
                 localStorage.setItem('products', JSON.stringify(products));
@@ -161,7 +161,7 @@
 
                 let message = "";
                 if (duplicates.length > 0) {
-                    message += `Skipped ${duplicates.length} duplicate Serial Numbers.<br>`;
+                    message += `Found ${duplicates.length} duplicate Serial Numbers. Rows are highlighted in red.<br>`;
                 }
 
                 if (message) {
@@ -357,10 +357,18 @@
             tbody.innerHTML = '';
 
             let html = '';
+            // Count occurrences of each SN for highlighting duplicates
+            const snCounts = {};
+            products.forEach(p => {
+                const sn = p.serialNumber;
+                snCounts[sn] = (snCounts[sn] || 0) + 1;
+            });
+
             pageItems.forEach((product, i) => {
                 const index = start + i;
+                const isDuplicate = snCounts[product.serialNumber] > 1;
                 html += `
-                <tr>
+                <tr class="${isDuplicate ? 'table-danger' : ''}">
                     <td class="py-1">${index + 1}</td>
                     <td class="py-1">${product.partName}</td>
                     <td class="py-1">${product.partNumber}</td>
