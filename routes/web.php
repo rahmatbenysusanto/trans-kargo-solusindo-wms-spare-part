@@ -88,12 +88,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
     Route::prefix('/outbound')->controller(OutboundController::class)->group(function () {
         Route::get('/', 'index')->name('outbound.index');
-        Route::get('/get-inventory', 'getInventory')->name('outbound.get.inventory');
-        Route::get('/{id}', 'show')->name('outbound.show');
-        Route::get('/print/{id}', 'printPdf')->name('outbound.print');
-        Route::post('/cancel', 'cancel')->name('outbound.cancel');
-
         Route::prefix('/create')->group(function () {
+            Route::get('/', 'create')->name('outbound.create');
             Route::get('/spare', 'createSpare')->name('outbound.create.spare');
             Route::get('/faulty', 'createFaulty')->name('outbound.create.faulty');
             Route::get('/rma', 'createRma')->name('outbound.create.rma');
@@ -104,6 +100,11 @@ Route::middleware([AuthMiddleware::class])->group(function () {
             Route::post('/store/rma', 'storeRma')->name('outbound.store.rma');
             Route::post('/store/write-off', 'storeWriteOff')->name('outbound.store.write-off');
         });
+
+        Route::get('/get-inventory', 'getInventory')->name('outbound.get.inventory');
+        Route::get('/{id}', 'show')->name('outbound.show');
+        Route::get('/print/{id}', 'printPdf')->name('outbound.print');
+        Route::post('/cancel', 'cancel')->name('outbound.cancel');
     });
 
     Route::prefix('/rma')->controller(RmaController::class)->group(function () {

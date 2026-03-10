@@ -38,45 +38,54 @@ class OutboundController extends Controller
             ->paginate(15);
 
         $clients = Client::all();
-        $categories = ['Spare to Replacement', 'Spare from Replacement', 'Spare to Loan', 'Spare from Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
+        $categories = ['Spare Write Off', 'Spare from/to Loan', 'RMA', 'Faulty', 'Spare from/to Replacement', 'Spare Migration'];
 
         return view('outbound.index', compact('title', 'data', 'clients', 'categories'));
     }
 
+    public function create(): View
+    {
+        return $this->createSpare();
+    }
+
     public function createSpare(): View
     {
-        $title = 'Create Outbound Spare';
         $client = Client::all();
-        $productGroup = ProductGroup::all();
-        $brand = Brand::all();
-        return view('outbound.spare.create', compact('title', 'client', 'productGroup', 'brand'));
+        $title = "Create Outbound Spare";
+        $storeUrl = route('outbound.store.spare');
+        $defaultCategory = 'Spare from/to Loan';
+        $defaultRequestType = 'Loan';
+        return view('outbound.create', compact('title', 'client', 'storeUrl', 'defaultCategory', 'defaultRequestType'));
     }
 
     public function createFaulty(): View
     {
-        $title = 'Create Outbound Faulty';
         $client = Client::all();
-        $productGroup = ProductGroup::all();
-        $brand = Brand::all();
-        return view('outbound.faulty.create', compact('title', 'client', 'productGroup', 'brand'));
+        $title = "Create Outbound Faulty";
+        $storeUrl = route('outbound.store.faulty');
+        $defaultCategory = 'Faulty';
+        $defaultRequestType = 'RMA';
+        return view('outbound.create', compact('title', 'client', 'storeUrl', 'defaultCategory', 'defaultRequestType'));
     }
 
     public function createRma(): View
     {
-        $title = 'Create Outbound RMA';
         $client = Client::all();
-        $productGroup = ProductGroup::all();
-        $brand = Brand::all();
-        return view('outbound.rma.create', compact('title', 'client', 'productGroup', 'brand'));
+        $title = "Create Outbound RMA";
+        $storeUrl = route('outbound.store.rma');
+        $defaultCategory = 'RMA';
+        $defaultRequestType = 'RMA';
+        return view('outbound.create', compact('title', 'client', 'storeUrl', 'defaultCategory', 'defaultRequestType'));
     }
 
     public function createWriteOff(): View
     {
-        $title = 'Create Outbound Write-off';
         $client = Client::all();
-        $productGroup = ProductGroup::all();
-        $brand = Brand::all();
-        return view('outbound.write-off.create', compact('title', 'client', 'productGroup', 'brand'));
+        $title = "Create Outbound Write Off";
+        $storeUrl = route('outbound.store.write-off');
+        $defaultCategory = 'Spare Write Off';
+        $defaultRequestType = 'Spare Write Off';
+        return view('outbound.create', compact('title', 'client', 'storeUrl', 'defaultCategory', 'defaultRequestType'));
     }
 
     public function show($id): View
@@ -180,11 +189,12 @@ class OutboundController extends Controller
                     $inventoryStatus = 'Shipped / Outbound'; // Default fallback
 
                     switch ($outbound->category) {
-                        case 'Replacement':
+                        case 'Spare from/to Replacement':
                         case 'Spare from Replacement':
                         case 'Spare to Replacement':
                             $inventoryStatus = 'Out for Replacement/ Support';
                             break;
+                        case 'Spare from/to Loan':
                         case 'Spare from Loan':
                         case 'Spare to Loan':
                         case 'Loan':
@@ -195,9 +205,9 @@ class OutboundController extends Controller
                         case 'Out for Return':
                             $inventoryStatus = 'Out for Return';
                             break;
-                        case 'Write-off':
                         case 'Spare Write Off':
                         case 'Spare Write-off':
+                        case 'Write-off':
                             $inventoryStatus = 'Write-off';
                             break;
                         case 'Spare Migration':

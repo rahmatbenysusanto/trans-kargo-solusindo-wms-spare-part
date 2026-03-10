@@ -93,26 +93,9 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-end mb-3">
-                <div class="dropdown">
-                    <button class="btn btn-primary dropdown-toggle shadow-sm" type="button" id="dropdownMenuButton"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="ti tabler-plus me-1"></i> Create Outbound
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item d-flex align-items-center" href="{{ route('outbound.create.spare') }}">
-                            <i class="ti tabler-settings me-2"></i> Spare
-                        </a>
-                        <a class="dropdown-item d-flex align-items-center" href="{{ route('outbound.create.faulty') }}">
-                            <i class="ti tabler-tool me-2"></i> Faulty
-                        </a>
-                        <a class="dropdown-item d-flex align-items-center" href="{{ route('outbound.create.rma') }}">
-                            <i class="ti tabler-refresh me-2"></i> RMA
-                        </a>
-                        <a class="dropdown-item d-flex align-items-center" href="{{ route('outbound.create.write-off') }}">
-                            <i class="ti tabler-trash-x me-2"></i> Write-off
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('outbound.create') }}" class="btn btn-primary d-flex align-items-center shadow-sm px-4">
+                    <i class="ti tabler-plus me-2 fs-5"></i> Create Outbound
+                </a>
             </div>
 
             <div class="card mb-4">

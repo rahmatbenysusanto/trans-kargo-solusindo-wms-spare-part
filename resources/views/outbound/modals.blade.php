@@ -142,7 +142,9 @@
             '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary shadow-sm mb-3"></div><p class="text-muted fw-medium mb-0">Scanning inventory database...</p></td></tr>';
 
         // Collect existing IDs to exclude
-        const keys = ['outbound_products', 'outbound_f_products', 'outbound_rma_products', 'outbound_products_wo'];
+        const keys = ['outbound_temp_products', 'outbound_products', 'outbound_f_products', 'outbound_rma_products',
+            'outbound_products_wo'
+        ];
         let excludeIds = [];
         keys.forEach(k => {
             try {
