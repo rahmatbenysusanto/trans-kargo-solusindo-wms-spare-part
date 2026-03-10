@@ -11,7 +11,7 @@ class UserController extends Controller
     public function index(Request $request): View
     {
         $search = $request->get('search');
-        $users = User::latest()
+        $users = User::with('clients')->latest()
             ->when($search, function ($query) use ($search) {
                 return $query->where('name', 'LIKE', "%{$search}%")
                     ->orWhere('username', 'LIKE', "%{$search}%")
@@ -20,7 +20,8 @@ class UserController extends Controller
             ->paginate(10);
 
         $title = 'User';
-        return view('user.index', compact('title', 'users', 'search'));
+        $clients = \App\Models\Client::all();
+        return view('user.index', compact('title', 'users', 'search', 'clients'));
     }
 
     public function store(Request $request)
@@ -30,16 +31,22 @@ class UserController extends Controller
             'username' => 'required|unique:users',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6',
+            'role' => 'required',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
             'email' => $request->email,
             'no_hp' => $request->no_hp,
             'password' => \Illuminate\Support\Facades\Hash::make($request->password),
             'status' => $request->status ?? 'active',
+            'role' => $request->role,
         ]);
+
+        if ($request->client_ids) {
+            $user->clients()->sync($request->client_ids);
+        }
 
         return redirect()->back()->with('success', 'User created successfully');
     }
@@ -51,6 +58,7 @@ class UserController extends Controller
             'name' => 'required',
             'username' => 'required|unique:users,username,' . $request->id,
             'email' => 'required|email|unique:users,email,' . $request->id,
+            'role' => 'required',
         ]);
 
         $user = User::findOrFail($request->id);
@@ -60,6 +68,7 @@ class UserController extends Controller
             'email' => $request->email,
             'no_hp' => $request->no_hp,
             'status' => $request->status,
+            'role' => $request->role,
         ];
 
         if ($request->password) {
@@ -67,6 +76,14 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        // Sync clients
+        if ($request->role === 'Client User') {
+            $user->clients()->sync($request->client_ids ?? []);
+        } else {
+            // Admin WMS doesn't strictly need clients sync'd, but maybe better to clear it
+            $user->clients()->detach();
+        }
 
         return redirect()->back()->with('success', 'User updated successfully');
     }

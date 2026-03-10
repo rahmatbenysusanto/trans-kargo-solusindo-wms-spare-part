@@ -156,6 +156,7 @@
                     @php
                         $hasDashboard =
                             Auth::user()->hasMenu('Dashboard: Stock Overview') ||
+                            Auth::user()->hasMenu('Dashboard: Summary Stock') ||
                             Auth::user()->hasMenu('Dashboard: Utilization By Client') ||
                             Auth::user()->hasMenu('Dashboard: RMA Monitoring') ||
                             Auth::user()->hasMenu('Dashboard: Inbound vs Return Trend') ||
@@ -164,12 +165,21 @@
 
                     @if ($hasDashboard)
                         <li
-                            class="menu-item {{ in_array($title, ['Stock Overview', 'utilizationByClient', 'rmaMonitoring', 'inboundReturn', 'stockMonitoring']) ? 'show open' : '' }}">
+                            class="menu-item {{ in_array($title, ['Stock Overview', 'Summary Stock', 'utilizationByClient', 'rmaMonitoring', 'inboundReturn', 'stockMonitoring']) ? 'show open' : '' }}">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-chart-pie"></i>
                                 <div data-i18n="Dashboards">Dashboards</div>
                             </a>
                             <ul class="menu-sub">
+                                @if (Auth::user()->hasMenu('Dashboard: Summary Stock'))
+                                    <li class="menu-item {{ $title == 'Summary Stock' ? 'active' : '' }}">
+                                        <a href="{{ route('dashboard.summary.stock') }}"
+                                            class="menu-link text-bg-primary text-white mb-1 rounded-2">
+                                            <i class="ti tabler-layout-dashboard me-2 fs-6"></i>
+                                            <div data-i18n="Summary Stock">Summary Stock</div>
+                                        </a>
+                                    </li>
+                                @endif
                                 @if (Auth::user()->hasMenu('Dashboard: Stock Overview'))
                                     <li class="menu-item {{ $title == 'Stock Overview' ? 'active' : '' }}">
                                         <a href="{{ route('dashboard') }}" class="menu-link">

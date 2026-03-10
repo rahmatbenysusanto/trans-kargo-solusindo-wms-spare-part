@@ -6,13 +6,15 @@ use App\Models\InventoryHistory;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class CycleCountController extends Controller
 {
     public function index(Request $request): View
     {
         $title = 'Cycle Count';
-        $clients = \App\Models\Client::all();
+        $user = Auth::user();
+        $clients = $user->isAdminWMS() ? \App\Models\Client::all() : $user->clients;
 
         $startDate = $request->get('start_date', Carbon::today()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::today()->format('Y-m-d'));
@@ -24,15 +26,31 @@ class CycleCountController extends Controller
             Carbon::parse($endDate)->endOfDay()
         ])
             ->whereIn('type', ['Inbound', 'Outbound', 'Movement'])
-            ->with(['inventory.product.brand', 'inventory.product.productGroup', 'inventory.client'])
-            ->when($clientId, function ($query) use ($clientId) {
-                return $query->whereHas('inventory', function ($q) use ($clientId) {
+            ->with(['inventory.product.brand', 'inventory.product.productGroup', 'inventory.client']);
+
+        // Client Filter Logic
+        if ($user->isAdminWMS()) {
+            if ($clientId) {
+                $data->whereHas('inventory', function ($q) use ($clientId) {
                     $q->where('client_id', $clientId);
                 });
-            })
-            ->when($type, function ($query) use ($type) {
-                return $query->where('type', $type);
-            })
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($clientId && in_array($clientId, $accessibleIds)) {
+                $data->whereHas('inventory', function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId);
+                });
+            } else {
+                $data->whereHas('inventory', function ($q) use ($accessibleIds) {
+                    $q->whereIn('client_id', $accessibleIds);
+                });
+            }
+        }
+
+        $data = $data->when($type, function ($query) use ($type) {
+            return $query->where('type', $type);
+        })
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
                     $q->where('serial_number', 'like', '%' . $request->search . '%')
@@ -46,16 +64,30 @@ class CycleCountController extends Controller
             ->latest()
             ->paginate(50);
 
-        // Summary for the selected range - matching the logic above
+        // Summary Statistics using same logic
         $baseQuery = InventoryHistory::whereBetween('created_at', [
             Carbon::parse($startDate)->startOfDay(),
             Carbon::parse($endDate)->endOfDay()
-        ])->whereIn('type', ['Inbound', 'Outbound', 'Movement'])
-            ->when($clientId, function ($query) use ($clientId) {
-                return $query->whereHas('inventory', function ($q) use ($clientId) {
+        ])->whereIn('type', ['Inbound', 'Outbound', 'Movement']);
+
+        if ($user->isAdminWMS()) {
+            if ($clientId) {
+                $baseQuery->whereHas('inventory', function ($q) use ($clientId) {
                     $q->where('client_id', $clientId);
                 });
-            });
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($clientId && in_array($clientId, $accessibleIds)) {
+                $baseQuery->whereHas('inventory', function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId);
+                });
+            } else {
+                $baseQuery->whereHas('inventory', function ($q) use ($accessibleIds) {
+                    $q->whereIn('client_id', $accessibleIds);
+                });
+            }
+        }
 
         $summary = [
             'inbound' => (clone $baseQuery)->where('type', 'Inbound')->count(),

@@ -30,6 +30,15 @@ Route::get('/scan/{unique_id}', [InventoryController::class, 'scan'])->name('inv
 Route::middleware([AuthMiddleware::class])->group(function () {
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'index')->name('dashboard');
+        Route::get('/summary-stock', 'summaryStock')->name('dashboard.summary.stock');
+        Route::get('/summary-stock/inventory-list', 'inventoryList')->name('dashboard.inventory.list');
+        Route::get('/summary-stock/inventory-list/pdf', 'inventoryExportPdf')->name('dashboard.inventory.export.pdf');
+        Route::get('/summary-stock/inventory-list/excel', 'inventoryExportExcel')->name('dashboard.inventory.export.excel');
+        Route::get('/summary-stock/inventory-list/{id}', 'inventoryShow')->name('dashboard.inventory.show');
+        Route::get('/summary-stock/product-summary', 'productSummary')->name('dashboard.product.summary');
+        Route::get('/summary-stock/product-summary/detail', 'productSummaryDetail')->name('dashboard.product.summary.detail');
+        Route::get('/summary-stock/stock-statement', 'stockStatement')->name('dashboard.stock.statement');
+        Route::get('/summary-stock/cycle-count', 'cycleCount')->name('dashboard.cycle-count');
         Route::get('/utilization-by-client', 'utilizationByClient')->name('utilizationByClient');
         Route::get('/rma-monitoring', 'rmaMonitoring')->name('rmaMonitoring');
         Route::get('/inbound-return', 'inboundReturn')->name('inboundReturn');

@@ -47,7 +47,7 @@
                 <h6 class="mb-0 fw-bold"><i class="ti tabler-filter me-2"></i>Filter Options</h6>
             </div>
             <div class="card-body">
-                <form action="{{ route('inventory.stock.statement') }}" method="GET">
+                <form action="{{ route('dashboard.stock.statement') }}" method="GET">
                     <div class="row g-3">
                         @if (Auth::user()->isAdminWMS() || Auth::user()->clients->count() > 1)
                             <div class="col-md-3">
@@ -89,7 +89,7 @@
                                 <input type="text" name="search" class="form-control" placeholder="Search..."
                                     value="{{ request('search') }}">
                                 <button class="btn btn-primary" type="submit"><i class="ti tabler-search"></i></button>
-                                <a href="{{ route('inventory.stock.statement') }}" class="btn btn-outline-secondary"><i
+                                <a href="{{ route('dashboard.stock.statement') }}" class="btn btn-outline-secondary"><i
                                         class="ti tabler-refresh"></i></a>
                             </div>
                         </div>

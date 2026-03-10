@@ -151,7 +151,7 @@
             $('#detailModal').modal('show');
 
             $.ajax({
-                url: '{{ route('inventory.product.summary.detail') }}',
+                url: '{{ route('dashboard.product.summary.detail') }}',
                 method: 'GET',
                 data: {
                     part_name: partName,

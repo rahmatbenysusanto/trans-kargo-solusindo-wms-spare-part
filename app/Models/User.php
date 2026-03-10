@@ -24,7 +24,13 @@ class User extends Authenticatable
         'email',
         'password',
         'status',
+        'role',
     ];
+
+    public function clients()
+    {
+        return $this->belongsToMany(Client::class, 'user_clients', 'user_id', 'client_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -57,5 +63,26 @@ class User extends Authenticatable
     public function hasMenu($menuName)
     {
         return $this->menus()->where('name', $menuName)->exists();
+    }
+
+    public function isAdminWMS()
+    {
+        return $this->role === 'Admin WMS';
+    }
+
+    public function isClientUser()
+    {
+        return $this->role === 'Client User';
+    }
+
+    /**
+     * Get IDs of clients this user can access
+     */
+    public function getAccessibleClientIds()
+    {
+        if ($this->isAdminWMS()) {
+            return Client::pluck('id')->toArray();
+        }
+        return $this->clients()->pluck('client_id')->toArray();
     }
 }

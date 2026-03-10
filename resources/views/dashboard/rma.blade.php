@@ -8,17 +8,19 @@
                 <h4 class="mb-0">RMA Monitoring</h4>
                 <p class="text-muted small mb-0">RMA Monitoring (SN Swap Tracking)</p>
             </div>
-            <form action="{{ route('rmaMonitoring') }}" method="GET" class="d-flex">
-                <select name="client_id" class="form-select form-select-sm me-2" onchange="this.form.submit()">
-                    <option value="">All Clients</option>
-                    @foreach ($clients as $client)
-                        <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                            {{ $client->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <button type="submit" class="btn btn-sm btn-primary">Filter</button>
-            </form>
+            @if (Auth::user()->isAdminWMS() || Auth::user()->clients->count() > 1)
+                <form action="{{ route('rmaMonitoring') }}" method="GET" class="d-flex">
+                    <select name="client_id" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+                        <option value="">All Clients</option>
+                        @foreach ($clients as $client)
+                            <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                                {{ $client->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                </form>
+            @endif
         </div>
     </div>
     <div class="row">

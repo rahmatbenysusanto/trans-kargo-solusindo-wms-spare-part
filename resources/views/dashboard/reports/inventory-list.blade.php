@@ -37,11 +37,11 @@
                 <div class="card-header d-flex justify-content-between align-items-center border-bottom py-3">
                     <h5 class="card-title mb-0 fw-bold"><i class="ti tabler-box me-2 text-primary"></i>Inventory Data</h5>
                     <div class="d-flex gap-2">
-                        <a href="{{ route('inventory.export.pdf', request()->all()) }}" target="_blank"
+                        <a href="{{ route('dashboard.inventory.export.pdf', request()->all()) }}" target="_blank"
                             class="btn btn-sm btn-label-secondary">
                             <i class="ti tabler-file-type-pdf me-1"></i> PDF Export
                         </a>
-                        <a href="{{ route('inventory.export.excel', request()->all()) }}"
+                        <a href="{{ route('dashboard.inventory.export.excel', request()->all()) }}"
                             class="btn btn-sm btn-label-success">
                             <i class="ti tabler-file-spreadsheet me-1"></i> Excel Export
                         </a>
@@ -187,7 +187,7 @@
                                         </td>
                                         <td>
                                             <div class="d-flex gap-1 justify-content-center">
-                                                <a href="{{ route('inventory.show', $item->id) }}"
+                                                <a href="{{ route('dashboard.inventory.show', $item->id) }}"
                                                     class="btn btn-icon btn-sm btn-label-primary">
                                                     <i class="ti tabler-info-circle fs-6"></i>
                                                 </a>

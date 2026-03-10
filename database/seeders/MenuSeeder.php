@@ -15,6 +15,7 @@ class MenuSeeder extends Seeder
         $menus = [
             // Dashboards
             'Dashboard: Stock Overview',
+            'Dashboard: Summary Stock',
             'Dashboard: Utilization By Client',
             'Dashboard: RMA Monitoring',
             'Dashboard: Inbound vs Return Trend',

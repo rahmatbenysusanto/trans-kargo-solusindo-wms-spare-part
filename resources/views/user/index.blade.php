@@ -30,8 +30,8 @@
                                     <th>#</th>
                                     <th>Name</th>
                                     <th>Username</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Assigned Clients</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -42,8 +42,22 @@
                                         <td>{{ $users->firstItem() + $index }}</td>
                                         <td>{{ $user->name }}</td>
                                         <td>{{ $user->username }}</td>
-                                        <td>{{ $user->email }}</td>
-                                        <td>{{ $user->no_hp ?? '-' }}</td>
+                                        <td>
+                                            <span class="badge {{ $user->role == 'Admin WMS' ? 'bg-primary' : 'bg-info' }}">
+                                                {{ $user->role }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if ($user->role == 'Admin WMS')
+                                                <span class="text-muted small">All Clients Access</span>
+                                            @else
+                                                @forelse($user->clients as $client)
+                                                    <span class="badge bg-secondary mb-1">{{ $client->name }}</span>
+                                                @empty
+                                                    <span class="text-danger small">No Clients Assigned</span>
+                                                @endforelse
+                                            @endif
+                                        </td>
                                         <td>
                                             @if ($user->status == 'active')
                                                 <span class="badge bg-success">Active</span>
@@ -58,7 +72,7 @@
                                                     <i class="bi bi-shield-lock"></i> Menu
                                                 </button>
                                                 <button class="btn btn-secondary btn-sm text-white"
-                                                    onclick="editUser('{{ $user->id }}', '{{ $user->name }}', '{{ $user->username }}', '{{ $user->email }}', '{{ $user->no_hp }}', '{{ $user->status }}')">
+                                                    onclick="editUser('{{ $user->id }}', '{{ addslashes($user->name) }}', '{{ $user->username }}', '{{ $user->email }}', '{{ $user->no_hp }}', '{{ $user->status }}', '{{ $user->role }}', {{ json_encode($user->clients->pluck('id')) }})">
                                                     <i class="bi bi-pencil"></i> Edit
                                                 </button>
                                                 <a href="{{ route('user.destroy', $user->id) }}"
@@ -93,6 +107,22 @@
                     <form action="{{ route('user.store') }}" method="POST">
                         @csrf
                         <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" name="role"
+                                onchange="toggleClientFields(this, '#addClientFields')">
+                                <option value="Admin WMS">Admin WMS (Full Access)</option>
+                                <option value="Client User">Client User (Restricted)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="addClientFields">
+                            <label class="form-label">Assign Clients</label>
+                            <select class="form-select select2" name="client_ids[]" multiple style="width: 100%;">
+                                @foreach ($clients as $client)
+                                    <option value="{{ $client->id }}">{{ $client->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">Name</label>
                             <input type="text" class="form-control" name="name" placeholder="Full Name ..." required>
                         </div>
@@ -118,7 +148,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Password</label>
-                            <input type="password" class="form-control" name="password" placeholder="Password ..." required>
+                            <input type="password" class="form-control" name="password" placeholder="Password ..."
+                                required>
                         </div>
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary text-white">Save User</button>
@@ -141,6 +172,23 @@
                     <form action="{{ route('user.update') }}" method="POST">
                         @csrf
                         <input type="hidden" name="id" id="editId">
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" name="role" id="editRole"
+                                onchange="toggleClientFields(this, '#editClientFields')">
+                                <option value="Admin WMS">Admin WMS (Full Access)</option>
+                                <option value="Client User">Client User (Restricted)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="editClientFields">
+                            <label class="form-label">Assign Clients</label>
+                            <select class="form-select select2" name="client_ids[]" id="editClientIds" multiple
+                                style="width: 100%;">
+                                @foreach ($clients as $client)
+                                    <option value="{{ $client->id }}">{{ $client->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">Name</label>
                             <input type="text" class="form-control" name="name" id="editName"
@@ -208,13 +256,38 @@
 
 @section('js')
     <script>
-        function editUser(id, name, username, email, phone, status) {
+        $(document).ready(function() {
+            $('.select2').each(function() {
+                $(this).select2({
+                    dropdownParent: $(this).closest('.modal-content')
+                });
+            });
+        });
+
+        function toggleClientFields(select, targetId) {
+            if (select.value === 'Client User') {
+                $(targetId).removeClass('d-none');
+            } else {
+                $(targetId).addClass('d-none');
+            }
+        }
+
+        function editUser(id, name, username, email, phone, status, role, clientIds) {
             $('#editId').val(id);
             $('#editName').val(name);
             $('#editUsername').val(username);
             $('#editEmail').val(email);
             $('#editPhone').val(phone === 'null' ? '' : phone);
             $('#editStatus').val(status);
+            $('#editRole').val(role).trigger('change');
+
+            // Set multiple clients if it's Client User
+            if (role === 'Client User') {
+                $('#editClientIds').val(clientIds).trigger('change');
+            } else {
+                $('#editClientIds').val([]).trigger('change');
+            }
+
             $('#editUserModal').modal('show');
         }
 

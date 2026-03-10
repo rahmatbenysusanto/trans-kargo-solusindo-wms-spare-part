@@ -5,9 +5,28 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Models\Client;
 
 class InventoryController extends Controller
 {
+    private function applyClientFilter($query, $clientId, $column = 'client_id')
+    {
+        $user = Auth::user();
+        if ($user->isAdminWMS()) {
+            if ($clientId) {
+                $query->where($column, $clientId);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($clientId && in_array($clientId, $accessibleIds)) {
+                $query->where($column, $clientId);
+            } else {
+                $query->whereIn($column, $accessibleIds);
+            }
+        }
+        return $query;
+    }
+
     public function scan($unique_id)
     {
         $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
@@ -26,16 +45,19 @@ class InventoryController extends Controller
     public function index(Request $request): View
     {
         $title = 'Inventory List';
+        $clientId = $request->get('client_id');
+        $user = Auth::user();
+
         $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
             ->when($request->status, function ($query) use ($request) {
                 return $query->where('status', $request->status);
-            })
-            ->when($request->client_id, function ($query) use ($request) {
-                return $query->where('client_id', $request->client_id);
-            })
-            ->when($request->condition, function ($query) use ($request) {
-                return $query->where('condition', $request->condition);
-            })
+            });
+
+        $this->applyClientFilter($inventory, $clientId);
+
+        $inventory = $inventory->when($request->condition, function ($query) use ($request) {
+            return $query->where('condition', $request->condition);
+        })
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
                     $q->where('unique_id', 'like', '%' . $request->search . '%')
@@ -49,23 +71,25 @@ class InventoryController extends Controller
 
         $statuses = \App\Models\Inventory::select('status')->distinct()->pluck('status');
         $conditions = \App\Models\Inventory::select('condition')->distinct()->pluck('condition');
-        $clients = \App\Models\Client::all();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
 
         return view('inventory.inventory-list.index', compact('title', 'inventory', 'statuses', 'conditions', 'clients'));
     }
 
     public function exportPdf(Request $request): View
     {
+        $clientId = $request->get('client_id');
+
         $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
             ->when($request->status, function ($query) use ($request) {
                 return $query->where('status', $request->status);
-            })
-            ->when($request->client_id, function ($query) use ($request) {
-                return $query->where('client_id', $request->client_id);
-            })
-            ->when($request->condition, function ($query) use ($request) {
-                return $query->where('condition', $request->condition);
-            })
+            });
+
+        $this->applyClientFilter($inventory, $clientId);
+
+        $inventory = $inventory->when($request->condition, function ($query) use ($request) {
+            return $query->where('condition', $request->condition);
+        })
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
                     $q->where('unique_id', 'like', '%' . $request->search . '%')
@@ -83,16 +107,18 @@ class InventoryController extends Controller
 
     public function exportExcel(Request $request)
     {
+        $clientId = $request->get('client_id');
+
         $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
             ->when($request->status, function ($query) use ($request) {
                 return $query->where('status', $request->status);
-            })
-            ->when($request->client_id, function ($query) use ($request) {
-                return $query->where('client_id', $request->client_id);
-            })
-            ->when($request->condition, function ($query) use ($request) {
-                return $query->where('condition', $request->condition);
-            })
+            });
+
+        $this->applyClientFilter($inventory, $clientId);
+
+        $inventory = $inventory->when($request->condition, function ($query) use ($request) {
+            return $query->where('condition', $request->condition);
+        })
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
                     $q->where('unique_id', 'like', '%' . $request->search . '%')
@@ -129,10 +155,6 @@ class InventoryController extends Controller
         echo "<tbody>";
 
         foreach ($inventory as $index => $item) {
-            $zone = $item->storageLevel ? ($item->storageLevel->bin->rak->zone->name ?? '-') : '-';
-            $rack = $item->storageLevel ? ($item->storageLevel->bin->rak->name ?? '-') : '-';
-            $bin = $item->storageLevel ? ($item->storageLevel->bin->name ?? '-') : '-';
-            $level = $item->storageLevel ? ($item->storageLevel->name ?? '-') : '-';
             $brand = $item->product && $item->product->brand ? $item->product->brand->name : '-';
             $group = $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-';
 
@@ -142,7 +164,7 @@ class InventoryController extends Controller
             echo "<td>" . ($item->client->name ?? '-') . "</td>";
             echo "<td>{$item->part_name}</td>";
             echo "<td>{$item->part_number}</td>";
-            echo "<td>'{$item->serial_number}</td>"; // Prefix with ' to force string in Excel
+            echo "<td>'{$item->serial_number}</td>";
             echo "<td>{$brand}</td>";
             echo "<td>{$group}</td>";
             $storage = $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : "-";
@@ -161,9 +183,20 @@ class InventoryController extends Controller
     public function stockMovement(): View
     {
         $title = 'Stock Movement';
-        $movements = \App\Models\InventoryMovement::with(['inventory', 'fromStorageLevel.bin.rak.zone', 'toStorageLevel.bin.rak.zone', 'user'])
-            ->latest()
-            ->paginate(20);
+        $user = Auth::user();
+
+        $movements = \App\Models\InventoryMovement::with(['inventory', 'fromStorageLevel.bin.rak.zone', 'toStorageLevel.bin.rak.zone', 'user']);
+
+        if ($user->isAdminWMS()) {
+            // No automatic filter
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            $movements->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->whereIn('client_id', $accessibleIds);
+            });
+        }
+
+        $movements = $movements->latest()->paginate(20);
 
         return view('inventory.stock-movement.index', compact('title', 'movements'));
     }
@@ -182,7 +215,7 @@ class InventoryController extends Controller
 
         $sn = $inventory->serial_number;
 
-        // Fetch unified history for this SN and its parent link
+        // Fetch unified history
         $history = \App\Models\InventoryHistory::where('serial_number', $sn)
             ->orWhere('serial_number', $inventory->parent_serial_number)
             ->orWhere('description', 'like', '%' . $sn . '%')
@@ -198,12 +231,11 @@ class InventoryController extends Controller
                     'user' => $item->user,
                     'from_location' => $item->from_location,
                     'to_location' => $item->to_location,
-                    'sn' => $item->serial_number, // Added to distinguish if it's from another SN
-                    'parent_sn' => null // Default for InventoryHistory
+                    'sn' => $item->serial_number,
+                    'parent_sn' => null
                 ];
             });
 
-        // Add inbound details to history
         foreach ($inventory->details as $detail) {
             if ($detail->inboundDetail) {
                 $history->push([
@@ -215,13 +247,12 @@ class InventoryController extends Controller
                     'user' => $detail->inboundDetail->inbound->received_by,
                     'from_location' => $detail->inboundDetail->vendor ?: 'Supplier',
                     'to_location' => 'Inbound Staging',
-                    'sn' => $sn, // The SN of the current inventory item
+                    'sn' => $sn,
                     'parent_sn' => $detail->inboundDetail->parent_sn ?? $detail->inboundDetail->old_serial_number
                 ]);
             }
         }
 
-        // Sort the combined history by date
         $history = $history->sortByDesc('date')->values();
 
         return view('inventory.inventory-list.show', compact('title', 'inventory', 'history'));
@@ -230,10 +261,21 @@ class InventoryController extends Controller
     public function productMovementIndex(): View
     {
         $title = 'Product Movement';
+        $user = Auth::user();
+
         $movements = \App\Models\InventoryMovement::with(['inventory', 'fromStorageLevel.bin.rak.zone', 'toStorageLevel.bin.rak.zone', 'user'])
-            ->where('type', 'Movement')
-            ->latest()
-            ->paginate(20);
+            ->where('type', 'Movement');
+
+        if ($user->isAdminWMS()) {
+            // No automatic filter
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            $movements->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->whereIn('client_id', $accessibleIds);
+            });
+        }
+
+        $movements = $movements->latest()->paginate(20);
 
         return view('inventory.product-movement.index', compact('title', 'movements'));
     }
@@ -241,7 +283,15 @@ class InventoryController extends Controller
     public function productMovementProcess(): View
     {
         $title = 'Product Movement';
-        $inventory = \App\Models\Inventory::where('qty', '>', 0)->latest()->get();
+        $user = Auth::user();
+
+        $inventory = \App\Models\Inventory::where('qty', '>', 0);
+
+        if (!$user->isAdminWMS()) {
+            $inventory->whereIn('client_id', $user->getAccessibleClientIds());
+        }
+
+        $inventory = $inventory->latest()->get();
         $storageZone = \App\Models\StorageZone::all();
 
         return view('inventory.product-movement.process', compact('title', 'inventory', 'storageZone'));
@@ -266,7 +316,6 @@ class InventoryController extends Controller
                     'last_movement_date' => now()
                 ]);
 
-                // Record History
                 \App\Models\InventoryMovement::create([
                     'inventory_id' => $id,
                     'from_storage_level_id' => $oldStorageLevelId,
@@ -276,7 +325,6 @@ class InventoryController extends Controller
                     'description' => 'Product moved by ' . Auth::user()->name
                 ]);
 
-                // Record Unified History
                 $toStorage = \App\Models\StorageLevel::with('bin.rak.zone')->find($request->storage_level_id);
                 $toName = $toStorage ? "{$toStorage->bin->rak->zone->name}-{$toStorage->bin->rak->name}-{$toStorage->bin->name}-{$toStorage->name}" : 'N/A';
 
@@ -303,28 +351,36 @@ class InventoryController extends Controller
             return response()->json(['status' => false, 'message' => $err->getMessage()]);
         }
     }
+
     public function productSummary(Request $request): View
     {
         $title = 'Inventory Product';
+        $clientId = $request->get('client_id');
+        $user = Auth::user();
+
         $query = \App\Models\Inventory::select(
             'part_name',
             'part_number',
             \Illuminate\Support\Facades\DB::raw('COUNT(*) as total_in'),
             \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty > 0 THEN 1 ELSE 0 END) as in_inventory'),
             \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty = 0 THEN 1 ELSE 0 END) as total_out')
-        )
-            ->when($request->search, function ($query) use ($request) {
-                return $query->where(function ($q) use ($request) {
-                    $q->where('part_name', 'like', '%' . $request->search . '%')
-                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
-                });
-            })
+        );
+
+        $this->applyClientFilter($query, $clientId);
+
+        $query = $query->when($request->search, function ($query) use ($request) {
+            return $query->where(function ($q) use ($request) {
+                $q->where('part_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('part_number', 'like', '%' . $request->search . '%');
+            });
+        })
             ->groupBy('part_name', 'part_number')
             ->orderBy('part_name');
 
         $data = $query->paginate(15);
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
 
-        return view('inventory.product-summary', compact('title', 'data'));
+        return view('inventory.product-summary', compact('title', 'data', 'clients'));
     }
 
     public function productSummaryDetail(Request $request)
@@ -334,8 +390,13 @@ class InventoryController extends Controller
 
         $details = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client'])
             ->where('part_name', $partName)
-            ->where('part_number', $partNumber)
-            ->get()
+            ->where('part_number', $partNumber);
+
+        if (!Auth::user()->isAdminWMS()) {
+            $details->whereIn('client_id', Auth::user()->getAccessibleClientIds());
+        }
+
+        $details = $details->get()
             ->map(function ($item) {
                 $storage = $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : "-";
                 return [
@@ -354,11 +415,13 @@ class InventoryController extends Controller
     public function stockStatement(Request $request): View
     {
         $title = 'Inventory Stock Statement';
-        $clients = \App\Models\Client::all();
+        $user = Auth::user();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
         $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
         $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
 
-        // Core query for Inbound Details - Only show PA'd items or Outbounded items
+        $clientId = $request->get('client_id');
+
         $inboundData = \App\Models\InboundDetail::with(['inbound.client', 'brand', 'storageLevel.bin.rak.zone', 'productGroup'])
             ->select('inbound_detail.*')
             ->join('inbound', 'inbound_detail.inbound_id', '=', 'inbound.id')
@@ -369,13 +432,25 @@ class InventoryController extends Controller
                             ->from('outbound_detail')
                             ->whereColumn('outbound_detail.serial_number', 'inbound_detail.serial_number');
                     });
-            })
-            ->when($request->client_id, function ($query) use ($request) {
-                return $query->where('inbound.client_id', $request->client_id);
-            })
-            ->when($request->category, function ($query) use ($request) {
-                return $query->where('inbound.category', $request->category);
-            })
+            });
+
+        // Custom filter for Inbound relation
+        if ($user->isAdminWMS()) {
+            if ($clientId) {
+                $inboundData->where('inbound.client_id', $clientId);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($clientId && in_array($clientId, $accessibleIds)) {
+                $inboundData->where('inbound.client_id', $clientId);
+            } else {
+                $inboundData->whereIn('inbound.client_id', $accessibleIds);
+            }
+        }
+
+        $inboundData = $inboundData->when($request->category, function ($query) use ($request) {
+            return $query->where('inbound.category', $request->category);
+        })
             ->when($request->request_type, function ($query) use ($request) {
                 return $query->where('inbound.request_type', $request->request_type);
             })
@@ -396,18 +471,16 @@ class InventoryController extends Controller
             ->latest()
             ->paginate(50);
 
-        // Optimize by fetching all relevant inventory and outbound details at once
         $sns = $inboundData->pluck('serial_number')->toArray();
-        $inventories = \App\Models\Inventory::with('storageLevel.bin.rak.zone')->whereIn('serial_number', $sns)->where('qty', '>', 0)->get()->keyBy('serial_number');
+        $inventories = \App\Models\Inventory::with('storageLevel.bin.rak.zone')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
         $outbounds = \App\Models\OutboundDetail::with('outbound')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
 
         foreach ($inboundData as $item) {
             $inventory = $inventories->get($item->serial_number);
             $outbound = $outbounds->get($item->serial_number);
 
-            // Logic Movement Category
             $item->is_outbound = (bool)$outbound;
-            $item->is_in_stock = (bool)$inventory;
+            $item->is_in_stock = $inventory && $inventory->qty > 0;
             $item->current_inventory = $inventory;
             $item->outbound_detail = $outbound;
         }
