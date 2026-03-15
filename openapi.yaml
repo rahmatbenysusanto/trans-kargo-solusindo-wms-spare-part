@@ -1,0 +1,320 @@
+openapi: 3.0.3
+info:
+  title: WMS Spare Room API
+  description: |
+    Dokumentasi API untuk sistem Warehouse Management System (WMS) Spare Room.
+    
+    ### Autentikasi
+    Gunakan endpoint `/auth/login` untuk mendapatkan token JWT. 
+    Semua endpoint lainnya membutuhkan header:
+    `Authorization: Bearer <your_token>`
+  version: 1.0.0
+servers:
+  - url: /api
+    description: Base URL API
+tags:
+  - name: Auth
+    description: Endpoint untuk autentikasi
+  - name: Clients
+    description: Manajemen data Client
+  - name: Inbound
+    description: Data barang masuk
+  - name: Inventory
+    description: Data stok barang
+  - name: Outbound
+    description: Data barang keluar
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        last_page:
+          type: integer
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    Inbound:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        qty:
+          type: integer
+        received_date:
+          type: string
+          format: date
+        client:
+          $ref: '#/components/schemas/Client'
+
+    Inventory:
+      type: object
+      properties:
+        id:
+          type: integer
+        unique_id:
+          type: string
+        part_name:
+          type: string
+        serial_number:
+          type: string
+        status:
+          type: string
+        condition:
+          type: string
+        location:
+          type: string
+        client:
+          $ref: '#/components/schemas/Client'
+
+    Outbound:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        outbound_date:
+          type: string
+          format: date
+        client:
+          $ref: '#/components/schemas/Client'
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login untuk mendapatkan token JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login sukses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  token:
+                    type: string
+                  user:
+                    type: object
+
+  /clients:
+    get:
+      tags:
+        - Clients
+      summary: Mendapatkan data client
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Daftar client
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Client'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /inbound:
+    get:
+      tags:
+        - Inbound
+      summary: Mendapatkan data inbound dengan filter & pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: client_id
+          in: query
+          schema:
+            type: integer
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Data Inbound
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Inbound'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /inventory:
+    get:
+      tags:
+        - Inventory
+      summary: Mendapatkan data inventory dengan filter & pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: client_id
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: condition
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data Inventory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Inventory'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /outbound:
+    get:
+      tags:
+        - Outbound
+      summary: Mendapatkan data outbound dengan filter & pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: client_id
+          in: query
+          schema:
+            type: integer
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Data Outbound
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Outbound'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
