@@ -230,6 +230,7 @@
                             Auth::user()->hasMenu('Inventory: Product Summary') ||
                             Auth::user()->hasMenu('Inventory: Stock Statement') ||
                             Auth::user()->hasMenu('Inventory: Product Movement') ||
+                            Auth::user()->hasMenu('Inventory: Storage Inventory') ||
                             Auth::user()->hasMenu('Inventory: Write-off') ||
                             Auth::user()->hasMenu('Inventory: Cycle Count');
 
@@ -283,7 +284,7 @@
 
                     @if ($hasInventory)
                         <li
-                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
+                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Storage Inventory', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-truck-loading"></i>
                                 <div data-i18n="Inventory">Inventory</div>
@@ -315,6 +316,13 @@
                                     <li class="menu-item {{ $title == 'Product Movement' ? 'active' : '' }}">
                                         <a href="{{ route('inventory.product.movement') }}" class="menu-link">
                                             <div data-i18n="Product Movement">Product Movement</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Storage Inventory'))
+                                    <li class="menu-item {{ $title == 'Storage Inventory' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.storage') }}" class="menu-link">
+                                            <div data-i18n="Storage Inventory">Storage Inventory</div>
                                         </a>
                                     </li>
                                 @endif

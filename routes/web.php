@@ -91,6 +91,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/product-summary', 'productSummary')->name('inventory.product.summary');
         Route::get('/product-summary/detail', 'productSummaryDetail')->name('inventory.product.summary.detail');
         Route::get('/stock-statement', 'stockStatement')->name('inventory.stock.statement');
+        Route::get('/storage', 'storageInventory')->name('inventory.storage');
+        Route::get('/storage/detail', 'storageInventoryDetail')->name('inventory.storage.detail');
     });
 
     Route::get('/inventory/cycle-count', [\App\Http\Controllers\CycleCountController::class, 'index'])->name('inventory.cycle-count');

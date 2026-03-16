@@ -487,4 +487,103 @@ class InventoryController extends Controller
 
         return view('inventory.stock-statement.index', compact('title', 'inboundData', 'clients', 'categories', 'requestTypes'));
     }
+
+    public function storageInventory(Request $request): View
+    {
+        $title = 'Storage Inventory';
+        $clientId = $request->get('client_id');
+        $user = Auth::user();
+
+        $query = \App\Models\Inventory::query()
+            ->join('storage_level', 'inventory.storage_level_id', '=', 'storage_level.id')
+            ->join('storage_bin', 'storage_level.storage_bin_id', '=', 'storage_bin.id')
+            ->join('storage_rak', 'storage_bin.storage_rak_id', '=', 'storage_rak.id')
+            ->join('storage_zone', 'storage_rak.storage_zone_id', '=', 'storage_zone.id')
+            ->select(
+                'inventory.storage_level_id',
+                'storage_zone.name as zone_name',
+                'storage_rak.name as rak_name',
+                'storage_bin.name as bin_name',
+                'storage_level.name as level_name',
+                \Illuminate\Support\Facades\DB::raw('COUNT(inventory.id) as total_items')
+            )
+            ->where('inventory.qty', '>', 0);
+
+        if ($user->isAdminWMS()) {
+            if ($clientId) {
+                $query->where('inventory.client_id', $clientId);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($clientId && in_array($clientId, $accessibleIds)) {
+                $query->where('inventory.client_id', $clientId);
+            } else {
+                $query->whereIn('inventory.client_id', $accessibleIds);
+            }
+        }
+
+        $query->when($request->search, function ($q) use ($request) {
+            $q->where(function ($sq) use ($request) {
+                $sq->where('storage_zone.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('storage_rak.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('storage_bin.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('storage_level.name', 'like', '%' . $request->search . '%');
+            });
+        });
+
+        $data = $query->groupBy(
+            'inventory.storage_level_id',
+            'storage_zone.name',
+            'storage_rak.name',
+            'storage_bin.name',
+            'storage_level.name'
+        )
+            ->orderBy('storage_zone.name')
+            ->orderBy('storage_rak.name')
+            ->orderBy('storage_bin.name')
+            ->orderBy('storage_level.name')
+            ->paginate(20);
+
+        $clients = $user->isAdminWMS() ? \App\Models\Client::all() : $user->clients;
+
+        return view('inventory.storage-inventory', compact('title', 'data', 'clients'));
+    }
+
+    public function storageInventoryDetail(Request $request)
+    {
+        $storageLevelId = $request->storage_level_id;
+        $clientId = $request->client_id;
+
+        $items = \App\Models\Inventory::with(['client', 'product.brand', 'product.productGroup'])
+            ->where('storage_level_id', $storageLevelId)
+            ->where('qty', '>', 0);
+
+        $user = Auth::user();
+        if ($user->isAdminWMS()) {
+            if ($clientId) {
+                $items->where('client_id', $clientId);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($clientId && in_array($clientId, $accessibleIds)) {
+                $items->where('client_id', $clientId);
+            } else {
+                $items->whereIn('client_id', $accessibleIds);
+            }
+        }
+
+        $items = $items->get()->map(function ($item) {
+            return [
+                'unique_id' => $item->unique_id,
+                'part_name' => $item->part_name,
+                'part_number' => $item->part_number,
+                'serial_number' => $item->serial_number,
+                'client' => $item->client->name ?? '-',
+                'status' => $item->status,
+                'condition' => $item->condition,
+            ];
+        });
+
+        return response()->json($items);
+    }
 }
