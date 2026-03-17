@@ -119,7 +119,7 @@
                                     <th class="py-2 px-3">Part Number</th>
                                     <th class="py-2 px-3">Serial Number</th>
                                     <th class="py-2 px-3">Condition</th>
-                                    <th class="py-2 px-3">Description</th>
+                                    <th class="py-2 px-3">Product Description</th>
                                 </tr>
                             </thead>
                             <tbody>

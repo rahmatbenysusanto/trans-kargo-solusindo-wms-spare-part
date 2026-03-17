@@ -161,7 +161,7 @@
                     </div>
                     @if ($inventory->part_description)
                         <div class="mt-3 text-muted border-top pt-2 small">
-                            <span class="detail-label">Description</span>
+                            <span class="detail-label">Product Description</span>
                             {{ $inventory->part_description }}
                         </div>
                     @endif
@@ -348,7 +348,7 @@
                                     <th>Activity</th>
                                     <th>Ref Number</th>
                                     <th>Movement Path</th>
-                                    <th>Description</th>
+                                    <th>Product Description</th>
                                     <th>User</th>
                                 </tr>
                             </thead>

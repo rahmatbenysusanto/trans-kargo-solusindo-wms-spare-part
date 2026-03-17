@@ -550,8 +550,8 @@
                             <thead class="table-light sticky-top">
                                 <tr>
                                     <th>#</th>
-                                    <th>SKU / Product Number</th>
-                                    <th>Description</th>
+                                    <th>SKU / Part Number</th>
+                                    <th>Product Description</th>
                                     <th>Serial Number</th>
                                     <th>Brand</th>
                                     <th>Group</th>

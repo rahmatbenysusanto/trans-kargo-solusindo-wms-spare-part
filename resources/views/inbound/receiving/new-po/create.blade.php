@@ -99,7 +99,7 @@
                                     <th>Part Number/SKU</th>
                                     <th>Brand</th>
                                     <th>Group</th>
-                                    <th>Part Description</th>
+                                    <th>Product Description</th>
                                     <th>QTY</th>
                                     <th>Serial Number</th>
                                     <th>
@@ -170,9 +170,9 @@
                                 <input type="text" class="form-control" id="partName" placeholder="Part Name ...">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Part Description</label>
+                                <label class="form-label">Product Description</label>
                                 <input type="text" class="form-control" id="partDescription"
-                                    placeholder="Part Description ...">
+                                    placeholder="Product Description ...">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Product Group</label>
@@ -279,7 +279,7 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Part Number", "Part Desc", "Brand", "Brand Group", "Serial Number",
+                ["Part Name", "Part Number", "Product Description", "Brand", "Brand Group", "Serial Number",
                     "Condition"
                 ]
             ];
@@ -339,7 +339,7 @@
                                 "Material"] || "",
                             partNumber: row["Part Number"] || row["Part Number/SKU"] || row[
                                 "Material"] || "",
-                            partDescription: row["Part Desc"] || row["Part Description"] || row[
+                            partDescription: row["Product Description"] || row["Product Description"] || row[
                                 "Material Description"] || "",
                             serialNumber: sn,
                             productGroup: groupName,

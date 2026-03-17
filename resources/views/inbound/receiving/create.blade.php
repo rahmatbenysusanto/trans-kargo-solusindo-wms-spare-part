@@ -75,7 +75,7 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Product Number", "Part Desc", "Brand", "Brand Group", "Serial Number", "Parent SN",
+                ["Part Name", "Product Number", "Product Description", "Brand", "Brand Group", "Serial Number", "Parent SN",
                     "Condition"
                 ]
             ];
@@ -139,7 +139,7 @@
                         partNumber: row["Product Number"] || row["Part Number"] || row[
                             "Part Number/SKU"] || row[
                             "Material"] || row["Product Number (SKU)"] || "",
-                        partDescription: row["Part Desc"] || row["Part Description"] || row[
+                        partDescription: row["Product Description"] || row["Product Description"] || row[
                             "Material Description"] || row["Product Description"] || "",
                         serialNumber: sn,
                         parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
@@ -743,7 +743,7 @@
                                     <th class="text-white">Product Number/SKU</th>
                                     <th class="text-white">Brand</th>
                                     <th class="text-white">Group</th>
-                                    <th class="text-white">Part Description</th>
+                                    <th class="text-white">Product Description</th>
                                     <th class="text-white">Serial Number</th>
                                     <th class="text-white">Parent SN</th>
                                     <th class="text-white text-center">Qty</th>
@@ -811,9 +811,9 @@
                                 <input type="text" class="form-control" id="partName" placeholder="Part Name ...">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Part Description</label>
+                                <label class="form-label">Product Description</label>
                                 <input type="text" class="form-control" id="partDescription"
-                                    placeholder="Part Description ...">
+                                    placeholder="Product Description ...">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Product Group</label>

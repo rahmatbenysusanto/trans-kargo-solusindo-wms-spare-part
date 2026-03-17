@@ -46,7 +46,7 @@
                                     <th>#</th>
                                     <th>Part Name</th>
                                     <th>Part Number</th>
-                                    <th>Description</th>
+                                    <th>Product Description</th>
                                     <th>Total Qty</th>
                                     <th>Status</th>
                                 </tr>

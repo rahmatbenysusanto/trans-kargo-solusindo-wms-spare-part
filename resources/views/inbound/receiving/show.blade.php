@@ -213,7 +213,7 @@
                                     <th class="py-2 px-3">Brand</th>
                                     <th class="py-2 px-3">SKU</th>
                                     <th class="py-2 px-3">Part Name</th>
-                                    <th class="py-2 px-3">Description</th>
+                                    <th class="py-2 px-3">Product Description</th>
                                     <th class="py-2 px-3 text-center">Qty</th>
                                     <th class="py-2 px-3">Serial Number</th>
                                     <th class="py-2 px-3">Parent SN</th>
