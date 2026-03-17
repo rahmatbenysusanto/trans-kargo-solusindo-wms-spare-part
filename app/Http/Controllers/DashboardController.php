@@ -672,4 +672,99 @@ class DashboardController extends Controller
 
         return view('dashboard.reports.cycle-count', compact('title', 'data', 'startDate', 'endDate', 'summary', 'type', 'clients', 'clientId'));
     }
+
+    public function receivingMonitoring(Request $request): View
+    {
+        $title = 'Receiving Monitoring';
+        $clientId = $request->get('client_id');
+        $user = Auth::user();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+
+        $query = Inbound::with('client')->latest();
+        $this->applyClientFilter($query, $clientId);
+
+        $inbound = $query->when($request->category, function ($q) use ($request) {
+            return $q->where('category', $request->category);
+        })
+            ->when($request->request_type, function ($q) use ($request) {
+                return $q->where('request_type', $request->request_type);
+            })
+            ->when($request->search, function ($q) use ($request) {
+                return $q->where(function ($sub) use ($request) {
+                    $sub->where('number', 'like', '%' . $request->search . '%')
+                        ->orWhere('rma_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('itsm_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('vendor', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->paginate(15);
+
+        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
+        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
+
+        return view('dashboard.monitoring.receiving', compact('title', 'inbound', 'categories', 'requestTypes', 'clients'));
+    }
+
+    public function outboundMonitoring(Request $request): View
+    {
+        $title = 'Outbound Monitoring';
+        $clientId = $request->get('client_id');
+        $user = Auth::user();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+
+        $query = Outbound::with('client')->latest();
+        $this->applyClientFilter($query, $clientId);
+
+        $data = $query->when($request->category, function ($q) use ($request) {
+            return $q->where('category', $request->category);
+        })
+            ->when($request->search, function ($q) use ($request) {
+                return $q->where(function ($sub) use ($request) {
+                    $sub->where('number', 'like', '%' . $request->search . '%')
+                        ->orWhere('sap_po_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('ntt_dn_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('tks_dn_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('tks_invoice_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('rma_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('itsm_number', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->paginate(15);
+
+        $categories = ['Spare Write Off', 'Spare from/to Loan', 'RMA', 'Faulty', 'Spare from/to Replacement', 'Spare Migration'];
+
+        return view('dashboard.monitoring.outbound', compact('title', 'data', 'clients', 'categories'));
+    }
+
+    public function receivingMonitoringDetail($id): View
+    {
+        $inbound = Inbound::with(['client', 'details.brand', 'details.storageLevel.zone', 'details.storageLevel.rak', 'details.storageLevel.bin', 'invoices'])->findOrFail($id);
+        
+        $user = Auth::user();
+        if (!$user->isAdminWMS()) {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if (!in_array($inbound->client_id, $accessibleIds)) {
+                abort(403, 'Unauthorized access to this record.');
+            }
+        }
+
+        $title = 'Receiving Detail Monitoring';
+        return view('dashboard.monitoring.receiving_show', compact('title', 'inbound'));
+    }
+
+    public function outboundMonitoringDetail($id): View
+    {
+        $outbound = Outbound::with(['client', 'details.brand', 'invoices'])->findOrFail($id);
+
+        $user = Auth::user();
+        if (!$user->isAdminWMS()) {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if (!in_array($outbound->client_id, $accessibleIds)) {
+                abort(403, 'Unauthorized access to this record.');
+            }
+        }
+
+        $title = 'Outbound Detail Monitoring';
+        return view('dashboard.monitoring.outbound_show', compact('title', 'outbound'));
+    }
 }

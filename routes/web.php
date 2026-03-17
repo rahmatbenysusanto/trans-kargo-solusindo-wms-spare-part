@@ -43,6 +43,10 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/rma-monitoring', 'rmaMonitoring')->name('rmaMonitoring');
         Route::get('/inbound-return', 'inboundReturn')->name('inboundReturn');
         Route::get('/stock-monitoring', 'stockMonitoring')->name('stockMonitoring');
+        Route::get('/receiving-monitoring', 'receivingMonitoring')->name('receivingMonitoring');
+        Route::get('/receiving-monitoring/{id}', 'receivingMonitoringDetail')->name('receivingMonitoring.show');
+        Route::get('/outbound-monitoring', 'outboundMonitoring')->name('outboundMonitoring');
+        Route::get('/outbound-monitoring/{id}', 'outboundMonitoringDetail')->name('outboundMonitoring.show');
     });
 
     Route::prefix('/inbound')->controller(InboundController::class)->group(function () {

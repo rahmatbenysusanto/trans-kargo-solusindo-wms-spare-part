@@ -160,12 +160,14 @@
                             Auth::user()->hasMenu('Dashboard: Utilization By Client') ||
                             Auth::user()->hasMenu('Dashboard: RMA Monitoring') ||
                             Auth::user()->hasMenu('Dashboard: Inbound vs Return Trend') ||
-                            Auth::user()->hasMenu('Dashboard: Stock Monitoring');
+                            Auth::user()->hasMenu('Dashboard: Stock Monitoring') ||
+                            Auth::user()->hasMenu('Dashboard: Receiving Monitoring') ||
+                            Auth::user()->hasMenu('Dashboard: Outbound Monitoring');
                     @endphp
 
                     @if ($hasDashboard)
                         <li
-                            class="menu-item {{ in_array($title, ['Stock Overview', 'Summary Stock', 'utilizationByClient', 'rmaMonitoring', 'inboundReturn', 'stockMonitoring']) ? 'show open' : '' }}">
+                            class="menu-item {{ in_array($title, ['Stock Overview', 'Summary Stock', 'utilizationByClient', 'rmaMonitoring', 'inboundReturn', 'stockMonitoring', 'Receiving Monitoring', 'Outbound Monitoring']) ? 'show open' : '' }}">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-chart-pie"></i>
                                 <div data-i18n="Dashboards">Dashboards</div>
@@ -212,6 +214,20 @@
                                     <li class="menu-item {{ $title == 'stockMonitoring' ? 'active' : '' }}">
                                         <a href="{{ route('stockMonitoring') }}" class="menu-link">
                                             <div data-i18n="Stock Monitoring">Stock Monitoring</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Dashboard: Receiving Monitoring'))
+                                    <li class="menu-item {{ $title == 'Receiving Monitoring' ? 'active' : '' }}">
+                                        <a href="{{ route('receivingMonitoring') }}" class="menu-link">
+                                            <div data-i18n="Receiving Monitoring">Receiving Monitoring</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Dashboard: Outbound Monitoring'))
+                                    <li class="menu-item {{ $title == 'Outbound Monitoring' ? 'active' : '' }}">
+                                        <a href="{{ route('outboundMonitoring') }}" class="menu-link">
+                                            <div data-i18n="Outbound Monitoring">Outbound Monitoring</div>
                                         </a>
                                     </li>
                                 @endif

@@ -113,4 +113,53 @@ class ApiOutboundController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /api/outbound/{id}
+     */
+    public function show($id)
+    {
+        $role      = request()->attributes->get('jwt_role');
+        $clientIds = request()->attributes->get('jwt_client_ids', []);
+
+        $outbound = Outbound::with([
+            'details.inventory.client',
+            'details.brand:id,name',
+            'client:id,name',
+        ])->findOrFail($id);
+
+        // Scope client access
+        if ($role !== 'Admin WMS') {
+            if (!in_array($outbound->client_id, $clientIds)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized access to this client data.',
+                ], 403);
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => [
+                'id'              => $outbound->id,
+                'number'          => $outbound->number,
+                'category'        => $outbound->category,
+                'client'          => $outbound->client ? ['id' => $outbound->client->id, 'name' => $outbound->client->name] : null,
+                'status'          => $outbound->status,
+                'outbound_date'   => $outbound->outbound_date,
+                'qty'             => $outbound->qty,
+                'details'         => $outbound->details->map(function ($detail) {
+                    return [
+                        'id'               => $detail->id,
+                        'part_name'        => $detail->inventory->part_name ?? '-',
+                        'part_number'      => $detail->inventory->part_number ?? '-',
+                        'serial_number'    => $detail->serial_number,
+                        'qty'              => $detail->qty,
+                        'brand'            => $detail->brand ? $detail->brand->name : null,
+                        'condition'        => $detail->condition,
+                    ];
+                }),
+            ],
+        ]);
+    }
 }

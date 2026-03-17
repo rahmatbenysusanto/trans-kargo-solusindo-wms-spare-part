@@ -33,15 +33,19 @@ Route::middleware('jwt')->group(function () {
     // Inbound
     Route::prefix('inbound')->controller(ApiInboundController::class)->group(function () {
         Route::get('/', 'index');
+        Route::get('/{id}', 'show');
     });
 
     // Inventory
     Route::prefix('inventory')->controller(ApiInventoryController::class)->group(function () {
         Route::get('/', 'index');
+        Route::get('/stock-statement', 'stockStatement');
+        Route::get('/cycle-count', 'cycleCount');
     });
 
     // Outbound
     Route::prefix('outbound')->controller(ApiOutboundController::class)->group(function () {
         Route::get('/', 'index');
+        Route::get('/{id}', 'show');
     });
 });

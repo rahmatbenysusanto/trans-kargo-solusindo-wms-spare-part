@@ -295,6 +295,7 @@
             document.getElementById('previewContainer').classList.remove('d-none');
             document.getElementById('summaryTitle').innerText = `Preview: ${totalReceiving} Receivings (${totalProducts} Items)`;
             document.getElementById('btnSubmit').disabled = false;
+            document.getElementById('btnSubmitSecondary').disabled = false;
         }
 
         function viewItems(index) {
@@ -508,10 +509,15 @@
 
             <!-- Preview Section -->
             <div id="previewContainer" class="card d-none">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0" id="summaryTitle">Preview Data</h5>
-                    <button id="btnSubmit" class="btn btn-success px-4" onclick="submitBulk()" disabled>
-                        <i class="ti tabler-check me-1"></i> Confirm & Create All
+                <div class="card-header bg-label-success d-flex justify-content-between align-items-center py-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-2">
+                            <span class="avatar-initial rounded bg-success"><i class="ti tabler-database-import fs-4"></i></span>
+                        </div>
+                        <h5 class="card-title mb-0 fw-bold text-dark" id="summaryTitle">Preview Data</h5>
+                    </div>
+                    <button id="btnSubmit" class="btn btn-success fw-bold px-4 shadow-sm" onclick="submitBulk()" disabled>
+                        <i class="ti tabler-circle-check me-1 fs-5"></i> CONFIRM & SAVE ALL
                     </button>
                 </div>
                 <div class="table-responsive">

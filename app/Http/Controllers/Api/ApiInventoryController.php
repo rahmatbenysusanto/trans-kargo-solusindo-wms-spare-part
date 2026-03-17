@@ -4,7 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inventory;
+use App\Models\InboundDetail;
+use App\Models\InventoryHistory;
+use App\Models\OutboundDetail;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ApiInventoryController extends Controller
 {
@@ -98,6 +103,148 @@ class ApiInventoryController extends Controller
                     'last_movement_date'   => $item->last_movement_date,
                     'created_at'           => $item->created_at?->toDateTimeString(),
                     'updated_at'           => $item->updated_at?->toDateTimeString(),
+                ];
+            }),
+            'meta' => [
+                'current_page' => $data->currentPage(),
+                'per_page'     => $data->perPage(),
+                'total'        => $data->total(),
+                'last_page'    => $data->lastPage(),
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/inventory/stock-statement
+     */
+    public function stockStatement(Request $request)
+    {
+        $role      = $request->attributes->get('jwt_role');
+        $clientIds = $request->attributes->get('jwt_client_ids', []);
+        $clientId  = $request->get('client_id');
+
+        $query = InboundDetail::with(['inbound.client', 'brand', 'storageLevel.bin.rak.zone', 'productGroup'])
+            ->select('inbound_detail.*')
+            ->join('inbound', 'inbound_detail.inbound_id', '=', 'inbound.id');
+
+        // Scope client access
+        if ($role !== 'Admin WMS') {
+            if (count($clientIds) === 0) {
+                return response()->json(['status' => false, 'message' => 'No accessible clients.'], 403);
+            }
+            $query->whereIn('inbound.client_id', $clientIds);
+        }
+
+        if ($clientId) {
+            $query->where('inbound.client_id', $clientId);
+        }
+
+        if ($request->category) {
+            $query->where('inbound.category', $request->category);
+        }
+
+        if ($request->search) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('inbound_detail.serial_number', 'like', "%$s%")
+                    ->orWhere('inbound_detail.part_name', 'like', "%$s%")
+                    ->orWhere('inbound.number', 'like', "%$s%");
+            });
+        }
+
+        $perPage = min((int) $request->get('per_page', 15), 100);
+        $data    = $query->latest('inbound_detail.created_at')->paginate($perPage);
+
+        $sns = $data->pluck('serial_number')->toArray();
+        $inventories = Inventory::whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+        $outbounds   = OutboundDetail::with('outbound')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+
+        return response()->json([
+            'status' => true,
+            'data'   => $data->map(function ($item) use ($inventories, $outbounds) {
+                $inv = $inventories->get($item->serial_number);
+                $out = $outbounds->get($item->serial_number);
+
+                return [
+                    'serial_number' => $item->serial_number,
+                    'part_name'     => $item->part_name,
+                    'part_number'   => $item->part_number,
+                    'client'        => $item->inbound->client->name ?? '-',
+                    'inbound'       => [
+                        'number' => $item->inbound->number,
+                        'date'   => $item->inbound->received_date,
+                    ],
+                    'outbound' => $out ? [
+                        'number' => $out->outbound->number,
+                        'date'   => $out->outbound->outbound_date,
+                    ] : null,
+                    'status' => ($inv && $inv->qty > 0) ? 'In Stock' : ($out ? 'Outbound' : 'N/A'),
+                ];
+            }),
+            'meta' => [
+                'current_page' => $data->currentPage(),
+                'per_page'     => $data->perPage(),
+                'total'        => $data->total(),
+                'last_page'    => $data->lastPage(),
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/inventory/cycle-count
+     */
+    public function cycleCount(Request $request)
+    {
+        $role      = $request->attributes->get('jwt_role');
+        $clientIds = $request->attributes->get('jwt_client_ids', []);
+        
+        $startDate = $request->get('start_date', Carbon::today()->format('Y-m-d'));
+        $endDate   = $request->get('end_date', Carbon::today()->format('Y-m-d'));
+
+        $query = InventoryHistory::with(['inventory.client'])
+            ->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ])
+            ->whereIn('type', ['Inbound', 'Outbound', 'Movement']);
+
+        if ($role !== 'Admin WMS') {
+            $query->whereHas('inventory', function ($q) use ($clientIds) {
+                $q->whereIn('client_id', $clientIds);
+            });
+        }
+
+        if ($request->client_id) {
+            $query->whereHas('inventory', function ($q) use ($request) {
+                $q->where('client_id', $request->client_id);
+            });
+        }
+
+        if ($request->search) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('serial_number', 'like', "%$s%")
+                    ->orWhere('reference_number', 'like', "%$s%")
+                    ->orWhere('description', 'like', "%$s%");
+            });
+        }
+
+        $perPage = min((int) $request->get('per_page', 15), 100);
+        $data    = $query->latest()->paginate($perPage);
+
+        return response()->json([
+            'status' => true,
+            'data'   => $data->map(function ($item) {
+                return [
+                    'date'             => $item->created_at->toDateTimeString(),
+                    'type'             => $item->type,
+                    'reference_number' => $item->reference_number,
+                    'serial_number'    => $item->serial_number,
+                    'description'      => $item->description,
+                    'user'             => $item->user,
+                    'from_location'    => $item->from_location,
+                    'to_location'      => $item->to_location,
+                    'client'           => $item->inventory->client->name ?? '-',
                 ];
             }),
             'meta' => [

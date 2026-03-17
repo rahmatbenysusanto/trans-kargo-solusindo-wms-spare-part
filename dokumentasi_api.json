@@ -1,0 +1,1076 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "WMS Spare Room API Documentation",
+    "description": "Dokumentasi API untuk sistem Warehouse Management System (WMS) Spare Room. Semua endpoint dilindungi kecuali login menggunakan JWT Bearer Token.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Base API URL (relative to application domain)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Meta": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "example": 1
+          },
+          "per_page": {
+            "type": "integer",
+            "example": 15
+          },
+          "total": {
+            "type": "integer",
+            "example": 100
+          },
+          "last_page": {
+            "type": "integer",
+            "example": 7
+          }
+        }
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "PT. Telekomunikasi Indonesia"
+          }
+        }
+      },
+      "Inbound": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 125
+          },
+          "number": {
+            "type": "string",
+            "example": "SPR-240317-001"
+          },
+          "receiving_note": {
+            "type": "string",
+            "example": "PO-2024-001"
+          },
+          "category": {
+            "type": "string",
+            "example": "New PO"
+          },
+          "request_type": {
+            "type": "string",
+            "example": "New PO"
+          },
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "status": {
+            "type": "string",
+            "example": "new"
+          },
+          "shipment_status": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "qty": {
+            "type": "integer",
+            "example": 10
+          },
+          "vendor": {
+            "type": "string",
+            "example": "Cisco Systems"
+          },
+          "sttb": {
+            "type": "string",
+            "example": "STTB-9921"
+          },
+          "rma_number": {
+            "type": "string",
+            "example": null
+          },
+          "itsm_number": {
+            "type": "string",
+            "example": "ITSM-7721"
+          },
+          "sap_po_number": {
+            "type": "string",
+            "example": "SAP-00122"
+          },
+          "received_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-03-17"
+          },
+          "received_by": {
+            "type": "string",
+            "example": "Admin Warehouse"
+          },
+          "created_at": {
+            "type": "string",
+            "example": "2024-03-17 10:00:00"
+          }
+        }
+      },
+      "Inventory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 501
+          },
+          "unique_id": {
+            "type": "string",
+            "example": "202403171015001"
+          },
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "part_name": {
+            "type": "string",
+            "example": "Cisco Router ISR 4331"
+          },
+          "part_number": {
+            "type": "string",
+            "example": "ISR4331/K9"
+          },
+          "part_description": {
+            "type": "string",
+            "example": "Cisco ISR 4331 (3GE,2-NI slot,1-SM slot,4G FLASH,4G DRAM,IPB)"
+          },
+          "serial_number": {
+            "type": "string",
+            "example": "FDO22310ABC"
+          },
+          "qty": {
+            "type": "integer",
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "example": "available"
+          },
+          "condition": {
+            "type": "string",
+            "example": "New"
+          },
+          "location": {
+            "type": "string",
+            "example": "ZONE-A-RAK-01-BIN-02-L-01"
+          },
+          "created_at": {
+            "type": "string",
+            "example": "2024-03-17 10:05:00"
+          }
+        }
+      },
+      "Outbound": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 88
+          },
+          "number": {
+            "type": "string",
+            "example": "OUT-240317-005"
+          },
+          "category": {
+            "type": "string",
+            "example": "Replacement"
+          },
+          "request_type": {
+            "type": "string",
+            "example": "RMA"
+          },
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "status": {
+            "type": "string",
+            "example": "process"
+          },
+          "shipment_status": {
+            "type": "string",
+            "example": "In Transit"
+          },
+          "qty": {
+            "type": "integer",
+            "example": 1
+          },
+          "sap_po_number": {
+            "type": "string",
+            "example": "SAP-9981"
+          },
+          "ntt_requestor": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "pickup_address": {
+            "type": "string",
+            "example": "Jl. Merdeka No. 10, Jakarta"
+          },
+          "outbound_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-03-17"
+          },
+          "outbound_by": {
+            "type": "string",
+            "example": "User Outbound"
+          }
+        }
+      },
+      "CycleCount": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2024-03-17 14:30:00"
+          },
+          "type": {
+            "type": "string",
+            "example": "Movement"
+          },
+          "reference_number": {
+            "type": "string",
+            "example": "MOV-2024-001"
+          },
+          "serial_number": {
+            "type": "string",
+            "example": "FDO22310ABC"
+          },
+          "description": {
+            "type": "string",
+            "example": "Unit moved from ZONE-A to ZONE-B"
+          },
+          "user": {
+            "type": "string",
+            "example": "Admin Warehouse"
+          },
+          "from_location": {
+            "type": "string",
+            "example": "ZONE-A-RAK-01-BIN-01-L-01"
+          },
+          "to_location": {
+            "type": "string",
+            "example": "ZONE-B-RAK-03-BIN-12-L-02"
+          },
+          "client": {
+            "type": "string",
+            "example": "PT. Telekomunikasi Indonesia"
+          }
+        }
+      },
+      "StockStatement": {
+        "type": "object",
+        "properties": {
+          "serial_number": {
+            "type": "string",
+            "example": "FDO22310ABC"
+          },
+          "part_name": {
+            "type": "string",
+            "example": "Cisco Router ISR 4331"
+          },
+          "part_number": {
+            "type": "string",
+            "example": "ISR4331/K9"
+          },
+          "client": {
+            "type": "string",
+            "example": "PT. Telekomunikasi Indonesia"
+          },
+          "inbound": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "string",
+                "example": "SPR-240317-001"
+              },
+              "date": {
+                "type": "string",
+                "example": "2024-03-17"
+              }
+            }
+          },
+          "outbound": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "number": {
+                "type": "string",
+                "example": "OUT-240318-005"
+              },
+              "date": {
+                "type": "string",
+                "example": "2024-03-18"
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "example": "In Stock"
+          }
+        }
+      },
+      "InboundDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1001 },
+          "part_name": { "type": "string", "example": "Cisco Router ISR 4331" },
+          "part_number": { "type": "string", "example": "ISR4331/K9" },
+          "serial_number": { "type": "string", "example": "FDO22310ABC" },
+          "qty": { "type": "integer", "example": 1 },
+          "brand": { "type": "string", "example": "Cisco" },
+          "condition": { "type": "string", "example": "New" },
+          "location": { "type": "string", "example": "ZONE-A-RAK-01-BIN-01-L-01" }
+        }
+      },
+      "OutboundDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 2001 },
+          "part_name": { "type": "string", "example": "Cisco Router ISR 4331" },
+          "part_number": { "type": "string", "example": "ISR4331/K9" },
+          "serial_number": { "type": "string", "example": "FDO22310ABC" },
+          "qty": { "type": "integer", "example": 1 },
+          "brand": { "type": "string", "example": "Cisco" },
+          "condition": { "type": "string", "example": "New" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "User Login",
+        "description": "Endpoint untuk mendapatkan JWT token guna mengakses API proteksi.",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "admin"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Login successful."
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoiQWRtaW4iLCJpYXQiOjE3MTA2NjQwMDAsImV4cCI6MTcxMDc1MDQwMH0.signature"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Administrator"
+                        },
+                        "username": {
+                          "type": "string",
+                          "example": "admin"
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "Admin WMS"
+                        },
+                        "client_ids": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "example": []
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid username or password."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients": {
+      "get": {
+        "summary": "Get List of Clients",
+        "tags": [
+          "Master Data"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter berdasarkan nama"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 15
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar Client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Client"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbound": {
+      "get": {
+        "summary": "Get Inbound Transactions",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Nomor, RMA, ITSM, Vendor"
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "request_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Y-m-d"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Y-m-d"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 15
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar Inbound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Inbound"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inbound/{id}": {
+      "get": {
+        "summary": "Get Detailed Inbound Transaction",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the inbound transaction"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail Inbound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 125 },
+                        "number": { "type": "string", "example": "SPR-240317-001" },
+                        "category": { "type": "string", "example": "New PO" },
+                        "client": { "$ref": "#/components/schemas/Client" },
+                        "status": { "type": "string", "example": "new" },
+                        "received_date": { "type": "string", "format": "date", "example": "2024-03-17" },
+                        "qty": { "type": "integer", "example": 10 },
+                        "details": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/InboundDetail" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inventory": {
+      "get": {
+        "summary": "Get Inventory List",
+        "tags": [
+          "Inventory"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "SN, Part Name, Part Number"
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "condition",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 15
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar Inventory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Inventory"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inventory/stock-statement": {
+      "get": {
+        "summary": "Get Inventory Stock Statement (Inbound vs Outbound)",
+        "tags": [
+          "Inventory"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stock Statement List",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StockStatement"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inventory/cycle-count": {
+      "get": {
+        "summary": "Get Inventory Cycle Count (Movement History)",
+        "tags": [
+          "Inventory"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cycle Count List",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CycleCount"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outbound": {
+      "get": {
+        "summary": "Get Outbound Transactions",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Nomor, SAP PO, DN, RMA, ITSM"
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 15
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar Outbound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Outbound"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outbound/{id}": {
+      "get": {
+        "summary": "Get Detailed Outbound Transaction",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the outbound transaction"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail Outbound",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 88 },
+                        "number": { "type": "string", "example": "OUT-240317-005" },
+                        "category": { "type": "string", "example": "Replacement" },
+                        "client": { "$ref": "#/components/schemas/Client" },
+                        "status": { "type": "string", "example": "process" },
+                        "outbound_date": { "type": "string", "format": "date", "example": "2024-03-17" },
+                        "qty": { "type": "integer", "example": 1 },
+                        "details": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/OutboundDetail" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

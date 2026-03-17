@@ -120,4 +120,65 @@ class ApiInboundController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /api/inbound/{id}
+     */
+    public function show($id)
+    {
+        $role      = request()->attributes->get('jwt_role');
+        $clientIds = request()->attributes->get('jwt_client_ids', []);
+
+        $inbound = Inbound::with([
+            'details.brand:id,name',
+            'details.storageLevel.bin.rak.zone',
+            'client:id,name',
+        ])->findOrFail($id);
+
+        // Scope client access
+        if ($role !== 'Admin WMS') {
+            if (!in_array($inbound->client_id, $clientIds)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized access to this client data.',
+                ], 403);
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => [
+                'id'              => $inbound->id,
+                'number'          => $inbound->number,
+                'category'        => $inbound->category,
+                'request_type'    => $inbound->request_type,
+                'client'          => $inbound->client ? ['id' => $inbound->client->id, 'name' => $inbound->client->name] : null,
+                'status'          => $inbound->status,
+                'received_date'   => $inbound->received_date,
+                'qty'             => $inbound->qty,
+                'details'         => $inbound->details->map(function ($detail) {
+                    $location = null;
+                    if ($detail->storageLevel && $detail->storageLevel->bin && $detail->storageLevel->bin->rak && $detail->storageLevel->bin->rak->zone) {
+                        $location = implode('-', [
+                            $detail->storageLevel->bin->rak->zone->name,
+                            $detail->storageLevel->bin->rak->name,
+                            $detail->storageLevel->bin->name,
+                            $detail->storageLevel->name,
+                        ]);
+                    }
+                    return [
+                        'id'               => $detail->id,
+                        'part_name'        => $detail->part_name,
+                        'part_number'      => $detail->part_number,
+                        'part_description' => $detail->part_description,
+                        'serial_number'    => $detail->serial_number,
+                        'qty'              => $detail->qty,
+                        'brand'            => $detail->brand ? $detail->brand->name : null,
+                        'condition'        => $detail->condition,
+                        'location'         => $location,
+                    ];
+                }),
+            ],
+        ]);
+    }
 }
