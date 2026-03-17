@@ -27,9 +27,14 @@
     <div class="row">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="fw-bold mb-0">Receiving List</h4>
-            <a href="{{ route('receiving.create') }}" class="btn btn-sm btn-primary">
-                <i class="ti tabler-plus me-1"></i> Create Receiving
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('receiving.bulk-import') }}" class="btn btn-sm btn-success">
+                    <i class="ti tabler-upload me-1"></i> Bulk Import Receiving
+                </a>
+                <a href="{{ route('receiving.create') }}" class="btn btn-sm btn-primary">
+                    <i class="ti tabler-plus me-1"></i> Create Receiving
+                </a>
+            </div>
         </div>
 
         <div class="col-12">

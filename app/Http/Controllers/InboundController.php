@@ -336,6 +336,89 @@ class InboundController extends Controller
         }
     }
 
+    public function bulkImport(): View
+    {
+        $client = Client::all();
+        $title = "Bulk Import Receiving";
+        return view('inbound.receiving.bulk-import', compact('title', 'client'));
+    }
+
+    public function bulkImportStore(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'client_id'  => 'required',
+            'receivings' => 'required|array|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $clientId = $request->post('client_id');
+            $receivings = $request->post('receivings');
+            $receivedBy = Auth::check() ? Auth::user()->name : 'System';
+
+            // Get initial starting serial for today
+            $datePrefix = date('ymd');
+            $prefix = 'SPR';
+            $lastInbound = Inbound::where('number', 'like', "$prefix-$datePrefix-%")->orderBy('id', 'desc')->first();
+            $lastSerial = 0;
+            if ($lastInbound) {
+                $lastSerial = (int) substr($lastInbound->number, -3);
+            }
+
+            foreach ($receivings as $rec) {
+                $category = $rec['category'] ?? 'New PO';
+                $sapPo = $rec['sap_po_number'] ?? null;
+                $itsm = $rec['itsm_number'] ?? null;
+                $receiveDate = $rec['receivedDate'] ?? date('Y-m-d');
+                $products = $rec['products'] ?? [];
+
+                // Simple check if products exist
+                if (empty($products)) continue;
+
+                $lastSerial++;
+                $newNumber = "$prefix-$datePrefix-" . str_pad($lastSerial, 3, '0', STR_PAD_LEFT);
+                
+                // Determine request type based on category roughly
+                $requestType = 'New PO';
+                if (stripos($category, 'RMA') !== false || stripos($category, 'Faulty') !== false || stripos($category, 'Replacement') !== false) {
+                    $requestType = 'RMA';
+                } elseif (stripos($category, 'Loan') !== false) {
+                    $requestType = 'Loan';
+                } elseif (stripos($category, 'Write-off') !== false) {
+                    $requestType = 'Spare Write Off';
+                } elseif (stripos($category, 'Migration') !== false) {
+                    $requestType = 'Spare Migration';
+                }
+
+                $inbound = Inbound::create([
+                    'category'              => $category,
+                    'request_type'          => $requestType,
+                    'client_id'             => $clientId,
+                    'number'                => $newNumber,
+                    'receiving_note'        => '-', // Not provided in Bulk Upload
+                    'sttb'                  => '-', // Not provided
+                    'sap_po_number'         => $sapPo,
+                    'itsm_number'           => $itsm,
+                    'vendor'                => 'Internal',
+                    'qty'                   => count($products),
+                    'received_date'         => $receiveDate,
+                    'received_by'           => $receivedBy,
+                    'status'                => 'new'
+                ]);
+
+                $this->storeDetails($inbound, $products);
+            }
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            Log::error("Bulk Import Store Error: " . $err->getMessage());
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
     public function create(): View
     {
         $brand = Brand::all();

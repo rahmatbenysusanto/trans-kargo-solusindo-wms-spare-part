@@ -50,6 +50,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
             Route::get('/', 'receiving')->name('receiving');
             Route::get('/create', 'create')->name('receiving.create');
             Route::post('/store', 'store')->name('receiving.store');
+            Route::get('/bulk-import', 'bulkImport')->name('receiving.bulk-import');
+            Route::post('/bulk-import/store', 'bulkImportStore')->name('receiving.bulk-import.store');
             Route::get('/{id}', 'show')->name('receiving.show');
             Route::post('/approve', 'approve')->name('receiving.approve');
             Route::post('/cancel', 'cancel')->name('receiving.cancel');
