@@ -243,6 +243,7 @@
 
                         $hasInventory =
                             Auth::user()->hasMenu('Inventory: List') ||
+                            Auth::user()->hasMenu('Inventory: History') ||
                             Auth::user()->hasMenu('Inventory: Product Summary') ||
                             Auth::user()->hasMenu('Inventory: Stock Statement') ||
                             Auth::user()->hasMenu('Inventory: Product Movement') ||
@@ -300,7 +301,7 @@
 
                     @if ($hasInventory)
                         <li
-                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Storage Inventory', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
+                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory History', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Storage Inventory', 'Write Off', 'Cycle Count']) ? 'show open' : '' }}">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-truck-loading"></i>
                                 <div data-i18n="Inventory">Inventory</div>
@@ -310,6 +311,13 @@
                                     <li class="menu-item {{ $title == 'Inventory List' ? 'active' : '' }}">
                                         <a href="{{ route('inventory.index') }}" class="menu-link">
                                             <div data-i18n="Inventory List">Inventory List</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: History'))
+                                    <li class="menu-item {{ $title == 'Inventory History' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.history') }}" class="menu-link text-primary fw-bold">
+                                            <div data-i18n="Inventory History">Inventory History</div>
                                         </a>
                                     </li>
                                 @endif

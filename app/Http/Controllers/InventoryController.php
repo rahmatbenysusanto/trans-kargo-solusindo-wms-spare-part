@@ -586,4 +586,31 @@ class InventoryController extends Controller
 
         return response()->json($items);
     }
+
+    public function history(Request $request): View
+    {
+        $title = 'Inventory History';
+        $user = Auth::user();
+        $clientId = $request->get('client_id');
+        $serialNumber = $request->get('serial_number');
+
+        $query = \App\Models\OutboundDetail::with(['outbound.client', 'inventory.storageLevel.bin.rak.zone'])
+            ->whereHas('outbound', function ($q) use ($user, $clientId) {
+                if (!$user->isAdminWMS()) {
+                    $q->whereIn('client_id', $user->getAccessibleClientIds());
+                }
+                if ($clientId) {
+                    $q->where('client_id', $clientId);
+                }
+            });
+
+        if ($serialNumber) {
+            $query->where('serial_number', 'like', '%' . $serialNumber . '%');
+        }
+
+        $history = $query->latest()->paginate(20);
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+
+        return view('inventory.history', compact('title', 'history', 'clients'));
+    }
 }
