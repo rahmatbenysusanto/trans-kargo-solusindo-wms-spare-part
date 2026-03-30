@@ -169,7 +169,7 @@
 
         <!-- Right Column: Destination Selective Selection -->
         <div class="col-md-6">
-            <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+            <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 fw-bold small text-uppercase text-muted">Shelving Preparation List</h5>
                     <span id="selectedCountBadge" class="selected-count-badge">0 Items Selected</span>
@@ -255,8 +255,7 @@
             $('.select2').each(function() {
                 $(this).select2({
                     placeholder: $(this).data('placeholder'),
-                    width: '100%',
-                    dropdownParent: $(this).parent()
+                    width: '100%'
                 });
             });
         });
