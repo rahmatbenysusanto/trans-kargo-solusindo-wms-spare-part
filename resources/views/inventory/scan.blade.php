@@ -35,7 +35,7 @@
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden mb-5">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Asset ID</h2>
+                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Warehouse Asset ID</h2>
                     <p class="text-xl font-extrabold text-gray-900">{{ $inventory->unique_id }}</p>
                 </div>
 

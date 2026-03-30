@@ -116,7 +116,7 @@
                             id="detailTable">
                             <thead class="bg-primary text-white sticky-top shadow-sm">
                                 <tr>
-                                    <th class="text-white">Asset ID</th>
+                                    <th class="text-white">Warehouse Asset ID</th>
                                     <th class="text-white">Serial Number</th>
                                     <th class="text-white">Client / Owner</th>
                                     <th class="text-white">Storage Location</th>

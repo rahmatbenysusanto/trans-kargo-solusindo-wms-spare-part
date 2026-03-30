@@ -158,8 +158,10 @@
                 let colMap = bestColMap;
 
                 if (overallMaxScore < 20) {
-                    console.warn("No high-confidence header found. Defaulting to first sheet.");
+                    console.warn("No high-confidence header found. Defaulting to standard column order.");
                     headerRowIndex = 0;
+                    // Standard order based on provided Bulk.xlsx:
+                    // 0: PN, 1: Desc, 2: Qty, 3: SN, 4: Group, 5: Date, 6: Category, 7: ITSM, 8: SAP, 9: Brand
                     colMap = { pn: 0, desc: 1, qty: 2, sn: 3, group: 4, date: 5, category: 6, itsm: 7, po: 8, brand: 9 };
                 }
 
@@ -169,6 +171,7 @@
                 let receivingsMap = {};
                 let snCounts = {};
 
+                let missingCount = 0;
                 // Pass 1: Count non-empty SNs
                 for (let i = headerRowIndex + 1; i < rawData.length; i++) {
                     const row = rawData[i];

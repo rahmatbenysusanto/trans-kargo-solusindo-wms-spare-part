@@ -74,7 +74,7 @@
                 </div>
                 <div class="card-body pt-3">
                     <div class="text-center mb-4 p-3 bg-light rounded-3 border border-dashed border-primary">
-                        <span class="detail-label">Asset ID / Unique ID</span>
+                        <span class="detail-label">Warehouse Asset ID / Unique ID</span>
                         <div class="h4 fw-bold text-primary mb-0 font-monospace">{{ $inventory->unique_id }}</div>
                         <div class="mt-2">
                             @php

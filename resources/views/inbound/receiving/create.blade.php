@@ -75,8 +75,8 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Part Name", "Product Number", "Product Description", "Brand", "Brand Group", "Serial Number", "Parent SN",
-                    "Condition"
+                ["Part Name", "Product Number", "Product Description", "Brand", "Product Group", "Serial Number",
+                    "Parent SN", "Warehouse Asset#", "Condition", "Stock Status", "Staging Date", "QTY"
                 ]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(headers);
@@ -139,8 +139,9 @@
                         partNumber: row["Product Number"] || row["Part Number"] || row[
                             "Part Number/SKU"] || row[
                             "Material"] || row["Product Number (SKU)"] || "",
-                        partDescription: row["Product Description"] || row["Product Description"] || row[
-                            "Material Description"] || row["Product Description"] || "",
+                        partDescription: row["Product Description"] || row["Product Description"] ||
+                            row[
+                                "Material Description"] || row["Product Description"] || "",
                         serialNumber: sn,
                         parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
                         whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
@@ -540,20 +541,37 @@
         }
 
         function toggleFields() {
-            const reqType = document.getElementById('request_type').value;
+            const category = document.getElementById('category').value;
 
-            // Reset all dynamic fields
-            $('.field-ntt-requestor, .field-request-date, .field-sap-po, .field-ecapex, .field-rma, .field-itsm, .field-vendor-dn')
+            // Hide all dynamic fields first
+            $('.field-ntt-requestor, .field-request-date, .field-sttb, .field-ntt-rn, .field-sap-po, .field-ecapex, .field-rma, .field-itsm, .field-tks-dn, .field-tks-inv, .field-vendor-dn, .field-po-ref, .field-client-contact, .field-pickup-address, .field-vendor, .field-courier-dn, .field-courier-inv, .field-received-date, .field-received-by')
                 .hide();
 
-            if (reqType === 'New PO') {
-                $('.field-sap-po, .field-ecapex').show();
-            } else if (reqType === 'RMA') {
-                $('.field-ntt-requestor, .field-request-date, .field-rma, .field-itsm').show();
-            } else if (reqType === 'Loan') {
-                $('.field-ntt-requestor, .field-request-date').show();
-            } else if (reqType === 'Spare Migration') {
-                // No extra fields needed usually
+            if (category === 'New PO') {
+                // Row 3: eCapex (17), SAP PO# (18), Vendor DN (19), Received Date (21), Processed By (29)
+                $('.field-ecapex, .field-sap-po, .field-vendor-dn, .field-received-date, .field-received-by').show();
+            } else if (category === 'Spare Migration') {
+                // Row 10: Received Date (21), Processed By (29)
+                $('.field-received-date, .field-received-by').show();
+            } else if (category === 'Faulty') {
+                // Row 13: Requestor (4), Req Date (5), NTT RN# (20), Received Date (21), TKS DN (24), TKS Invoice (25), ITSM (27), Processed By (29), Client Contact (31), Pickup Address (32)
+                $('.field-ntt-requestor, .field-request-date, .field-ntt-rn, .field-received-date, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client-contact, .field-pickup-address')
+                    .show();
+            } else if (category === 'RMA') {
+                // Row 7: Requestor (4), Req Date (5), Vendor DN (19), Received Date (21), ITSM (27), RMA# (28), Processed By (29)
+                $('.field-ntt-requestor, .field-request-date, .field-vendor-dn, .field-received-date, .field-itsm, .field-rma, .field-received-by')
+                    .show();
+            } else if (category === 'Spare from/to Replacement') {
+                // Row 8: Requestor (4), Req Date (5), NTT RN# (20), Received Date (21), TKS DN (24), TKS Inv (25), ITSM (27), Processed By (29), Client Contact (31), Pickup Address (32)
+                $('.field-ntt-requestor, .field-request-date, .field-ntt-rn, .field-received-date, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client-contact, .field-pickup-address')
+                    .show();
+            } else if (category === 'Spare from/to Loan') {
+                // Row 4: Requestor (4), Req Date (5), Vendor DN (19), NTT RN# (20), TKS DN (24), TKS Inv (25), ITSM (27), Processed By (29), Client Contact (31), Pickup Address (32)
+                $('.field-ntt-requestor, .field-request-date, .field-vendor-dn, .field-ntt-rn, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client-contact, .field-pickup-address')
+                    .show();
+            } else if (category === 'Spare Write-off') {
+                // Row 5: Received Date (21)
+                $('.field-received-date').show();
             }
         }
 
@@ -610,11 +628,11 @@
                             <input type="date" class="form-control" id="request_date" value="{{ date('Y-m-d') }}">
                         </div>
 
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-sttb">
                             <label class="form-label">STTB / Ref Number</label>
                             <input type="text" class="form-control" name="sttb" id="sttb" placeholder="STTB ...">
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-ntt-rn">
                             <label class="form-label">NTT RN#</label>
                             <input type="text" class="form-control" name="number" id="number"
                                 placeholder="NTT RN# ...">
@@ -636,11 +654,11 @@
                             <input type="text" class="form-control" id="itsm_number" placeholder="ITSM# ...">
                         </div>
 
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-tks-dn">
                             <label class="form-label">TKS DN# (Optional)</label>
                             <input type="text" class="form-control" id="tks_dn_number" placeholder="TKS DN# ...">
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-tks-inv">
                             <label class="form-label">TKS Invoice# (Optional)</label>
                             <input type="text" class="form-control" id="tks_invoice_number"
                                 placeholder="TKS Invoice# ...">
@@ -651,7 +669,7 @@
                                 placeholder="Vendor DN# ...">
                         </div>
 
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-po-ref">
                             <label class="form-label">PO# (Transkargo Ref)</label>
                             <input type="text" class="form-control" name="po_number" id="po_number"
                                 placeholder="PO# ...">
@@ -668,38 +686,38 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-client-contact">
                             <label class="form-label">Client Contact</label>
                             <input type="text" class="form-control" id="client_contact"
                                 placeholder="Contact Name/Dept ...">
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-3 field-pickup-address">
                             <label class="form-label">Pickup/Shipment Address</label>
                             <input type="text" class="form-control" id="pickup_address"
                                 placeholder="Address detail ...">
                         </div>
 
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-vendor">
                             <label class="form-label">Vendor / Supplier</label>
                             <input type="text" class="form-control" name="vendor" id="vendor"
                                 placeholder="Vendor / Supplier ...">
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 field-courier-dn">
                             <label class="form-label">Courier DN</label>
                             <input type="text" class="form-control" name="delivery_note" id="delivery_note"
                                 placeholder="Courier DN ...">
                         </div>
-                        <div class="col-md-2 mb-3">
+                        <div class="col-md-2 mb-3 field-courier-inv">
                             <label class="form-label">Courier Invoice</label>
                             <input type="text" class="form-control" name="courier_invoice" id="courier_invoice"
                                 placeholder="Courier Invoice ...">
                         </div>
-                        <div class="col-md-2 mb-3">
+                        <div class="col-md-2 mb-3 field-received-date">
                             <label class="form-label">Received Date</label>
                             <input type="date" class="form-control" name="date" id="date"
                                 value="{{ date('Y-m-d') }}">
                         </div>
-                        <div class="col-md-2 mb-3">
+                        <div class="col-md-2 mb-3 field-received-by">
                             <label class="form-label">Received By</label>
                             <input type="text" class="form-control" name="received_by" id="received_by"
                                 placeholder="Received By ...">
@@ -851,7 +869,7 @@
                                 <input type="text" class="form-control" id="parentSn" placeholder="Parent SN ...">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">WH Asset#</label>
+                                <label class="form-label">Warehouse Asset ID</label>
                                 <input type="text" class="form-control" id="whAssetNumber"
                                     placeholder="Asset Number ...">
                             </div>

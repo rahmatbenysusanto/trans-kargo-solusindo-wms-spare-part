@@ -139,7 +139,7 @@ class InventoryController extends Controller
         echo "<thead>";
         echo "<tr>";
         echo "<th>No</th>";
-        echo "<th>Asset ID</th>";
+        echo "<th>Warehouse Asset ID</th>";
         echo "<th>Client</th>";
         echo "<th>Part Name</th>";
         echo "<th>Part Number</th>";
@@ -585,6 +585,108 @@ class InventoryController extends Controller
         });
 
         return response()->json($items);
+    }
+
+    public function storageInventoryExportExcel(Request $request)
+    {
+        $clientId = $request->get('client_id');
+        $user = Auth::user();
+
+        $query = \App\Models\Inventory::query()
+            ->join('storage_level', 'inventory.storage_level_id', '=', 'storage_level.id')
+            ->join('storage_bin', 'storage_level.storage_bin_id', '=', 'storage_bin.id')
+            ->join('storage_rak', 'storage_bin.storage_rak_id', '=', 'storage_rak.id')
+            ->join('storage_zone', 'storage_rak.storage_zone_id', '=', 'storage_zone.id')
+            ->leftJoin('client', 'inventory.client_id', '=', 'client.id')
+            ->select(
+                'inventory.*',
+                'storage_zone.name as zone_name',
+                'storage_rak.name as rak_name',
+                'storage_bin.name as bin_name',
+                'storage_level.name as level_name',
+                'client.name as client_name'
+            )
+            ->where('inventory.qty', '>', 0);
+
+        if ($user->isAdminWMS()) {
+            if ($clientId) {
+                $query->where('inventory.client_id', $clientId);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($clientId && in_array($clientId, $accessibleIds)) {
+                $query->where('inventory.client_id', $clientId);
+            } else {
+                $query->whereIn('inventory.client_id', $accessibleIds);
+            }
+        }
+
+        $query->when($request->search, function ($q) use ($request) {
+            $q->where(function ($sq) use ($request) {
+                $sq->where('storage_zone.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('storage_rak.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('storage_bin.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('storage_level.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.part_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.part_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.serial_number', 'like', '%' . $request->search . '%');
+            });
+        });
+
+        if ($request->has('storage_level_id')) {
+            $query->where('inventory.storage_level_id', $request->get('storage_level_id'));
+        }
+
+        $data = $query->orderBy('storage_zone.name')
+            ->orderBy('storage_rak.name')
+            ->orderBy('storage_bin.name')
+            ->orderBy('storage_level.name')
+            ->get();
+
+        $filename = "storage-inventory-detail-" . date('Y-m-d') . ".xls";
+
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+
+        echo "<table border='1'>";
+        echo "<thead>";
+        echo "<tr>";
+        echo "<th>No</th>";
+        echo "<th>Warehouse Asset ID</th>";
+        echo "<th>Part Name</th>";
+        echo "<th>Part Number</th>";
+        echo "<th>Serial Number</th>";
+        echo "<th>Client</th>";
+        echo "<th>Zone</th>";
+        echo "<th>Rak</th>";
+        echo "<th>Bin</th>";
+        echo "<th>Level</th>";
+        echo "<th>Status</th>";
+        echo "<th>Condition</th>";
+        echo "</tr>";
+        echo "</thead>";
+        echo "<tbody>";
+
+        foreach ($data as $index => $item) {
+            echo "<tr>";
+            echo "<td>" . ($index + 1) . "</td>";
+            echo "<td>{$item->unique_id}</td>";
+            echo "<td>{$item->part_name}</td>";
+            echo "<td>{$item->part_number}</td>";
+            echo "<td>'{$item->serial_number}</td>";
+            echo "<td>" . ($item->client_name ?? '-') . "</td>";
+            echo "<td>" . ($item->zone_name ?? '-') . "</td>";
+            echo "<td>" . ($item->rak_name ?? '-') . "</td>";
+            echo "<td>" . ($item->bin_name ?? '-') . "</td>";
+            echo "<td>" . ($item->level_name ?? '-') . "</td>";
+            echo "<td>{$item->status}</td>";
+            echo "<td>{$item->condition}</td>";
+            echo "</tr>";
+        }
+
+        echo "</tbody>";
+        echo "</table>";
+        exit;
     }
 
     public function history(Request $request): View

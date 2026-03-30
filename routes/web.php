@@ -99,6 +99,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/stock-statement', 'stockStatement')->name('inventory.stock.statement');
         Route::get('/storage', 'storageInventory')->name('inventory.storage');
         Route::get('/storage/detail', 'storageInventoryDetail')->name('inventory.storage.detail');
+        Route::get('/storage/export-excel', 'storageInventoryExportExcel')->name('inventory.storage.export-excel');
         Route::get('/history', 'history')->name('inventory.history');
     });
 

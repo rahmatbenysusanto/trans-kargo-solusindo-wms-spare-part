@@ -73,7 +73,7 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-label-secondary text-uppercase small ls-1 fw-bold border-top-0">
                             <tr>
-                                <th class="ps-4">Asset ID</th>
+                                <th class="ps-4">Warehouse Asset ID</th>
                                 <th>Specification</th>
                                 <th>Serial Number</th>
                                 <th>Brand</th>

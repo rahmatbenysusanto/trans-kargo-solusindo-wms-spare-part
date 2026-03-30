@@ -281,17 +281,17 @@
                                         </a>
                                     </li>
                                 @endif
-                                @if (Auth::user()->hasMenu('Inbound: Staging (Testing)'))
-                                    <li class="menu-item {{ $title == 'Staging Management' ? 'active' : '' }}">
-                                        <a href="{{ route('staging.index') }}" class="menu-link">
-                                            <div data-i18n="Staging">Staging (Testing)</div>
-                                        </a>
-                                    </li>
-                                @endif
                                 @if (Auth::user()->hasMenu('Inbound: Put Away'))
                                     <li class="menu-item {{ $title == 'Put Away' ? 'active' : '' }}">
                                         <a href="{{ route('receiving.put.away') }}" class="menu-link">
                                             <div data-i18n="Put Away">Put Away</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inbound: Staging (Testing)'))
+                                    <li class="menu-item {{ $title == 'Staging Management' ? 'active' : '' }}">
+                                        <a href="{{ route('staging.index') }}" class="menu-link">
+                                            <div data-i18n="Staging">Staging (Testing)</div>
                                         </a>
                                     </li>
                                 @endif

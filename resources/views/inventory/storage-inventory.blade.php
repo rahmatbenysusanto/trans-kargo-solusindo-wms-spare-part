@@ -42,6 +42,9 @@
                             <input type="text" class="form-control" name="search" value="{{ request()->get('search') }}"
                                 placeholder="Search Zone, Rak, Bin, Level ...">
                             <button class="btn btn-primary" type="submit">Filter</button>
+                            <a href="{{ route('inventory.storage.export-excel', request()->all()) }}" class="btn btn-success">
+                                <i class="ti tabler-file-spreadsheet"></i>
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -72,11 +75,17 @@
                                                 style="min-width: 40px;">{{ number_format($item->total_items) }}</span>
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-primary btn-xs btn-icon"
-                                                onclick="showDetail('{{ $item->storage_level_id }}', '{{ $item->zone_name }}-{{ $item->rak_name }}-{{ $item->bin_name }}-{{ $item->level_name }}')"
-                                                title="View Breakdown">
-                                                <i class="ti tabler-search"></i>
-                                            </button>
+                                            <div class="d-flex justify-content-center gap-1">
+                                                <button type="button" class="btn btn-primary btn-xs btn-icon"
+                                                    onclick="showDetail('{{ $item->storage_level_id }}', '{{ $item->zone_name }}-{{ $item->rak_name }}-{{ $item->bin_name }}-{{ $item->level_name }}')"
+                                                    title="View Breakdown">
+                                                    <i class="ti tabler-eye"></i>
+                                                </button>
+                                                <a href="{{ route('inventory.storage.export-excel', ['storage_level_id' => $item->storage_level_id, 'client_id' => request('client_id')]) }}"
+                                                    class="btn btn-success btn-xs btn-icon" title="Download Excel">
+                                                    <i class="ti tabler-file-spreadsheet"></i>
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -109,7 +118,7 @@
                             id="detailTable">
                             <thead class="bg-primary text-white sticky-top shadow-sm">
                                 <tr>
-                                    <th class="text-white">Asset ID</th>
+                                    <th class="text-white">Warehouse Asset ID</th>
                                     <th class="text-white">Part Name</th>
                                     <th class="text-white">Part Number</th>
                                     <th class="text-white">Serial Number</th>

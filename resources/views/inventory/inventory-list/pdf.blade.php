@@ -36,7 +36,7 @@
                             <thead class="table-light border-dark">
                                 <tr>
                                     <th class="text-center">#</th>
-                                    <th>Asset ID</th>
+                                    <th>Warehouse Asset ID</th>
                                     <th>Product Details</th>
                                     <th>Serial Number</th>
                                     <th>Storage</th>

@@ -113,7 +113,7 @@
                                 <tr>
                                     <th width="30">#</th>
                                     <th>Client / Owner</th>
-                                    <th>Asset ID</th>
+                                    <th>Warehouse Asset ID</th>
                                     <th>Serial Number</th>
                                     <th>Part Name</th>
                                     <th>Part Number</th>
