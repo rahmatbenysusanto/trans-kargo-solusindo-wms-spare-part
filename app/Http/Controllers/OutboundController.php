@@ -194,6 +194,7 @@ class OutboundController extends Controller
                     $inventoryStatus = 'Shipped / Outbound'; // Default fallback
 
                     switch ($outbound->category) {
+                        case 'RMA':
                         case 'Spare from/to Replacement':
                         case 'Spare from Replacement':
                         case 'Spare to Replacement':
@@ -206,7 +207,6 @@ class OutboundController extends Controller
                             $inventoryStatus = 'Out for Loan';
                             break;
                         case 'Faulty':
-                        case 'RMA':
                         case 'Out for Return':
                             $inventoryStatus = 'Out for Return';
                             break;
