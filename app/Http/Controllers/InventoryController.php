@@ -509,25 +509,18 @@ class InventoryController extends Controller
             )
             ->where('inventory.qty', '>', 0);
 
-        if ($user->isAdminWMS()) {
-            if ($clientId) {
-                $query->where('inventory.client_id', $clientId);
-            }
-        } else {
-            $accessibleIds = $user->getAccessibleClientIds();
-            if ($clientId && in_array($clientId, $accessibleIds)) {
-                $query->where('inventory.client_id', $clientId);
-            } else {
-                $query->whereIn('inventory.client_id', $accessibleIds);
-            }
-        }
+        $this->applyClientFilter($query, $clientId, 'inventory.client_id');
 
         $query->when($request->search, function ($q) use ($request) {
             $q->where(function ($sq) use ($request) {
                 $sq->where('storage_zone.name', 'like', '%' . $request->search . '%')
                     ->orWhere('storage_rak.name', 'like', '%' . $request->search . '%')
                     ->orWhere('storage_bin.name', 'like', '%' . $request->search . '%')
-                    ->orWhere('storage_level.name', 'like', '%' . $request->search . '%');
+                    ->orWhere('storage_level.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.unique_id', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.serial_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.part_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.part_number', 'like', '%' . $request->search . '%');
             });
         });
 
@@ -627,6 +620,7 @@ class InventoryController extends Controller
                     ->orWhere('storage_rak.name', 'like', '%' . $request->search . '%')
                     ->orWhere('storage_bin.name', 'like', '%' . $request->search . '%')
                     ->orWhere('storage_level.name', 'like', '%' . $request->search . '%')
+                    ->orWhere('inventory.unique_id', 'like', '%' . $request->search . '%')
                     ->orWhere('inventory.part_name', 'like', '%' . $request->search . '%')
                     ->orWhere('inventory.part_number', 'like', '%' . $request->search . '%')
                     ->orWhere('inventory.serial_number', 'like', '%' . $request->search . '%');

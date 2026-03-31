@@ -40,6 +40,17 @@
 
         let groupedReceivings = [];
 
+        function generateUniqueId() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString() +
+                (now.getMonth() + 1).toString().padStart(2, '0') +
+                now.getDate().toString().padStart(2, '0') +
+                now.getHours().toString().padStart(2, '0') +
+                now.getMinutes().toString().padStart(2, '0');
+            const randomStr = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return dateStr + randomStr;
+        }
+
         function downloadTemplate() {
             const headers = [
                 ["Product Number (SKU)", "Product Description", "Qty", "Serial Number (SN)", "Product Group", "Received Date", "Stock Category", "ITSM#", "SAP PO#", "Brand", "Box / Pallet"]
@@ -133,7 +144,8 @@
                             qty: findIdx(row, ['qty']),
                             group: findIdx(row, ['group']),
                             brand: findIdx(row, ['brand']),
-                            date: findIdx(row, ['date'])
+                            date: findIdx(row, ['date']),
+                            asset: findIdx(row, ['warehouse asset', 'asset#', 'wh asset'])
                         };
 
                         let currentScore = 0;
@@ -230,6 +242,7 @@
                         serialNumber: sn,
                         productGroup: grp,
                         brand: brd,
+                        whAssetNumber: val('asset') || generateUniqueId(),
                         condition: 'New',
                         qty: 1
                     });
@@ -317,6 +330,7 @@
                             ${p.serialNumber}
                             ${p.isDuplicate ? '<br><span class="badge bg-danger mt-1"><i class="ti tabler-alert-circle"></i> Duplicate</span>' : ''}
                         </td>
+                        <td><span class="badge bg-label-info">${p.whAssetNumber}</span></td>
                         <td>${p.brand}</td>
                         <td>${p.productGroup}</td>
                         <td class="text-center">
@@ -557,6 +571,7 @@
                                     <th>SKU / Part Number</th>
                                     <th>Product Description</th>
                                     <th>Serial Number</th>
+                                    <th>Warehouse Asset ID</th>
                                     <th>Brand</th>
                                     <th>Group</th>
                                     <th class="text-center">Action</th>

@@ -31,7 +31,12 @@ class OutboundController extends Controller
                         ->orWhere('tks_dn_number', 'like', '%' . $request->search . '%')
                         ->orWhere('tks_invoice_number', 'like', '%' . $request->search . '%')
                         ->orWhere('rma_number', 'like', '%' . $request->search . '%')
-                        ->orWhere('itsm_number', 'like', '%' . $request->search . '%');
+                        ->orWhere('itsm_number', 'like', '%' . $request->search . '%')
+                        ->orWhereHas('details', function ($dq) use ($request) {
+                            $dq->where('serial_number', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_name', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                        });
                 });
             })
             ->latest()

@@ -37,7 +37,12 @@ class InboundController extends Controller
                     $q->where('number', 'like', '%' . $request->search . '%')
                         ->orWhere('rma_number', 'like', '%' . $request->search . '%')
                         ->orWhere('itsm_number', 'like', '%' . $request->search . '%')
-                        ->orWhere('vendor', 'like', '%' . $request->search . '%');
+                        ->orWhere('vendor', 'like', '%' . $request->search . '%')
+                        ->orWhereHas('details', function ($dq) use ($request) {
+                            $dq->where('wh_asset_number', 'like', '%' . $request->search . '%')
+                                ->orWhere('serial_number', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_name', 'like', '%' . $request->search . '%');
+                        });
                 });
             })
             ->paginate(10);
@@ -202,7 +207,7 @@ class InboundController extends Controller
                     $productGroup = ProductGroup::find($inboundDetail->product_group_id);
 
                     $createInventory = Inventory::create([
-                        'unique_id'         => $this->generateUniqueId(),
+                        'unique_id'         => $inboundDetail->wh_asset_number ?? self::generateUniqueId(),
                         'client_id'         => $inbound->client_id,
                         'storage_level_id'  => $storageLevelId,
                         'product_id'        => $inboundDetail->product_id,
@@ -556,7 +561,7 @@ class InboundController extends Controller
                 'part_number'       => $product['partNumber'],
                 'description'       => $product['partDescription'] ?? '',
                 'qty'               => 1,
-                'wh_asset_number'   => $product['whAssetNumber'] ?? null,
+                'wh_asset_number'   => $product['whAssetNumber'] ?? self::generateUniqueId(),
                 'serial_number'     => $product['serialNumber'],
                 'old_serial_number' => $product['oldSerialNumber'] ?? null,
                 'parent_sn'         => $product['parentSn'] ?? null,

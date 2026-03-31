@@ -32,6 +32,17 @@
         let currentPage = 1;
         const pageSize = 50;
 
+        function generateUniqueId() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString() +
+                (now.getMonth() + 1).toString().padStart(2, '0') +
+                now.getDate().toString().padStart(2, '0') +
+                now.getHours().toString().padStart(2, '0') +
+                now.getMinutes().toString().padStart(2, '0');
+            const randomStr = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return dateStr + randomStr;
+        }
+
         // Load master data and create case-insensitive maps
         const groupList = @json($productGroup->pluck('name'));
         const brandList = @json($brand->pluck('name'));
@@ -145,7 +156,7 @@
                         serialNumber: sn,
                         parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
                         whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
-                            "Asset#"] || "",
+                            "Asset#"] || generateUniqueId(),
                         productGroup: groupName,
                         brand: brandName,
                         condition: row["Condition"] || "New",
@@ -226,7 +237,7 @@
                 partDescription: document.getElementById('partDescription').value,
                 serialNumber: sn,
                 parentSn: parentSn,
-                whAssetNumber: document.getElementById('whAssetNumber').value,
+                whAssetNumber: document.getElementById('whAssetNumber').value || generateUniqueId(),
                 productGroup: productGroup,
                 brand: brand,
                 condition: document.getElementById('condition').value,
@@ -282,9 +293,11 @@
             // Check visibility of client field
             const isClientVisible = $('.field-client').is(':visible');
 
-            if (!data.category || (isClientVisible && !data.client_id) || !data.date || !data.received_by || !data.sttb || !data.number) {
+            if (!data.category || (isClientVisible && !data.client_id) || !data.date || !data.received_by || !data
+                .sttb || !data.number) {
                 Swal.fire('Error',
-                    'Please fill in all required fields (Category, STTB, NTT RN#, ' + (isClientVisible ? 'Client, ' : '') + 'Date, Received By).',
+                    'Please fill in all required fields (Category, STTB, NTT RN#, ' + (isClientVisible ?
+                        'Client, ' : '') + 'Date, Received By).',
                     'error');
                 return;
             }
@@ -381,6 +394,7 @@
                     <td class="py-1">${product.partDescription}</td>
                     <td class="py-1"><span class="fw-bold text-dark">${product.serialNumber}</span></td>
                     <td class="py-1 text-muted small">${product.parentSn || '-'}</td>
+                    <td class="py-1"><span class="badge bg-label-info">${product.whAssetNumber}</span></td>
                     <td class="py-1 text-center">1</td>
                     <td class="py-1">
                         <select class="form-select form-select-sm py-0" style="font-size: 0.75rem;" onchange="updateProductCondition(${index}, this.value)">
@@ -767,6 +781,7 @@
                                     <th class="text-white">Product Description</th>
                                     <th class="text-white">Serial Number</th>
                                     <th class="text-white">Parent SN</th>
+                                    <th class="text-white">Warehouse Asset ID</th>
                                     <th class="text-white text-center">Qty</th>
                                     <th class="text-white" width="130">Condition</th>
                                     <th class="text-white text-center" width="80">Action</th>
