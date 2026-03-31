@@ -241,6 +241,7 @@
                                     <th>SKU / Part Number</th>
                                     <th>Serial Number</th>
                                     <th>Old / Parent SN</th>
+                                    <th>WH Asset ID</th>
                                     <th class="text-center">Condition</th>
                                     <th class="text-center">Status</th>
                                     <th>Storage Location</th>
@@ -260,6 +261,9 @@
                                         <td class="font-monospace fw-bold text-primary">{{ $detail->serial_number }}</td>
                                         <td class="small text-danger">
                                             {{ $detail->parent_sn ?? ($detail->old_serial_number ?? '-') }}</td>
+                                        <td><span class="fw-bold text-primary"
+                                                style="font-size: 0.72rem;">{{ $detail->wh_asset_number ?? '-' }}</span>
+                                        </td>
                                         <td class="text-center">
                                             @php
                                                 $condClass = 'bg-label-info';

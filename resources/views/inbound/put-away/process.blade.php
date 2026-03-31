@@ -134,7 +134,7 @@
                             <thead class="bg-label-secondary sticky-top">
                                 <tr>
                                     <th>Part / Specifications</th>
-                                    <th>Serial Number</th>
+                                    <th>Serial / WH Asset ID</th>
                                     <th width="50">PA</th>
                                 </tr>
                             </thead>
@@ -146,10 +146,13 @@
                                             <div class="text-muted" style="font-size: 0.72rem;">{{ $detail->part_number }}
                                             </div>
                                         </td>
-                                        <td class="font-monospace fw-medium small">{{ $detail->serial_number }}</td>
+                                        <td>
+                                            <div class="font-monospace fw-medium small">{{ $detail->serial_number }}</div>
+                                            <div class="text-primary fw-bold" style="font-size: 0.68rem;">{{ $detail->wh_asset_number ?: '-' }}</div>
+                                        </td>
                                         <td>
                                             <button class="btn btn-label-primary move-btn"
-                                                onclick="moveRight({{ $detail->id }}, '{{ addslashes($detail->part_name) }}', '{{ $detail->serial_number }}')">
+                                                onclick="moveRight({{ $detail->id }}, '{{ addslashes($detail->part_name) }}', '{{ $detail->serial_number }}', '{{ $detail->wh_asset_number }}')">
                                                 <i class="ti tabler-plus"></i>
                                             </button>
                                         </td>
@@ -180,7 +183,7 @@
                             <thead class="bg-label-warning sticky-top">
                                 <tr>
                                     <th>Part Name</th>
-                                    <th>Serial Number</th>
+                                    <th>Serial / WH Asset ID</th>
                                     <th width="50" class="text-center">Remove</th>
                                 </tr>
                             </thead>
@@ -294,7 +297,7 @@
             });
         }
 
-        function moveRight(id, name, sn) {
+        function moveRight(id, name, sn, asset) {
             if (selectedProducts.includes(id)) return;
 
             selectedProducts.push(id);
@@ -305,7 +308,10 @@
             const row = `
                 <tr id="selected-row-${id}">
                     <td class="small fw-medium text-dark">${name}</td>
-                    <td class="font-monospace small font-bold">${sn}</td>
+                    <td>
+                        <div class="font-monospace small font-bold">${sn}</div>
+                        <div class="text-primary fw-bold" style="font-size: 0.68rem;">${asset || '-'}</div>
+                    </td>
                     <td class="text-center">
                         <button class="btn btn-xs btn-label-danger move-btn mx-auto" onclick="moveLeft(${id})">
                             <i class="ti tabler-circle-x fs-6"></i>
@@ -336,8 +342,9 @@
                 if (idText) {
                     const id = parseInt(idText);
                     const name = row.cells[0].querySelector('.fw-bold').innerText;
-                    const sn = row.cells[1].innerText;
-                    moveRight(id, name, sn);
+                    const sn = row.cells[1].querySelector('.font-monospace').innerText;
+                    const asset = row.cells[1].querySelector('.text-primary').innerText;
+                    moveRight(id, name, sn, asset);
                 }
             });
         }
