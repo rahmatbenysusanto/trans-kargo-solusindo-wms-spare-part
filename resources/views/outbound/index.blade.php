@@ -166,7 +166,7 @@
                                                 {{ $item->outbound_by }}</small>
                                         </div>
                                     </td>
-                                    <td><span class="fw-bold text-dark">{{ $item->client->name ?? '-' }}</span></td>
+                                    <td><span class="fw-bold text-dark">{{ $item->client?->name ?? '-' }}</span></td>
                                     <td>
                                         <div class="d-flex flex-column gap-1">
                                             <span class="badge bg-label-info w-fit"

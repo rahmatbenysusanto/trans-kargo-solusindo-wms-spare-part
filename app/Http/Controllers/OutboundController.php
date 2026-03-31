@@ -185,7 +185,7 @@ class OutboundController extends Controller
                     'type' => 'Outbound',
                     'category' => $outbound->category,
                     'reference_number' => $outbound->number ?? $outbound->tks_dn_number,
-                    'description' => "Item shipped out via {$outbound->category} to " . ($outbound->client->name ?? 'Client') . (isset($product['oldSerialNumber']) && $product['oldSerialNumber'] ? " - Replacing SN: {$product['oldSerialNumber']}" : ""),
+                    'description' => "Item shipped out via {$outbound->category} to " . ($outbound->client?->name ?? 'Client') . (isset($product['oldSerialNumber']) && $product['oldSerialNumber'] ? " - Replacing SN: {$product['oldSerialNumber']}" : ""),
                     'user' => $outbound->outbound_by,
                 ]);
 

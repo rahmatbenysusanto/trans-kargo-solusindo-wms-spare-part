@@ -184,7 +184,7 @@
                 text: "This will record the transaction and update inventory.",
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: '<i class="ti tabler-device-floppy me-1"></i> Save Transaction',
+                confirmButtonText: '<i class="ti tabler-device-floppy me-1"></i> Create Outbound',
                 customClass: {
                     confirmButton: 'btn btn-success me-1',
                     cancelButton: 'btn btn-label-secondary'
@@ -306,7 +306,7 @@
                             </a>
                             <button class="btn btn-primary shadow-sm btn-sm waves-effect waves-light"
                                 onclick="submitOutbound()">
-                                <i class="ti tabler-device-floppy me-1"></i> Save Transaction
+                                <i class="ti tabler-device-floppy me-1"></i> Create Outbound
                             </button>
                         </div>
                     </div>

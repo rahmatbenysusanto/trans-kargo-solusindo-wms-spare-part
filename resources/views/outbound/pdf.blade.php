@@ -54,7 +54,7 @@
                         <tr>
                             <td class="ps-0 text-muted">Client:</td>
                             <td class="fw-bold text-dark text-truncate d-inline-block" style="max-width: 150px;">
-                                {{ $outbound->client->name ?? 'N/A' }}</td>
+                                {{ $outbound->client?->name ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <td class="ps-0 text-muted">Requestor:</td>

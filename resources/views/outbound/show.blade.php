@@ -37,7 +37,7 @@
                             <tbody>
                                 <tr>
                                     <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Client Name</th>
-                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->client->name ?? '-' }}</td>
+                                    <td class="fw-bold py-2 px-3 text-dark small">{{ $outbound->client?->name ?? '-' }}</td>
                                     <th class="bg-light-subtle text-muted w-25 py-2 px-3 small fw-medium">Category</th>
                                     <td class="py-2 px-3 small">
                                         <span class="badge bg-label-primary">{{ $outbound->category }}</span>
