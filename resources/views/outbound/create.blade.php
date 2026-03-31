@@ -20,7 +20,7 @@
 
             if (products.length === 0) {
                 const colspan = (category === 'RMA' || category === 'Faulty' || category === 'Spare from/to Replacement') ?
-                    7 : 6;
+                    9 : 8;
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="${colspan}" class="text-center py-5">
@@ -62,7 +62,13 @@
                             <small class="text-muted badge bg-label-secondary border-0 text-start px-0" style="width: fit-content;">${product.partNumber}</small>
                         </div>
                     </td>
+                    <td>
+                        <span class="badge ${product.condition === 'New' || product.condition === 'Good' ? 'bg-label-success' : (product.condition === 'Faulty' ? 'bg-label-danger' : 'bg-label-warning')}">
+                            ${product.condition}
+                        </span>
+                    </td>
                     <td><span class="fw-medium">${product.serialNumber}</span></td>
+                    <td><span class="badge bg-label-success">${product.stockStatus || '-'}</span></td>
                     ${extraCol}
                     <td><span class="badge bg-label-info border-info-subtle"><i class="ti tabler-map-pin me-1 fs-tiny"></i> ${product.location}</span></td>
                     <td class="text-center">
@@ -237,6 +243,7 @@
                 brand: item.brand,
                 productGroup: item.product_group,
                 condition: item.condition,
+                stockStatus: item.status,
                 location: item.location,
                 oldSerialNumber: ''
             });
@@ -465,9 +472,11 @@
                                 <thead class="bg-label-primary text-uppercase small fw-bold">
                                     <tr>
                                         <th class="text-center" style="width: 60px;">#</th>
-                                        <th>Asset info</th>
+                                        <th>Warehouse Asset ID</th>
                                         <th>Specification</th>
+                                        <th>Stock Condition</th>
                                         <th>Serial Number</th>
+                                        <th>Stock Status</th>
                                         <th id="rmaHeaderCol" style="display:none;">New Serial (Return)</th>
                                         <th>Location</th>
                                         <th class="text-center" style="width: 100px;">Action</th>

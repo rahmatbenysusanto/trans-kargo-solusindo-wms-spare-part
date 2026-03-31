@@ -342,6 +342,7 @@ class OutboundController extends Controller
                     'brand' => ($item->brand ? $item->brand->name : '-'),
                     'product_group' => ($item->productGroup ? $item->productGroup->name : '-'),
                     'condition' => $item->condition,
+                    'status' => $item->status,
                     'location' => $location
                 ];
             });
