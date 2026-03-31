@@ -290,14 +290,28 @@
                 received_by: document.getElementById('received_by').value,
             };
 
-            // Check visibility of client field
+            // Check visibility of fields
             const isClientVisible = $('.field-client').is(':visible');
+            const isSttbVisible = $('.field-sttb').is(':visible');
+            const isNumberVisible = $('.field-ntt-rn').is(':visible');
 
-            if (!data.category || (isClientVisible && !data.client_id) || !data.date || !data.received_by || !data
-                .sttb || !data.number) {
+            if (!data.category ||
+                (isClientVisible && !data.client_id) ||
+                !data.date ||
+                !data.received_by ||
+                (isSttbVisible && !data.sttb) ||
+                (isNumberVisible && !data.number)) {
+
+                let missingFields = [];
+                if (!data.category) missingFields.push('Category');
+                if (isClientVisible && !data.client_id) missingFields.push('Client');
+                if (!data.date) missingFields.push('Date');
+                if (!data.received_by) missingFields.push('Received By');
+                if (isSttbVisible && !data.sttb) missingFields.push('STTB');
+                if (isNumberVisible && !data.number) missingFields.push('NTT RN#');
+
                 Swal.fire('Error',
-                    'Please fill in all required fields (Category, STTB, NTT RN#, ' + (isClientVisible ?
-                        'Client, ' : '') + 'Date, Received By).',
+                    'Please fill in all required fields: ' + missingFields.join(', '),
                     'error');
                 return;
             }

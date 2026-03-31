@@ -464,11 +464,11 @@ class InboundController extends Controller
             'category'        => 'required',
             'request_type'    => 'nullable',
             'client_id'       => 'nullable',
-            'number'          => 'required', // NTT RN#
+            'number'          => 'nullable', // NTT RN#
             'po_number'       => 'nullable', // Transkargo SN / PO
             'sap_po_number'   => 'nullable',
             'ecapex_number'   => 'nullable',
-            'sttb'            => 'required',
+            'sttb'            => 'nullable',
             'receivedDate'    => 'required',
             'receivedBy'      => 'required',
             'products'        => 'required|array|min:1',
