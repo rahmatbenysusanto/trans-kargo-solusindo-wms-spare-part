@@ -300,7 +300,12 @@ class OutboundController extends Controller
                 ]);
 
             if ($clientId) {
-                $query->where('client_id', $clientId);
+                $query->where(function ($q) use ($clientId) {
+                    $q->where('client_id', $clientId)
+                        ->orWhereNull('client_id');
+                });
+            } else {
+                $query->whereNull('client_id');
             }
 
             if ($request->search) {
