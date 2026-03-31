@@ -209,7 +209,7 @@
                     let sn = val('sn');
                     let cat = val('category') || 'New PO';
                     let desc = val('desc');
-                    let sap = val('po');
+                    let sap = val('po').replace(/\D/g, '');
                     let itsm = val('itsm');
                     let grp = val('group');
                     let brd = val('brand');
@@ -273,6 +273,13 @@
             reader.readAsArrayBuffer(file);
         }
 
+        function formatDisplayDate(dateStr) {
+            if (!dateStr || dateStr === '') return '-';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
         function renderPreview() {
             const tbody = document.getElementById('previewTableBody');
             let html = '';
@@ -296,7 +303,7 @@
                         </td>
                         <td>${rec.sap_po_number ? `<span class="badge bg-label-info">SAP: ${rec.sap_po_number}</span>` : '-'}</td>
                         <td>${rec.itsm_number ? `<span class="badge bg-label-warning">ITSM: ${rec.itsm_number}</span>` : '-'}</td>
-                        <td>${rec.receivedDate}</td>
+                        <td>${formatDisplayDate(rec.receivedDate)}</td>
                         <td class="text-center"><span class="badge bg-primary">${rec.products.length} Items</span></td>
                         <td class="text-center">
                             <button class="btn btn-xs ${hasDuplicate ? 'btn-danger' : 'btn-outline-info'}" onclick="viewItems(${index})">
