@@ -346,14 +346,14 @@ class InboundController extends Controller
     public function bulkImportStore(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'client_id'  => 'required',
+            'client_id'  => 'nullable',
             'receivings' => 'required|array|min:1',
         ]);
 
         try {
             DB::beginTransaction();
 
-            $clientId = $request->post('client_id');
+            $clientId = $request->post('client_id') ?: null;
             $receivings = $request->post('receivings');
             $receivedBy = Auth::check() ? Auth::user()->name : 'System';
 
@@ -455,7 +455,7 @@ class InboundController extends Controller
         $request->validate([
             'category'        => 'required',
             'request_type'    => 'nullable',
-            'client_id'       => 'required',
+            'client_id'       => 'nullable',
             'number'          => 'required', // NTT RN#
             'po_number'       => 'nullable', // Transkargo SN / PO
             'sap_po_number'   => 'nullable',
@@ -474,7 +474,7 @@ class InboundController extends Controller
                 'request_type'          => $request->post('request_type'),
                 'ntt_requestor'         => $request->post('ntt_requestor'),
                 'request_date'          => $request->post('request_date'),
-                'client_id'             => $request->post('client_id'),
+                'client_id'             => $request->post('client_id') ?: null,
                 'client_contact'        => $request->post('client_contact'),
                 'pickup_address'        => $request->post('pickup_address'),
                 'number'                => $request->post('po_number') ?? self::generateInboundNumber('SPR'),

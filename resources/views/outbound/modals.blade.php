@@ -132,7 +132,8 @@
         const search = document.getElementById('inventorySearch').value;
         const tbody = document.getElementById('inventoryListBody');
 
-        if (!clientId || clientId === "") {
+        const isClientVisible = $('#client_id').closest('.field-client').is(':visible');
+        if (isClientVisible && (!clientId || clientId === "")) {
             tbody.innerHTML =
                 '<tr><td colspan="6" class="text-center py-5"><div class="badge bg-label-danger fs-6 rounded-pill px-4 py-2 mb-2"><i class="ti tabler-alert-triangle me-1"></i> Selection Required</div><p class="text-muted mb-0">Please choose a Client first to load inventory data.</p></td></tr>';
             return;

@@ -157,10 +157,11 @@
                 return;
             }
 
-            if (!data.client_id || !data.outbound_date || !data.outbound_by) {
+            const isClientVisible = $('#client_id').closest('.field-client').is(':visible');
+            if ((isClientVisible && !data.client_id) || !data.outbound_date || !data.outbound_by) {
                 Swal.fire({
                     title: 'Incomplete Form',
-                    text: 'Please fill in all required fields marked with *',
+                    text: 'Please fill in all required fields marked with *' + (isClientVisible ? ' (including Client)' : ''),
                     icon: 'warning',
                     customClass: {
                         confirmButton: 'btn btn-primary'
@@ -266,6 +267,15 @@
                     rmaCol.style.display = 'none';
                 }
             }
+            
+            // Toggle Client fields
+            const clientFields = $('.field-client, .field-client-contact, .field-pickup-address-container');
+            if (category === 'Spare Write Off' || category === 'Faulty' || category === 'Spare Migration') {
+                clientFields.hide();
+            } else {
+                clientFields.show();
+            }
+            
             renderProducts();
         }
 
@@ -330,7 +340,7 @@
                                             <option value="RMA">RMA</option>
                                         </select>
                                     </div>
-                                    <div class="mb-3">
+                                    <div class="mb-3 field-client">
                                         <label class="form-label small fw-bold text-dark">Client <span
                                                 class="text-danger">*</span></label>
                                         <select class="form-select select2" name="client_id" id="client_id">
@@ -340,7 +350,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="mb-0">
+                                    <div class="mb-0 field-client-contact">
                                         <label class="form-label small fw-bold text-dark">Client Contact</label>
                                         <input type="text" class="form-control border-light-subtle" name="client_contact"
                                             id="client_contact" placeholder="Contact person/Dept">
@@ -420,7 +430,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-12">
+                            <div class="col-12 field-pickup-address-container">
                                 <div class="card border-0 shadow-sm p-3"
                                     style="border-radius: 12px; background: rgba(115, 103, 240, 0.03); border: 1px dashed rgba(115, 103, 240, 0.2) !important;">
                                     <label class="form-label small fw-bold text-primary d-flex align-items-center"><i

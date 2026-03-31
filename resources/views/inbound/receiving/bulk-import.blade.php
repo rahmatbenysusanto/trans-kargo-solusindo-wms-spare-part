@@ -380,11 +380,6 @@
 
             const clientId = document.getElementById('client_id').value;
             
-            if (!clientId) {
-                Swal.fire('Error', 'Please select a Client before confirming.', 'error');
-                return;
-            }
-
             if (groupedReceivings.length === 0) {
                 Swal.fire('Error', 'No data to submit. Please upload and parse Excel first.', 'error');
                 return;
@@ -392,8 +387,8 @@
 
             Swal.fire({
                 title: 'Confirm Creation?',
-                text: `You are about to create ${groupedReceivings.length} Receiving Records.`,
-                icon: 'question',
+                text: `You are about to create ${groupedReceivings.length} Receiving Records` + (!clientId ? ' without a client assigned' : '') + '.',
+                icon: clientId ? 'question' : 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
                 cancelButtonColor: '#d33',
@@ -489,7 +484,7 @@
                         <div class="col-md-5 border-start ps-4">
                             <h6 class="fw-bold mb-3">Upload Configuration</h6>
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Select Client <span class="text-danger">*</span></label>
+                                <label class="form-label fw-bold">Select Client (Optional)</label>
                                 <select class="form-control select2" name="client_id" id="client_id">
                                     <option value="">-- Choose Client --</option>
                                     @foreach ($client as $item)

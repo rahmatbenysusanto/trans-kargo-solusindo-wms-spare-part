@@ -126,7 +126,7 @@ class OutboundController extends Controller
     private function storeOutbound(Request $request, $defaultCategory)
     {
         $request->validate([
-            'client_id' => 'required',
+            'client_id' => 'nullable',
             'outbound_date' => 'required',
             'outbound_by' => 'required',
             'products' => 'required|array|min:1',
@@ -141,7 +141,7 @@ class OutboundController extends Controller
                 'ntt_requestor' => $request->post('ntt_requestor'),
                 'request_date' => $request->post('request_date'),
                 'sap_po_number' => $request->post('sap_po_number'),
-                'client_id' => $request->post('client_id'),
+                'client_id' => $request->post('client_id') ?: null,
                 'client_contact' => $request->post('client_contact'),
                 'pickup_address' => $request->post('pickup_address'),
                 'number' => $request->post('number'), // PO# system ref
