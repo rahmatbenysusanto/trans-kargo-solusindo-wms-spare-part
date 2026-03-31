@@ -374,6 +374,9 @@ class InboundController extends Controller
             foreach ($receivings as $rec) {
                 $category = $rec['category'] ?? 'New PO';
                 $sapPo = $rec['sap_po_number'] ?? null;
+                if ($sapPo) {
+                    $sapPo = preg_replace('/\D/', '', $sapPo);
+                }
                 $itsm = $rec['itsm_number'] ?? null;
                 $receiveDate = $rec['receivedDate'] ?? date('Y-m-d');
                 $products = $rec['products'] ?? [];
@@ -489,7 +492,7 @@ class InboundController extends Controller
                 'courier_invoice'       => $request->post('courier_invoice'),
                 'rma_number'            => $request->post('rma_number'),
                 'itsm_number'           => $request->post('itsm_number'),
-                'sap_po_number'         => $request->post('sap_po_number'),
+                'sap_po_number'         => $request->post('sap_po_number') ? preg_replace('/\D/', '', $request->post('sap_po_number')) : null,
                 'ecapex_number'         => $request->post('ecapex_number'),
                 'vendor_dn_number'      => $request->post('vendor_dn_number'),
                 'tks_dn_number'         => $request->post('tks_dn_number'),

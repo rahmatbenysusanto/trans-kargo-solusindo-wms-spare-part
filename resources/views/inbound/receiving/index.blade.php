@@ -138,8 +138,8 @@
                                             <div class="d-flex flex-column">
                                                 <span class="fw-bold text-dark">{{ $item->number }}</span>
                                                 @if ($item->sap_po_number)
-                                                    <small class="text-primary fw-bold" style="font-size: 0.7rem;">SAP:
-                                                        {{ $item->sap_po_number }}</small>
+                                                    <small class="text-primary fw-bold"
+                                                        style="font-size: 0.7rem;">{{ $item->sap_po_number }}</small>
                                                 @endif
                                             </div>
                                         </td>

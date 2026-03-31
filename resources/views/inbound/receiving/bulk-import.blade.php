@@ -301,7 +301,7 @@
                             <span class="fw-bold text-primary">${rec.category}</span>
                             ${hasDuplicate ? '<br><span class="badge bg-danger mt-1 small"><i class="ti tabler-alert-triangle tiny"></i> Has Duplicates</span>' : ''}
                         </td>
-                        <td>${rec.sap_po_number ? `<span class="badge bg-label-info">SAP: ${rec.sap_po_number}</span>` : '-'}</td>
+                        <td>${rec.sap_po_number ? `<span class="badge bg-label-info">${rec.sap_po_number}</span>` : '-'}</td>
                         <td>${rec.itsm_number ? `<span class="badge bg-label-warning">ITSM: ${rec.itsm_number}</span>` : '-'}</td>
                         <td>${formatDisplayDate(rec.receivedDate)}</td>
                         <td class="text-center"><span class="badge bg-primary">${rec.products.length} Items</span></td>
@@ -350,7 +350,7 @@
             });
 
             tbody.innerHTML = html;
-            document.getElementById('modalTitle').innerText = `Items for Category: ${data.category} | SAP: ${data.sap_po_number || 'N/A'}`;
+            document.getElementById('modalTitle').innerText = `Items for Category: ${data.category} | ${data.sap_po_number || 'N/A'}`;
             $('#itemsModal').modal('show');
         }
 
