@@ -148,12 +148,23 @@
                 <div class="modal-body">
                     <input type="hidden" id="finishId">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Staging Result (New Condition)</label>
+                        <label class="form-label small fw-bold">Staging Condition Result</label>
                         <select id="finishCondition" class="form-select">
-                            <option value="New">New (Excellent)</option>
-                            <option value="Good">Good (Passed)</option>
-                            <option value="Faulty">Faulty (Failed)</option>
-                            <option value="Write-off Needed">Bad / Write-off</option>
+                            <option value="New">New</option>
+                            <option value="Refurbished">Refurbished</option>
+                            <option value="Faulty">Faulty</option>
+                            <option value="Write-off Needed">Write-off Needed</option>
+                            <option value="Spare Migration">Spare Migration</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Stock Status Result</label>
+                        <select id="finishStatus" class="form-select">
+                            <option value="Available">Available</option>
+                            <option value="Out for Replacement/ Support">Out for Replacement/ Support</option>
+                            <option value="Out for Loan">Out for Loan</option>
+                            <option value="Out for Return">Out for Return</option>
+                            <option value="Write-off">Write-off</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -270,6 +281,7 @@
                     body: JSON.stringify({
                         inventory_ids: [id],
                         condition: $('#finishCondition').val(),
+                        status: $('#finishStatus').val(),
                         description: $('#finishDescription').val()
                     })
                 })

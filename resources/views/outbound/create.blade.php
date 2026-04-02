@@ -45,6 +45,18 @@
                     </td>`;
                 }
 
+                let condClass = 'bg-label-secondary';
+                if (['New', 'Refurbished'].includes(product.condition)) condClass = 'bg-label-success';
+                else if (['Faulty', 'Write-off Needed'].includes(product.condition)) condClass = 'bg-label-danger';
+                else if (product.condition === 'Spare Migration') condClass = 'bg-label-info';
+
+                let statusClass = 'bg-label-secondary';
+                if (product.stockStatus === 'Available') statusClass = 'bg-label-success';
+                else if (product.stockStatus === 'Out for Replacement/ Support') statusClass = 'bg-label-warning';
+                else if (product.stockStatus === 'Out for Loan') statusClass = 'bg-label-primary';
+                else if (product.stockStatus === 'Out for Return') statusClass = 'bg-label-info';
+                else if (product.stockStatus === 'Write-off') statusClass = 'bg-label-danger';
+
                 const row = `
                 <tr class="animate__animated animate__fadeIn">
                     <td class="text-center">${index + 1}</td>
@@ -63,12 +75,14 @@
                         </div>
                     </td>
                     <td>
-                        <span class="badge ${product.condition === 'New' || product.condition === 'Good' ? 'bg-label-success' : (product.condition === 'Faulty' ? 'bg-label-danger' : 'bg-label-warning')}">
+                        <span class="badge ${condClass}">
                             ${product.condition}
                         </span>
                     </td>
                     <td><span class="fw-medium">${product.serialNumber}</span></td>
-                    <td><span class="badge bg-label-success">${product.stockStatus || '-'}</span></td>
+                    <td>
+                        <span class="badge ${statusClass}">${product.stockStatus || '-'}</span>
+                    </td>
                     ${extraCol}
                     <td><span class="badge bg-label-info border-info-subtle"><i class="ti tabler-map-pin me-1 fs-tiny"></i> ${product.location}</span></td>
                     <td class="text-center">

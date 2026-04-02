@@ -112,7 +112,6 @@
                             <thead class="table-light border-top">
                                 <tr>
                                     <th width="30">#</th>
-                                    <th>Client / Owner</th>
                                     <th>Warehouse Asset ID</th>
                                     <th>Serial Number</th>
                                     <th>Part Name</th>
@@ -120,7 +119,8 @@
                                     <th>Brand</th>
                                     <th>Group</th>
                                     <th>Location</th>
-                                    <th>Condition</th>
+                                    <th>Stock Condition</th>
+                                    <th>Staging Condition</th>
                                     <th>Status</th>
                                     <th>Check Date</th>
                                     <th>Activity</th>
@@ -131,8 +131,6 @@
                                 @forelse ($inventory as $item)
                                     <tr>
                                         <td>{{ $loop->iteration + ($inventory->currentPage() - 1) * $inventory->perPage() }}
-                                        </td>
-                                        <td><span class="small fw-medium text-dark">{{ $item->client->name ?? '-' }}</span>
                                         </td>
                                         <td><span class="text-mono fw-bold text-primary">{{ $item->unique_id }}</span></td>
                                         <td><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span>
@@ -158,6 +156,13 @@
                                                 class="badge {{ $item->condition == 'New' ? 'bg-label-info' : 'bg-label-secondary' }} badge-status">{{ $item->condition ?? '-' }}</span>
                                         </td>
                                         <td>
+                                            @if($item->staging_condition)
+                                            <span class="badge bg-label-dark badge-status">{{ $item->staging_condition }}</span>
+                                            @else
+                                            <span class="text-muted small">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             @php
                                                 $bgClass = 'bg-label-secondary';
                                                 switch (strtolower($item->status)) {
@@ -167,11 +172,16 @@
                                                     case 'staging':
                                                         $bgClass = 'bg-label-info';
                                                         break;
-                                                    case 'shipped / outbound':
+                                                    case 'out for replacement/ support':
                                                         $bgClass = 'bg-label-warning';
                                                         break;
+                                                    case 'out for loan':
+                                                        $bgClass = 'bg-label-primary';
+                                                        break;
+                                                    case 'out for return':
+                                                        $bgClass = 'bg-label-secondary';
+                                                        break;
                                                     case 'write-off':
-                                                    case 'faulty':
                                                         $bgClass = 'bg-label-danger';
                                                         break;
                                                 }

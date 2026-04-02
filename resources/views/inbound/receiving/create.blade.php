@@ -918,7 +918,9 @@
                                 <label class="form-label">Stock Status</label>
                                 <select class="form-control" id="stockStatus">
                                     <option value="Available">Available</option>
-                                    <option value="Faulty">Faulty</option>
+                                    <option value="Out for Replacement/ Support">Out for Replacement/ Support</option>
+                                    <option value="Out for Loan">Out for Loan</option>
+                                    <option value="Out for Return">Out for Return</option>
                                     <option value="Write-off">Write-off</option>
                                 </select>
                             </div>

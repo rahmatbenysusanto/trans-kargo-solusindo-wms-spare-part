@@ -106,7 +106,8 @@ class StagingController extends Controller
     {
         $request->validate([
             'inventory_ids' => 'required|array',
-            'condition' => 'required|string', // Pass, Faulty, etc.
+            'condition' => 'required|string',
+            'status' => 'required|string',
             'description' => 'nullable|string'
         ]);
 
@@ -117,10 +118,9 @@ class StagingController extends Controller
             foreach ($items as $item) {
                 if ($item->status != 'staging') continue;
 
-                $oldCondition = $item->condition;
                 $item->update([
-                    'status' => 'available',
-                    'condition' => $request->condition
+                    'status' => $request->status,
+                    'staging_condition' => $request->condition
                 ]);
 
                 $locationName = $item->storageLevel ?

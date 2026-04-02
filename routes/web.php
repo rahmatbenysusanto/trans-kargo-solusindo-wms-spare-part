@@ -101,6 +101,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/storage/detail', 'storageInventoryDetail')->name('inventory.storage.detail');
         Route::get('/storage/export-excel', 'storageInventoryExportExcel')->name('inventory.storage.export-excel');
         Route::get('/history', 'history')->name('inventory.history');
+        Route::get('/edit-sn', 'editSn')->name('inventory.edit.sn');
+        Route::post('/edit-sn', 'updateSn')->name('inventory.update.sn');
     });
 
     Route::get('/inventory/cycle-count', [\App\Http\Controllers\CycleCountController::class, 'index'])->name('inventory.cycle-count');

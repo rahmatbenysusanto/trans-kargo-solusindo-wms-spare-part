@@ -140,7 +140,6 @@ class InventoryController extends Controller
         echo "<tr>";
         echo "<th>No</th>";
         echo "<th>Warehouse Asset ID</th>";
-        echo "<th>Client</th>";
         echo "<th>Part Name</th>";
         echo "<th>Part Number</th>";
         echo "<th>Serial Number</th>";
@@ -148,7 +147,8 @@ class InventoryController extends Controller
         echo "<th>Product Group</th>";
         echo "<th>Storage</th>";
         echo "<th>Status</th>";
-        echo "<th>Condition</th>";
+        echo "<th>Stock Condition</th>";
+        echo "<th>Staging Condition</th>";
         echo "<th>Last Movement</th>";
         echo "</tr>";
         echo "</thead>";
@@ -161,7 +161,6 @@ class InventoryController extends Controller
             echo "<tr>";
             echo "<td>" . ($index + 1) . "</td>";
             echo "<td>{$item->unique_id}</td>";
-            echo "<td>" . ($item->client->name ?? '-') . "</td>";
             echo "<td>{$item->part_name}</td>";
             echo "<td>{$item->part_number}</td>";
             echo "<td>'{$item->serial_number}</td>";
@@ -171,6 +170,7 @@ class InventoryController extends Controller
             echo "<td>{$storage}</td>";
             echo "<td>{$item->status}</td>";
             echo "<td>{$item->condition}</td>";
+            echo "<td>" . ($item->staging_condition ?? '-') . "</td>";
             echo "<td>" . ($item->last_movement_date ?? '-') . "</td>";
             echo "</tr>";
         }
@@ -708,5 +708,66 @@ class InventoryController extends Controller
         $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
 
         return view('inventory.history', compact('title', 'history', 'clients'));
+    }
+
+    public function editSn()
+    {
+        $title = 'Edit Serial Number';
+        return view('inventory.edit-sn', compact('title'));
+    }
+
+    public function updateSn(Request $request)
+    {
+        $request->validate([
+            'search_sn' => 'required|string',
+            'new_sn'    => 'required|string',
+        ]);
+
+        $search = $request->search_sn;
+        $newSn = $request->new_sn;
+
+        $inventory = \App\Models\Inventory::where('serial_number', $search)
+            ->orWhere('unique_id', $search)
+            ->first();
+
+        $inboundDetail = \App\Models\InboundDetail::where('serial_number', $search)
+            ->orWhere('wh_asset_number', $search)
+            ->first();
+
+        if (!$inventory && !$inboundDetail) {
+            return back()->with('error', 'Item not found with given SN or Asset ID');
+        }
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            if ($inventory) {
+                \App\Models\InventoryHistory::create([
+                    'inventory_id' => $inventory->id,
+                    'serial_number' => $newSn,
+                    'type' => 'edit_sn',
+                    'category' => 'movement',
+                    'description' => "SN Changed from " . ($inventory->serial_number ?: '[EMPTY]') . " to {$newSn}. Asset ID: {$inventory->unique_id}",
+                    'user' => Auth::user()->name,
+                    'from_location' => '-',
+                    'to_location' => '-'
+                ]);
+
+                $inventory->update([
+                    'serial_number' => $newSn
+                ]);
+            }
+
+            if ($inboundDetail) {
+                $inboundDetail->update([
+                    'serial_number' => $newSn
+                ]);
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+            return back()->with('success', 'Serial Number updated successfully.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', 'Failed to update Serial Number: ' . $e->getMessage());
+        }
     }
 }

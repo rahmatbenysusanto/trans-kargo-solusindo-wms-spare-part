@@ -491,11 +491,11 @@
 
                     <!-- Inventory -->
                     <li class="nav-item">
-                        <a class="nav-link menu-link {{ in_array($title, ['Inventory List', 'Stock Movement']) ? 'active' : '' }}" href="#inventory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="inventory">
+                        <a class="nav-link menu-link {{ in_array($title, ['Inventory List', 'Stock Movement', 'Edit Serial Number']) ? 'active' : '' }}" href="#inventory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="inventory">
                             <i class="mdi mdi-warehouse"></i>
                             <span data-key="t-widgets">Inventory</span>
                         </a>
-                        <div class="collapse menu-dropdown {{ in_array($title, ['Inventory List', 'Stock Movement']) ? 'show' : '' }}" id="inventory">
+                        <div class="collapse menu-dropdown {{ in_array($title, ['Inventory List', 'Stock Movement', 'Edit Serial Number']) ? 'show' : '' }}" id="inventory">
                             <ul class="nav nav-sm flex-column">
                                 <li class="nav-item">
                                     <a href="" class="nav-link {{ $title == 'Inventory List' ? 'active' : '' }}" data-key="t-analytics">
@@ -505,6 +505,11 @@
                                 <li class="nav-item">
                                     <a href="" class="nav-link {{ $title == 'Stock Movement' ? 'active' : '' }}" data-key="t-analytics">
                                         <i class="mdi mdi-arrow-decision-auto me-2"></i> Stock Movement
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('inventory.edit.sn') }}" class="nav-link {{ $title == 'Edit Serial Number' ? 'active' : '' }}" data-key="t-analytics">
+                                        <i class="mdi mdi-barcode-scan me-2"></i> Edit Serial Number
                                     </a>
                                 </li>
                             </ul>

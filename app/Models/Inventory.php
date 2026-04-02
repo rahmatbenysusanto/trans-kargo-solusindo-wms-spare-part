@@ -24,6 +24,7 @@ class Inventory extends Model
         'part_name',
         'part_number',
         'condition',
+        'staging_condition',
         'part_description',
         'serial_number',
         'parent_serial_number',

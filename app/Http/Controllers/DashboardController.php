@@ -378,7 +378,6 @@ class DashboardController extends Controller
         echo "<tr>";
         echo "<th>No</th>";
         echo "<th>Asset ID</th>";
-        echo "<th>Client</th>";
         echo "<th>Part Name</th>";
         echo "<th>Part Number</th>";
         echo "<th>Serial Number</th>";
@@ -386,7 +385,8 @@ class DashboardController extends Controller
         echo "<th>Product Group</th>";
         echo "<th>Storage</th>";
         echo "<th>Status</th>";
-        echo "<th>Condition</th>";
+        echo "<th>Stock Condition</th>";
+        echo "<th>Staging Condition</th>";
         echo "<th>Last Movement</th>";
         echo "</tr>";
         echo "</thead>";
@@ -399,7 +399,6 @@ class DashboardController extends Controller
             echo "<tr>";
             echo "<td>" . ($index + 1) . "</td>";
             echo "<td>{$item->unique_id}</td>";
-            echo "<td>" . ($item->client->name ?? '-') . "</td>";
             echo "<td>{$item->part_name}</td>";
             echo "<td>{$item->part_number}</td>";
             echo "<td>'{$item->serial_number}</td>";
@@ -409,6 +408,7 @@ class DashboardController extends Controller
             echo "<td>{$storage}</td>";
             echo "<td>{$item->status}</td>";
             echo "<td>{$item->condition}</td>";
+            echo "<td>" . ($item->staging_condition ?? '-') . "</td>";
             echo "<td>" . ($item->last_movement_date ?? '-') . "</td>";
             echo "</tr>";
         }

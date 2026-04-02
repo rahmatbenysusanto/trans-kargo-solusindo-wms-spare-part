@@ -42,6 +42,7 @@
                                     <th>Storage</th>
                                     <th>Status</th>
                                     <th class="text-center">Condition</th>
+                                    <th class="text-center">Staging Cond</th>
                                 </tr>
                             </thead>
                             <tbody class="border-dark">
@@ -58,6 +59,7 @@
                                         </td>
                                         <td>{{ $item->status }}</td>
                                         <td class="text-center">{{ $item->condition }}</td>
+                                        <td class="text-center">{{ $item->staging_condition ?? '-' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
