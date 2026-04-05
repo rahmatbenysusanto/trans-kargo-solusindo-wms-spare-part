@@ -128,6 +128,32 @@ class OutboundController extends Controller
         return $this->storeOutbound($request, 'Write-off');
     }
 
+    private static function getRomanMonth($month)
+    {
+        $roman = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V',
+            6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X',
+            11 => 'XI', 12 => 'XII'
+        ];
+        return $roman[(int)$month] ?? 'I';
+    }
+
+    public static function generateOutboundNumber(): string
+    {
+        $year = date('Y');
+        $monthRoman = self::getRomanMonth(date('n'));
+        $format = "/DN/WH/$monthRoman/$year";
+
+        $lastOutbound = Outbound::where('number', 'like', "%/DN/WH/%/$year")->latest()->first();
+        $lastSerial = 0;
+        if ($lastOutbound) {
+            $parts = explode('/', $lastOutbound->number);
+            $lastSerial = (int) $parts[0];
+        }
+        $newSerial = str_pad($lastSerial + 1, 6, '0', STR_PAD_LEFT);
+        return "$newSerial$format";
+    }
+
     private function storeOutbound(Request $request, $defaultCategory)
     {
         $request->validate([
@@ -149,7 +175,7 @@ class OutboundController extends Controller
                 'client_id' => $request->post('client_id') ?: null,
                 'client_contact' => $request->post('client_contact'),
                 'pickup_address' => $request->post('pickup_address'),
-                'number' => $request->post('number'), // PO# system ref
+                'number' => $request->post('number') ?? self::generateOutboundNumber(), // PO# system ref
                 'ntt_dn_number' => $request->post('ntt_dn_number'),
                 'tks_dn_number' => $request->post('tks_dn_number'),
                 'tks_invoice_number' => $request->post('tks_invoice_number'),
@@ -159,6 +185,7 @@ class OutboundController extends Controller
                 'status' => 'new',
                 'outbound_date' => $request->post('outbound_date'),
                 'outbound_by' => $request->post('outbound_by'),
+                'remarks' => $request->post('remarks'),
             ]);
 
             foreach ($request->post('products') as $product) {

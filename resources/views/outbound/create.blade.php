@@ -160,6 +160,7 @@
                 pickup_address: document.getElementById('pickup_address').value,
                 outbound_date: document.getElementById('date').value,
                 outbound_by: document.getElementById('outbound_by').value,
+                remarks: document.getElementById('remarks').value,
                 products
             };
 
@@ -425,6 +426,11 @@
                                             <input type="text" class="form-control form-control-sm border-light-subtle"
                                                 name="tks_dn_number" id="tks_dn_number" placeholder="TKS DN">
                                         </div>
+                                        <div class="col-12 mb-2">
+                                            <label class="form-label small fw-bold text-dark">TKS Invoice#</label>
+                                            <input type="text" class="form-control form-control-sm border-light-subtle"
+                                                id="tks_invoice_number" placeholder="TKS Invoice">
+                                        </div>
                                         <div class="col-6 mb-2">
                                             <label class="form-label small fw-bold text-dark">RMA#</label>
                                             <input type="text" class="form-control form-control-sm border-light-subtle"
@@ -458,6 +464,15 @@
                                             class="ti tabler-map-pin me-2"></i> Pick up / Shipment Address</label>
                                     <textarea class="form-control border-0 bg-transparent p-0" name="pickup_address" id="pickup_address" rows="1"
                                         placeholder="Write full delivery address here..."></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <div class="card border-0 shadow-sm p-3"
+                                    style="border-radius: 12px; background: rgba(115, 103, 240, 0.03); border: 1px dashed rgba(115, 103, 240, 0.2) !important;">
+                                    <label class="form-label small fw-bold text-primary d-flex align-items-center"><i
+                                            class="ti tabler-message-2 me-2"></i> Print Reference / Remarks (Re:)</label>
+                                    <textarea class="form-control border-0 bg-transparent p-0" name="remarks" id="remarks" rows="2"
+                                        placeholder="Enter the reference text visible on the printed document..."></textarea>
                                 </div>
                             </div>
                         </div>

@@ -19,18 +19,31 @@ class DashboardController extends Controller
     private function applyClientFilter($query, $clientId, $column = 'client_id')
     {
         $user = Auth::user();
-        if ($user->isAdminWMS()) {
-            if ($clientId) {
-                $query->where($column, $clientId);
-            }
-        } else {
-            $accessibleIds = $user->getAccessibleClientIds();
-            if ($clientId && in_array($clientId, $accessibleIds)) {
-                $query->where($column, $clientId);
+        $model = $query->getModel();
+
+        $callback = function ($q) use ($user, $clientId, $column) {
+            if ($user->isAdminWMS()) {
+                if ($clientId) {
+                    $q->where($column, $clientId);
+                }
             } else {
-                $query->whereIn($column, $accessibleIds);
+                $accessibleIds = $user->getAccessibleClientIds();
+                if ($clientId && in_array($clientId, $accessibleIds)) {
+                    $q->where($column, $clientId);
+                } else {
+                    $q->whereIn($column, $accessibleIds);
+                }
             }
+        };
+
+        if ($model instanceof \App\Models\InboundDetail && $column === 'client_id') {
+            $query->whereHas('inbound', $callback);
+        } elseif ($model instanceof \App\Models\OutboundDetail && $column === 'client_id') {
+            $query->whereHas('outbound', $callback);
+        } else {
+            $callback($query);
         }
+
         return $query;
     }
 
@@ -69,22 +82,7 @@ class DashboardController extends Controller
         }
 
         $inboundQuery = Inbound::where('received_date', '>=', now()->subMonths(6));
-        if ($user->isAdminWMS()) {
-            if ($clientId) {
-                $inboundQuery->whereHas('details', function ($query) use ($clientId) {
-                    $query->where('client_id', $clientId);
-                });
-            }
-        } else {
-            $accessibleIds = $user->getAccessibleClientIds();
-            $inboundQuery->whereHas('details', function ($query) use ($clientId, $accessibleIds) {
-                if ($clientId && in_array($clientId, $accessibleIds)) {
-                    $query->where('client_id', $clientId);
-                } else {
-                    $query->whereIn('client_id', $accessibleIds);
-                }
-            });
-        }
+        $this->applyClientFilter($inboundQuery, $clientId);
 
         $inboundTrend = $inboundQuery->select(DB::raw("DATE_FORMAT(received_date, '%Y-%m') as month"), DB::raw('sum(qty) as count'))
             ->groupBy('month')
@@ -189,22 +187,7 @@ class DashboardController extends Controller
         }
 
         $inboundQuery = Inbound::where('received_date', '>=', now()->subMonths(12));
-        if ($user->isAdminWMS()) {
-            if ($clientId) {
-                $inboundQuery->whereHas('details', function ($query) use ($clientId) {
-                    $query->where('client_id', $clientId);
-                });
-            }
-        } else {
-            $accessibleIds = $user->getAccessibleClientIds();
-            $inboundQuery->whereHas('details', function ($query) use ($clientId, $accessibleIds) {
-                if ($clientId && in_array($clientId, $accessibleIds)) {
-                    $query->where('client_id', $clientId);
-                } else {
-                    $query->whereIn('client_id', $accessibleIds);
-                }
-            });
-        }
+        $this->applyClientFilter($inboundQuery, $clientId);
 
         $inboundTrend = $inboundQuery->select(DB::raw("DATE_FORMAT(received_date, '%Y-%m') as month"), DB::raw('sum(qty) as count'))
             ->groupBy('month')
@@ -739,7 +722,7 @@ class DashboardController extends Controller
     public function receivingMonitoringDetail($id): View
     {
         $inbound = Inbound::with(['client', 'details.brand', 'details.storageLevel.zone', 'details.storageLevel.rak', 'details.storageLevel.bin', 'invoices'])->findOrFail($id);
-        
+
         $user = Auth::user();
         if (!$user->isAdminWMS()) {
             $accessibleIds = $user->getAccessibleClientIds();

@@ -11,267 +11,163 @@
         </button>
     </div>
 
-    <div class="row" id="print-area">
-        <div class="col-12 mb-4">
-            <!-- Header (Logo / Branding) -->
-            <div class="row border-bottom border-3 border-primary pb-3 mb-4 align-items-center">
-                <div class="col-sm-6">
-                    <h2 class="text-primary fw-bold mb-0" style="letter-spacing: -1px;">OUTBOUND REPORT</h2>
-                    <span class="badge bg-label-primary px-3 py-1 rounded-pill fw-bold">{{ $outbound->number }}</span>
+    <div class="card overflow-hidden border-0" id="print-area">
+        <div class="card-body p-4">
+            <!-- Header -->
+            <div class="row align-items-start mb-3">
+                <div class="col-6">
+                    <div class="mb-1 text-dark small">DN NO : {{ $outbound->number }}</div>
+                    <div class="text-dark small">DATE &nbsp;&nbsp;: {{ date('d-m-Y', strtotime($outbound->outbound_date)) }}</div>
                 </div>
-                <div class="col-sm-6 text-sm-end">
-                    <h4 class="mb-1 fw-bold text-dark">TRANS KARGO SOLUSINDO</h4>
-                    <p class="text-muted mb-0 small text-uppercase fw-medium ls-1">WMS Spare Part & Fulfillment Center</p>
+                <div class="col-6 text-end">
+                    <h4 class="fw-bold text-dark mb-0">NTTDATA</h4>
+                    <p class="text-muted" style="font-size: 10px;">Trusted Global Innovator</p>
                 </div>
             </div>
 
-            <!-- Transaction Grid -->
-            <div class="row mb-4">
-                <div class="col-md-4 border-end">
-                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-3">Transaction Details</h6>
-                    <table class="table table-borderless table-sm mb-0">
-                        <tr>
-                            <td class="ps-0 text-muted">Stock Category:</td>
-                            <td class="fw-bold text-dark">{{ $outbound->category }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">Request Type:</td>
-                            <td class="fw-bold text-primary">{{ $outbound->request_type }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">Outbound date:</td>
-                            <td class="fw-bold text-dark">{{ $outbound->outbound_date }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">Outbound by:</td>
-                            <td class="fw-bold text-dark">{{ $outbound->outbound_by }}</td>
-                        </tr>
-                    </table>
+            <!-- Title -->
+            <div class="text-center my-3 py-1">
+                <h5 class="fw-bold text-dark mb-0 text-decoration-underline" style="letter-spacing: 1px;">RETURN NOTE</h5>
+                <p class="text-muted small italic mb-0">Services Department</p>
+            </div>
+
+            <!-- Sender & Recipient -->
+            <div class="row mt-4">
+                <div class="col-7">
+                    <p class="fw-bold text-dark mb-1 small">FROM :</p>
+                    <div class="ps-2 border-start border-2 border-light">
+                        <h6 class="fw-bold text-dark mb-1 small">{{ $outbound->client?->name ?? 'TRANS KARGO SOLUSINDO' }}</h6>
+                        <p class="text-muted mb-0" style="font-size: 11px;">{{ $outbound->client_contact ?? '' }}</p>
+                    </div>
                 </div>
-                <div class="col-md-4 border-end">
-                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-3">Client Information</h6>
-                    <table class="table table-borderless table-sm mb-0">
-                        <tr>
-                            <td class="ps-0 text-muted">Client:</td>
-                            <td class="fw-bold text-dark text-truncate d-inline-block" style="max-width: 150px;">
-                                {{ $outbound->client?->name ?? 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">Requestor:</td>
-                            <td class="fw-bold text-dark">{{ $outbound->ntt_requestor ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">Request Date:</td>
-                            <td class="fw-bold text-dark">{{ $outbound->request_date ?? '-' }}</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-4">
-                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-3">Reference Numbers</h6>
-                    <table class="table table-borderless table-sm mb-0">
-                        <tr>
-                            <td class="ps-0 text-muted">SAP PO #:</td>
-                            <td class="fw-bold text-dark">{{ $outbound->sap_po_number ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">TKS DN / Ref#:</td>
-                            <td class="fw-bold text-primary">{{ $outbound->tks_dn_number ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">TKS Inv #:</td>
-                            <td class="fw-bold text-dark">{{ $outbound->tks_invoice_number ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-0 text-muted">RMA / ITSM #:</td>
-                            <td class="fw-bold text-dark small">{{ $outbound->rma_number ?? '-' }} /
-                                {{ $outbound->itsm_number ?? '-' }}</td>
-                        </tr>
-                    </table>
+                <div class="col-5">
+                    <p class="fw-bold text-dark mb-1 small">DELIVER / SHIP TO :</p>
+                    <div class="ps-2 border-start border-2 border-light">
+                        <div class="text-dark fw-bold mb-1 small">{{ $outbound->ntt_requestor ?? 'NTT Data' }}</div>
+                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">{{ $outbound->pickup_address ?? '-' }}</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Product Table -->
-            <div class="table-responsive mb-4">
-                <table class="table table-bordered border-dark printable-table">
-                    <thead class="bg-light-subtle">
-                        <tr class="text-center align-middle">
-                            <th style="width: 4%">#</th>
-                            <th style="width: 25%">Product / Part Name</th>
-                            <th style="width: 15%">Part Number (SKU)</th>
-                            <th style="width: 15%">Serial Number (SN)</th>
-                            <th style="width: 15%">WH Asset #</th>
-                            <th style="width: 10%">Condition</th>
-                            <th>Remarks</th>
+            <div class="table-responsive mt-4">
+                <table class="table table-bordered border-dark custom-pdf-table">
+                    <thead>
+                        <tr class="text-center align-middle bg-light text-uppercase" style="font-size: 11px;">
+                            <th style="width: 25%" class="fw-bold py-1">PRODUCT NO.</th>
+                            <th style="width: 20%" class="fw-bold py-1">SERIAL NO.</th>
+                            <th style="width: 35%" class="fw-bold py-1">DESCRIPTION</th>
+                            <th style="width: 10%" class="fw-bold py-1">STATUS</th>
+                            <th style="width: 10%" class="fw-bold py-1">QTY</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse ($outbound->details as $detail)
+                    <tbody style="font-size: 11px;">
+                        @foreach ($outbound->details as $detail)
                             <tr class="align-middle">
-                                <td class="text-center fw-bold">{{ $loop->iteration }}</td>
-                                <td>
-                                    <div class="fw-bold text-dark">{{ $detail->part_name }}</div>
-                                </td>
-                                <td class="text-center">{{ $detail->part_number }}</td>
-                                <td class="text-center fw-bold text-primary font-monospace">{{ $detail->serial_number }}
-                                </td>
-                                <td class="text-center small">{{ $detail->inventory->unique_id ?? '-' }}</td>
-                                <td class="text-center">
-                                    <span class="badge border border-dark text-dark fw-bold"
-                                        style="font-size: 0.65rem;">{{ strtoupper($detail->condition) }}</span>
-                                </td>
-                                <td class="small">{{ $detail->description ?? '-' }}</td>
+                                <td class="text-center fw-bold">{{ $detail->part_number }}</td>
+                                <td class="text-center">{{ $detail->serial_number }}</td>
+                                <td class="px-2">{{ $detail->part_name }} - {{ $detail->description ?? '' }}</td>
+                                <td class="text-center">{{ $detail->condition }}</td>
+                                <td class="text-center">1</td>
                             </tr>
-                        @empty
+                        @endforeach
+                        <!-- Add empty rows to fill the space if needed -->
+                        @for ($i = count($outbound->details); $i < 6; $i++)
                             <tr>
-                                <td colspan="7" class="text-center py-4">No records found.</td>
+                                <td class="py-2">&nbsp;</td>
+                                <td>&nbsp;</td>
+                                <td>&nbsp;</td>
+                                <td>&nbsp;</td>
+                                <td>&nbsp;</td>
                             </tr>
-                        @endforelse
+                        @endfor
                     </tbody>
                 </table>
             </div>
 
-            <!-- Total & Signature Grid -->
-            <div class="row mt-5">
-                <div class="col-md-6 border rounded p-3">
-                    <h6 class="text-muted fw-bold text-uppercase small ls-1 mb-2">Shipment Summary</h6>
-                    <div class="d-flex justify-content-between align-items-end">
-                        <div>
-                            <p class="mb-1 text-muted">Total Quantity Dispatched:</p>
-                            <h2 class="mb-0 fw-bold">{{ $outbound->qty }} <small class="text-muted fs-6">Items</small></h2>
-                        </div>
-                        <div class="text-end">
-                            <p class="mb-1 text-muted">Current Status:</p>
-                            <span class="badge bg-primary px-3 py-1">{{ strtoupper($outbound->status) }}</span>
+            <!-- Reference Line -->
+            <div class="mt-3 p-2 bg-light border rounded">
+                <p class="mb-0 fw-bold text-dark" style="font-size: 11px;">
+                    Re: {{ $outbound->remarks ?? ($outbound->category . ' unit for ' . $outbound->request_type . ' || ' . ($outbound->itsm_number ?? $outbound->rma_number ?? '-')) }}
+                </p>
+            </div>
+
+            <!-- Note Text -->
+            <div class="mt-2 text-wrap" style="max-width: 90%;">
+                <p class="text-muted italic mb-0" style="font-size: 10px;">Barang kembali harus sesuai dengan keadaan semula (komplit dengan box, accessories, buku manual, busa, plastik pembungkus dll) Kerusakan barang di tanggung oleh Peminjam.</p>
+            </div>
+
+            <!-- Signatures -->
+            <div class="row mt-4 pt-2">
+                <div class="col-6">
+                    <div class="border border-dark p-2 rounded" style="min-height: 140px;">
+                        <p class="fw-bold mb-0 small">Dispatched by,</p>
+                        <div class="mt-auto pt-4">
+                            <div class="border-top border-dark pt-1 mt-4">
+                                <p class="mb-0 small">Name : <strong>{{ $outbound->outbound_by }}</strong></p>
+                                <p class="mb-0 small">Date : {{ date('d-m-Y', strtotime($outbound->outbound_date)) }}</p>
+                                <p class="mb-0 small">Time : {{ date('H:i') }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 pt-4 text-center">
-                    <div class="row">
-                        <div class="col-6">
-                            <p class="mb-5 small text-muted">Issued By (Warehouse)</p>
-                            <div class="mx-auto border-top border-dark d-inline-block pt-1 fw-bold" style="width: 150px;">
-                                {{ $outbound->outbound_by }}
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <p class="mb-5 small text-muted">Received By / Carrier</p>
-                            <div class="mx-auto border-top border-dark d-inline-block pt-1 fw-bold" style="width: 150px;">
-                                (Signature / Stamp)
+                <div class="col-6 text-end">
+                    <div class="border border-dark p-2 rounded text-start" style="min-height: 140px;">
+                        <p class="fw-bold mb-0 small">Received by,</p>
+                        <div class="mt-auto pt-4">
+                            <div class="border-top border-dark pt-1 mt-4">
+                                <p class="mb-0 small">Name : ____________________</p>
+                                <p class="mb-0 small">Date : {{ date('d-m-Y', strtotime($outbound->outbound_date)) }}</p>
+                                <p class="mb-0 small">Time : ________</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="text-center mt-5 pt-5 opacity-25">
-                <small class="text-muted">Generated by TKS WMS - System Auto-Generated Report</small>
+            <!-- Company Footer Address -->
+            <div class="mt-4 pt-3 text-start border-top">
+                <p class="fw-bold mb-0 text-dark small">PT NTT DATA Indonesia</p>
+                <p class="text-muted mb-0" style="font-size: 10px;">DBS Tower 22nd Floor, Jl. Prof. Dr. Satrio Kav 3-5, Jakarta Selatan 12940 Indonesia</p>
+                <p class="text-muted mb-0" style="font-size: 10px;">Tel: +62 21 2922 8300 | Fax: +62 21 2922 8301</p>
             </div>
         </div>
     </div>
 
-    <!-- Page Numbering container (fixed bottom right for each page via CSS) -->
-    <div id="pageFooter" class="d-none">
-        Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-    </div>
-    </div>
-    </div>
-
     <style>
-        .ls-1 {
-            letter-spacing: 1px;
+        #print-area {
+            font-family: 'Inter', -apple-system, sans-serif !important;
+            line-height: normal !important;
         }
-
         @media print {
-            @page {
-                size: A4;
-                margin: 15mm;
-            }
-
             body {
                 background: white !important;
             }
-
-            body * {
-                visibility: hidden;
-            }
-
-            #print-area,
-            #print-area * {
-                visibility: visible;
-            }
-
-            ::before,
-            ::after {
-                visibility: visible !important;
-            }
-
-            #print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-
-            .no-print,
-            .navbar,
-            .menu,
-            .layout-navbar,
-            .layout-menu,
-            footer {
+            .no-print, .navbar, .menu, footer {
                 display: none !important;
             }
-
-            .pdf-card {
-                border: none !important;
-                box-shadow: none !important;
+            #print-area {
+                width: 100% !important;
+                margin: 0 !important;
                 padding: 0 !important;
             }
-
-            .printable-table th,
-            .printable-table td {
-                padding: 10px !important;
-                font-size: 12px;
-                border-color: #000 !important;
+            .card {
+                border: none !important;
+                box-shadow: none !important;
             }
-
-            .bg-light {
+            .custom-pdf-table th {
                 background-color: #f8f9fa !important;
                 -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
             }
-
-            .badge {
-                border: 1px solid #000 !important;
-                color: #000 !important;
-                background: transparent !important;
-            }
-
-            .text-primary {
-                color: #000 !important;
-            }
-
-            /* Page Numbering Simulation via print */
-            #pageFooter {
-                display: block !important;
-                position: fixed;
-                bottom: -10mm;
-                right: 0;
-                font-size: 12px;
-                color: #555;
-            }
-
-            @page {
-                @bottom-right {
-                    content: "Page " counter(page) " of " counter(pages);
-                }
+            .table-bordered > :not(caption) > * > * {
+                border-width: 1px !important;
+                border-color: #000 !important;
             }
         }
+        .custom-pdf-table th, .custom-pdf-table td {
+            padding: 5px !important;
+            border-color: #000 !important;
+        }
+        .italic { font-style: italic; }
     </style>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Optional: Automatically trigger print when page loads
-            // setTimeout(() => { window.print(); }, 500);
-        });
-    </script>
 @endsection

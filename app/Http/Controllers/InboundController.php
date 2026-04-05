@@ -162,16 +162,30 @@ class InboundController extends Controller
         return date('YmdHi') . str_pad(mt_rand(0, 999), 3, '0', STR_PAD_LEFT);
     }
 
-    public static function generateInboundNumber(string $prefix): string
+    private static function getRomanMonth($month)
     {
-        $date = date('ymd');
-        $lastInbound = Inbound::where('number', 'like', "$prefix-$date-%")->latest()->first();
+        $roman = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V',
+            6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X',
+            11 => 'XI', 12 => 'XII'
+        ];
+        return $roman[(int)$month] ?? 'I';
+    }
+
+    public static function generateInboundNumber(): string
+    {
+        $year = date('Y');
+        $monthRoman = self::getRomanMonth(date('n'));
+        $format = "/RN/WH/$monthRoman/$year";
+        
+        $lastInbound = Inbound::where('number', 'like', "%/RN/WH/%/$year")->latest()->first();
         $lastSerial = 0;
         if ($lastInbound) {
-            $lastSerial = (int) substr($lastInbound->number, -3);
+            $parts = explode('/', $lastInbound->number);
+            $lastSerial = (int) $parts[0];
         }
-        $newSerial = str_pad($lastSerial + 1, 3, '0', STR_PAD_LEFT);
-        return "$prefix-$date-$newSerial";
+        $newSerial = str_pad($lastSerial + 1, 6, '0', STR_PAD_LEFT);
+        return "$newSerial$format";
     }
 
     /**
@@ -362,13 +376,15 @@ class InboundController extends Controller
             $receivings = $request->post('receivings');
             $receivedBy = Auth::check() ? Auth::user()->name : 'System';
 
-            // Get initial starting serial for today
-            $datePrefix = date('ymd');
-            $prefix = 'SPR';
-            $lastInbound = Inbound::where('number', 'like', "$prefix-$datePrefix-%")->orderBy('id', 'desc')->first();
+            $year = date('Y');
+            $monthRoman = self::getRomanMonth(date('n'));
+            $format = "/RN/WH/$monthRoman/$year";
+
+            $lastInbound = Inbound::where('number', 'like', "%/RN/WH/%/$year")->orderBy('id', 'desc')->first();
             $lastSerial = 0;
             if ($lastInbound) {
-                $lastSerial = (int) substr($lastInbound->number, -3);
+                $parts = explode('/', $lastInbound->number);
+                $lastSerial = (int) $parts[0];
             }
 
             foreach ($receivings as $rec) {
@@ -385,7 +401,7 @@ class InboundController extends Controller
                 if (empty($products)) continue;
 
                 $lastSerial++;
-                $newNumber = "$prefix-$datePrefix-" . str_pad($lastSerial, 3, '0', STR_PAD_LEFT);
+                $newNumber = str_pad($lastSerial, 6, '0', STR_PAD_LEFT) . $format;
                 
                 // Determine request type based on category roughly
                 $requestType = 'New PO';
@@ -485,7 +501,7 @@ class InboundController extends Controller
                 'client_id'             => $request->post('client_id') ?: null,
                 'client_contact'        => $request->post('client_contact'),
                 'pickup_address'        => $request->post('pickup_address'),
-                'number'                => $request->post('po_number') ?? self::generateInboundNumber('SPR'),
+                'number'                => $request->post('po_number') ?? self::generateInboundNumber(),
                 'receiving_note'        => $request->post('number'), // NTT RN#
                 'sttb'                  => $request->post('sttb'),
                 'courier_delivery_note' => $request->post('delivery_note'),
