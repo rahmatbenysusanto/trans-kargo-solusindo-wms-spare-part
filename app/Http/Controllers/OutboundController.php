@@ -131,9 +131,18 @@ class OutboundController extends Controller
     private static function getRomanMonth($month)
     {
         $roman = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V',
-            6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X',
-            11 => 'XI', 12 => 'XII'
+            1 => 'I',
+            2 => 'II',
+            3 => 'III',
+            4 => 'IV',
+            5 => 'V',
+            6 => 'VI',
+            7 => 'VII',
+            8 => 'VIII',
+            9 => 'IX',
+            10 => 'X',
+            11 => 'XI',
+            12 => 'XII'
         ];
         return $roman[(int)$month] ?? 'I';
     }
@@ -175,6 +184,7 @@ class OutboundController extends Controller
                 'client_id' => $request->post('client_id') ?: null,
                 'client_contact' => $request->post('client_contact'),
                 'pickup_address' => $request->post('pickup_address'),
+                'from_address' => $request->post('from_address'),
                 'number' => $request->post('number') ?? self::generateOutboundNumber(), // PO# system ref
                 'ntt_dn_number' => $request->post('ntt_dn_number'),
                 'tks_dn_number' => $request->post('tks_dn_number'),

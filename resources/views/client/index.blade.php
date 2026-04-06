@@ -21,6 +21,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Name</th>
+                                    <th>Address</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -29,9 +30,10 @@
                                     <tr>
                                         <td>{{ $client->firstItem() + $index }}</td>
                                         <td>{{ $item->name }}</td>
+                                        <td>{{ $item->address ?? '-' }}</td>
                                         <td>
                                             <a class="btn btn-secondary btn-sm text-white"
-                                                onclick="editClient('{{ $item->id }}', '{{ $item->name }}')">Edit</a>
+                                                onclick="editClient('{{ $item->id }}', '{{ $item->name }}', '{{ str_replace(["\r", "\n"], ['\r', '\n'], $item->address) }}')">Edit</a>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -61,6 +63,10 @@
                             <label class="form-label">Name</label>
                             <input type="text" class="form-control" name="name" placeholder="Name ..." required>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea class="form-control" name="address" rows="3" placeholder="Client address ..."></textarea>
+                        </div>
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary text-white">Add Client</button>
                         </div>
@@ -87,6 +93,10 @@
                             <input type="text" class="form-control" name="name" id="editName" placeholder="Name ..."
                                 required>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea class="form-control" name="address" id="editAddress" rows="3" placeholder="Client address ..."></textarea>
+                        </div>
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary text-white">Update Client</button>
                         </div>
@@ -99,9 +109,10 @@
 
 @section('js')
     <script>
-        function editClient(id, name) {
+        function editClient(id, name, address) {
             $('#editId').val(id);
             $('#editName').val(name);
+            $('#editAddress').val(address);
             $('#editClientModal').modal('show');
         }
     </script>

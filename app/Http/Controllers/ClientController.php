@@ -23,6 +23,7 @@ class ClientController extends Controller
     {
         Client::create([
             'name' => $request->post('name'),
+            'address' => $request->post('address'),
         ]);
 
         return redirect()->back()->with('success', 'Client added successfully');
@@ -33,6 +34,7 @@ class ClientController extends Controller
         $client = Client::find($request->post('id'));
         $client->update([
             'name' => $request->post('name'),
+            'address' => $request->post('address'),
         ]);
 
         return redirect()->back()->with('success', 'Client updated successfully');

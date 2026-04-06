@@ -31,7 +31,9 @@ class Outbound extends Model
         'status',
         'shipment_status',
         'outbound_date',
-        'outbound_by'
+        'outbound_by',
+        'from_address',
+        'remarks'
     ];
 
     public function details(): HasMany

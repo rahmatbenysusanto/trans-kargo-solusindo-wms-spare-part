@@ -37,6 +37,7 @@
                     <p class="fw-bold text-dark mb-1 small">FROM :</p>
                     <div class="ps-2 border-start border-2 border-light">
                         <h6 class="fw-bold text-dark mb-1 small">{{ $outbound->client?->name ?? 'TRANS KARGO SOLUSINDO' }}</h6>
+                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">{{ $outbound->from_address ?? ($outbound->client?->address ?? '') }}</p>
                         <p class="text-muted mb-0" style="font-size: 11px;">{{ $outbound->client_contact ?? '' }}</p>
                     </div>
                 </div>
