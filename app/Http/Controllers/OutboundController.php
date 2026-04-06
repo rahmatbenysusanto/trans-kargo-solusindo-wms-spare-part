@@ -184,7 +184,6 @@ class OutboundController extends Controller
                 'client_id' => $request->post('client_id') ?: null,
                 'client_contact' => $request->post('client_contact'),
                 'pickup_address' => $request->post('pickup_address'),
-                'from_address' => $request->post('from_address'),
                 'number' => $request->post('number') ?? self::generateOutboundNumber(), // PO# system ref
                 'ntt_dn_number' => $request->post('ntt_dn_number'),
                 'tks_dn_number' => $request->post('tks_dn_number'),
