@@ -158,7 +158,6 @@
                 client_id: document.getElementById('client_id').value,
                 client_contact: document.getElementById('client_contact').value,
                 pickup_address: document.getElementById('pickup_address').value,
-                from_address: document.getElementById('from_address').value,
                 outbound_date: document.getElementById('date').value,
                 outbound_by: document.getElementById('outbound_by').value,
                 remarks: document.getElementById('remarks').value,
@@ -303,13 +302,7 @@
         }
 
         function updateClientAddress() {
-            const select = document.getElementById('client_id');
-            const option = select.options[select.selectedIndex];
-            const address = option ? option.getAttribute('data-address') : '';
-            const fromAddressField = document.getElementById('from_address');
-            if (fromAddressField) {
-                fromAddressField.value = address || '';
-            }
+            // Logic removed as address is now fixed
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -377,10 +370,10 @@
                                     <div class="mb-3 field-client">
                                         <label class="form-label small fw-bold text-dark">Client <span
                                                 class="text-danger">*</span></label>
-                                         <select class="form-select select2" name="client_id" id="client_id" onchange="updateClientAddress()">
+                                         <select class="form-select select2" name="client_id" id="client_id">
                                              <option value="">-- Choose Client --</option>
                                              @foreach ($client as $item)
-                                                 <option value="{{ $item->id }}" data-address="{{ $item->address }}">{{ $item->name }}</option>
+                                                 <option value="{{ $item->id }}">{{ $item->name }}</option>
                                              @endforeach
                                          </select>
                                     </div>
@@ -469,19 +462,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6 field-pickup-address-container">
-                                <div class="card border-0 shadow-sm p-3 h-100"
-                                    style="border-radius: 12px; background: rgba(115, 103, 240, 0.03); border: 1px dashed rgba(115, 103, 240, 0.2) !important;">
-                                    <label class="form-label small fw-bold text-primary d-flex align-items-center"><i
-                                            class="ti tabler-building-warehouse me-2"></i> FROM Address (Attached to Client)</label>
-                                    <textarea class="form-control border-0 bg-transparent p-0" name="from_address" id="from_address" rows="4"
-                                        placeholder="Company address will appear here...">NTT Data
-WH Transkargo Solusindo 
-Pergudangan Tunas Daan Mogot Blok B2 No.11
-Batu Ceper Tangerang 12522.</textarea>
-                                </div>
-                            </div>
-                            <div class="col-md-6 field-pickup-address-container">
+                            <div class="col-12 field-pickup-address-container">
                                 <div class="card border-0 shadow-sm p-3 h-100"
                                     style="border-radius: 12px; background: rgba(115, 103, 240, 0.03); border: 1px dashed rgba(115, 103, 240, 0.2) !important;">
                                     <label class="form-label small fw-bold text-primary d-flex align-items-center"><i
