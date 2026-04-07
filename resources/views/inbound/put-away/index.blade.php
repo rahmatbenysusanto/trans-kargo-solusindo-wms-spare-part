@@ -35,13 +35,18 @@
                 <div class="card-body py-3">
                     <form action="" method="GET">
                         <div class="row g-3">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label small fw-bold">Search</label>
                                 <input type="text" name="search" class="form-control form-control-sm"
-                                    placeholder="Ref Number, NTT RN, Vendor..." value="{{ request('search') }}">
+                                    placeholder="Ref, NTT, Vendor..." value="{{ request('search') }}">
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label small fw-bold">Stock Category</label>
+                                <label class="form-label small fw-bold">Serial Number</label>
+                                <input type="text" name="serial_number" class="form-control form-control-sm"
+                                    placeholder="SN / Asset No..." value="{{ request('serial_number') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Category</label>
                                 <select name="category" class="form-select form-select-sm">
                                     <option value="">-- All --</option>
                                     @foreach ($categories as $cat)
@@ -61,10 +66,10 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label small fw-bold">Client</label>
                                 <select name="client_id" class="form-select form-select-sm">
-                                    <option value="">-- All Clients --</option>
+                                    <option value="">-- All --</option>
                                     @foreach ($clients as $c)
                                         <option value="{{ $c->id }}"
                                             {{ request('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}

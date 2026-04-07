@@ -125,11 +125,20 @@ class InboundController extends Controller
             ->when($request->request_type, function ($query) use ($request) {
                 return $query->where('request_type', $request->request_type);
             })
+            ->when($request->serial_number, function ($query) use ($request) {
+                return $query->whereHas('details', function ($q) use ($request) {
+                    $q->where('serial_number', 'like', '%' . $request->serial_number . '%');
+                });
+            })
             ->when($request->search, function ($query) use ($request) {
                 return $query->where(function ($q) use ($request) {
                     $q->where('number', 'like', '%' . $request->search . '%')
                         ->orWhere('receiving_note', 'like', '%' . $request->search . '%')
-                        ->orWhere('vendor', 'like', '%' . $request->search . '%');
+                        ->orWhere('vendor', 'like', '%' . $request->search . '%')
+                        ->orWhereHas('details', function ($dq) use ($request) {
+                            $dq->where('serial_number', 'like', '%' . $request->search . '%')
+                                ->orWhere('wh_asset_number', 'like', '%' . $request->search . '%');
+                        });
                 });
             })
             ->latest()->paginate(10);
