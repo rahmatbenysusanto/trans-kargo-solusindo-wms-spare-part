@@ -22,10 +22,26 @@ class InboundController extends Controller
 {
     public function receiving(Request $request): View
     {
-        $inbound = Inbound::latest()
-            ->when($request->client_id, function ($query) use ($request) {
-                return $query->where('client_id', $request->client_id);
-            })
+        $query = Inbound::latest();
+        $user = Auth::user();
+
+        if ($user->isAdminWMS()) {
+            if ($request->client_id) {
+                $query->where('client_id', $request->client_id);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($request->client_id && in_array($request->client_id, $accessibleIds)) {
+                $query->where('client_id', $request->client_id);
+            } else {
+                $query->where(function ($q) use ($accessibleIds) {
+                    $q->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            }
+        }
+
+        $inbound = $query
             ->when($request->category, function ($query) use ($request) {
                 return $query->where('category', $request->category);
             })
@@ -49,7 +65,7 @@ class InboundController extends Controller
 
         $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
         $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
-        $clients = Client::all();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
         $title = 'Receiving';
 
         return view('inbound.receiving.index', compact('title', 'inbound', 'categories', 'requestTypes', 'clients'));
@@ -115,10 +131,26 @@ class InboundController extends Controller
 
     public function putAway(Request $request): View
     {
-        $inbound = Inbound::where('status', 'process qc')
-            ->when($request->client_id, function ($query) use ($request) {
-                return $query->where('client_id', $request->client_id);
-            })
+        $query = Inbound::where('status', 'process qc');
+        $user = Auth::user();
+
+        if ($user->isAdminWMS()) {
+            if ($request->client_id) {
+                $query->where('client_id', $request->client_id);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($request->client_id && in_array($request->client_id, $accessibleIds)) {
+                $query->where('client_id', $request->client_id);
+            } else {
+                $query->where(function ($q) use ($accessibleIds) {
+                    $q->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            }
+        }
+
+        $inbound = $query
             ->when($request->category, function ($query) use ($request) {
                 return $query->where('category', $request->category);
             })
@@ -145,7 +177,7 @@ class InboundController extends Controller
 
         $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
         $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
-        $clients = Client::all();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
         $title = 'Put Away';
         return view('inbound.put-away.index', compact('title', 'inbound', 'categories', 'requestTypes', 'clients'));
     }

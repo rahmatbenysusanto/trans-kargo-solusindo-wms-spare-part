@@ -31,13 +31,10 @@ class ApiInboundController extends Controller
 
         // Scope client access
         if ($role !== 'Admin WMS') {
-            if (count($clientIds) === 0) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'No accessible clients found for this user.',
-                ], 403);
-            }
-            $query->whereIn('client_id', $clientIds);
+            $query->where(function ($q) use ($clientIds) {
+                $q->whereIn('client_id', $clientIds)
+                    ->orWhereNull('client_id');
+            });
         }
 
         // Filter client_id (jika admin memilih salah satu)
@@ -137,7 +134,7 @@ class ApiInboundController extends Controller
 
         // Scope client access
         if ($role !== 'Admin WMS') {
-            if (!in_array($inbound->client_id, $clientIds)) {
+            if ($inbound->client_id !== null && !in_array($inbound->client_id, $clientIds)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Unauthorized access to this client data.',

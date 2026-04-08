@@ -21,7 +21,10 @@ class InventoryController extends Controller
             if ($clientId && in_array($clientId, $accessibleIds)) {
                 $query->where($column, $clientId);
             } else {
-                $query->whereIn($column, $accessibleIds);
+                $query->where(function ($q) use ($column, $accessibleIds) {
+                    $q->whereIn($column, $accessibleIds)
+                        ->orWhereNull($column);
+                });
             }
         }
         return $query;
@@ -190,15 +193,86 @@ class InventoryController extends Controller
         if ($user->isAdminWMS()) {
             // No automatic filter
         } else {
+            /** @var \App\Models\User $user */
             $accessibleIds = $user->getAccessibleClientIds();
             $movements->whereHas('inventory', function ($q) use ($accessibleIds) {
-                $q->whereIn('client_id', $accessibleIds);
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
             });
         }
 
         $movements = $movements->latest()->paginate(20);
 
         return view('inventory.stock-movement.index', compact('title', 'movements'));
+    }
+
+    public function stockMovementPdf()
+    {
+        $title = 'Stock Movement Report';
+        $user = Auth::user();
+
+        $movements = \App\Models\InventoryMovement::with(['inventory', 'fromStorageLevel.bin.rak.zone', 'toStorageLevel.bin.rak.zone', 'user']);
+
+        if (!$user->isAdminWMS()) {
+            /** @var \App\Models\User $user */
+            $accessibleIds = $user->getAccessibleClientIds();
+            $movements->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            });
+        }
+
+        $movements = $movements->latest()->get();
+
+        return view('inventory.stock-movement.pdf', compact('title', 'movements'));
+    }
+
+    public function stockMovementExcel()
+    {
+        $user = Auth::user();
+        $movements = \App\Models\InventoryMovement::with(['inventory', 'fromStorageLevel.bin.rak.zone', 'toStorageLevel.bin.rak.zone', 'user']);
+
+        if (!$user->isAdminWMS()) {
+            /** @var \App\Models\User $user */
+            $accessibleIds = $user->getAccessibleClientIds();
+            $movements->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            });
+        }
+
+        $movements = $movements->latest()->get();
+
+        $filename = "stock-movement-" . date('Y-m-d') . ".xls";
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+
+        echo "<table border='1'>";
+        echo "<thead><tr><th>No</th><th>Date</th><th>Item</th><th>SN</th><th>From</th><th>To</th><th>User</th><th>Type</th><th>Description</th></tr></thead>";
+        echo "<tbody>";
+        foreach ($movements as $index => $item) {
+            $from = $item->fromStorageLevel ? $item->fromStorageLevel->bin->rak->zone->name . "-" . $item->fromStorageLevel->bin->rak->name . "-" . $item->fromStorageLevel->bin->name . "-" . $item->fromStorageLevel->name : "-";
+            $to = $item->toStorageLevel ? $item->toStorageLevel->bin->rak->zone->name . "-" . $item->toStorageLevel->bin->rak->name . "-" . $item->toStorageLevel->bin->name . "-" . $item->toStorageLevel->name : "-";
+            echo "<tr>";
+            echo "<td>" . ($index + 1) . "</td>";
+            echo "<td>" . $item->created_at . "</td>";
+            echo "<td>" . ($item->inventory->part_name ?? '-') . "</td>";
+            echo "<td>'" . ($item->inventory->serial_number ?? '-') . "</td>";
+            echo "<td>" . $from . "</td>";
+            echo "<td>" . $to . "</td>";
+            echo "<td>" . ($item->user->name ?? '-') . "</td>";
+            echo "<td>" . $item->type . "</td>";
+            echo "<td>" . $item->description . "</td>";
+            echo "</tr>";
+        }
+        echo "</tbody></table>";
+        exit;
     }
 
     public function show($id): View
@@ -269,9 +343,13 @@ class InventoryController extends Controller
         if ($user->isAdminWMS()) {
             // No automatic filter
         } else {
+            /** @var \App\Models\User $user */
             $accessibleIds = $user->getAccessibleClientIds();
             $movements->whereHas('inventory', function ($q) use ($accessibleIds) {
-                $q->whereIn('client_id', $accessibleIds);
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
             });
         }
 
@@ -288,7 +366,10 @@ class InventoryController extends Controller
         $inventory = \App\Models\Inventory::where('qty', '>', 0);
 
         if (!$user->isAdminWMS()) {
-            $inventory->whereIn('client_id', $user->getAccessibleClientIds());
+            $inventory->where(function ($q) use ($user) {
+                $q->whereIn('client_id', $user->getAccessibleClientIds())
+                    ->orWhereNull('client_id');
+            });
         }
 
         $inventory = $inventory->latest()->get();
@@ -383,6 +464,67 @@ class InventoryController extends Controller
         return view('inventory.product-summary', compact('title', 'data', 'clients'));
     }
 
+    public function productSummaryPdf(Request $request)
+    {
+        $title = 'Product Summary Report';
+        $clientId = $request->get('client_id');
+
+        $query = \App\Models\Inventory::select(
+            'part_name',
+            'part_number',
+            \Illuminate\Support\Facades\DB::raw('COUNT(*) as total_in'),
+            \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty > 0 THEN 1 ELSE 0 END) as in_inventory'),
+            \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty = 0 THEN 1 ELSE 0 END) as total_out')
+        );
+
+        $this->applyClientFilter($query, $clientId);
+
+        $data = $query->groupBy('part_name', 'part_number')
+            ->orderBy('part_name')
+            ->get();
+
+        return view('inventory.product-summary-pdf', compact('title', 'data'));
+    }
+
+    public function productSummaryExcel(Request $request)
+    {
+        $clientId = $request->get('client_id');
+
+        $query = \App\Models\Inventory::select(
+            'part_name',
+            'part_number',
+            \Illuminate\Support\Facades\DB::raw('COUNT(*) as total_in'),
+            \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty > 0 THEN 1 ELSE 0 END) as in_inventory'),
+            \Illuminate\Support\Facades\DB::raw('SUM(CASE WHEN qty = 0 THEN 1 ELSE 0 END) as total_out')
+        );
+
+        $this->applyClientFilter($query, $clientId);
+
+        $data = $query->groupBy('part_name', 'part_number')
+            ->orderBy('part_name')
+            ->get();
+
+        $filename = "product-summary-" . date('Y-m-d') . ".xls";
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+
+        echo "<table border='1'>";
+        echo "<thead><tr><th>No</th><th>Part Name</th><th>Part Number</th><th>Total Received</th><th>In Inventory</th><th>Total Outbound</th></tr></thead>";
+        echo "<tbody>";
+        foreach ($data as $index => $item) {
+            echo "<tr>";
+            echo "<td>" . ($index + 1) . "</td>";
+            echo "<td>" . $item->part_name . "</td>";
+            echo "<td>" . $item->part_number . "</td>";
+            echo "<td>" . $item->total_in . "</td>";
+            echo "<td>" . $item->in_inventory . "</td>";
+            echo "<td>" . $item->total_out . "</td>";
+            echo "</tr>";
+        }
+        echo "</tbody></table>";
+        exit;
+    }
+
     public function productSummaryDetail(Request $request)
     {
         $partName = $request->part_name;
@@ -393,7 +535,12 @@ class InventoryController extends Controller
             ->where('part_number', $partNumber);
 
         if (!Auth::user()->isAdminWMS()) {
-            $details->whereIn('client_id', Auth::user()->getAccessibleClientIds());
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $details->where(function ($q) use ($user) {
+                $q->whereIn('client_id', $user->getAccessibleClientIds())
+                    ->orWhereNull('client_id');
+            });
         }
 
         $details = $details->get()
@@ -440,11 +587,15 @@ class InventoryController extends Controller
                 $inboundData->where('inbound.client_id', $clientId);
             }
         } else {
+            /** @var \App\Models\User $user */
             $accessibleIds = $user->getAccessibleClientIds();
             if ($clientId && in_array($clientId, $accessibleIds)) {
                 $inboundData->where('inbound.client_id', $clientId);
             } else {
-                $inboundData->whereIn('inbound.client_id', $accessibleIds);
+                $inboundData->where(function ($q) use ($accessibleIds) {
+                    $q->whereIn('inbound.client_id', $accessibleIds)
+                        ->orWhereNull('inbound.client_id');
+                });
             }
         }
 
@@ -486,6 +637,99 @@ class InventoryController extends Controller
         }
 
         return view('inventory.stock-statement.index', compact('title', 'inboundData', 'clients', 'categories', 'requestTypes'));
+    }
+
+    public function stockStatementPdf(Request $request)
+    {
+        $title = 'Stock Statement Report';
+        $user = Auth::user();
+        $clientId = $request->get('client_id');
+
+        $query = \App\Models\InboundDetail::with(['inbound.client', 'brand', 'storageLevel.bin.rak.zone', 'productGroup'])
+            ->select('inbound_detail.*')
+            ->join('inbound', 'inbound_detail.inbound_id', '=', 'inbound.id');
+
+        if (!$user->isAdminWMS()) {
+            /** @var \App\Models\User $user */
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->where(function ($q) use ($accessibleIds) {
+                $q->whereIn('inbound.client_id', $accessibleIds)
+                    ->orWhereNull('inbound.client_id');
+            });
+        }
+        
+        if ($clientId) {
+            $query->where('inbound.client_id', $clientId);
+        }
+
+        $data = $query->latest()->get();
+        $sns = $data->pluck('serial_number')->toArray();
+        $inventories = \App\Models\Inventory::whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+        $outbounds = \App\Models\OutboundDetail::with('outbound')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+
+        foreach ($data as $item) {
+            $inventory = $inventories->get($item->serial_number);
+            $outbound = $outbounds->get($item->serial_number);
+            $item->is_outbound = (bool)$outbound;
+            $item->is_in_stock = $inventory && $inventory->qty > 0;
+            $item->outbound_detail = $outbound;
+        }
+
+        return view('inventory.stock-statement.pdf', compact('title', 'data'));
+    }
+
+    public function stockStatementExcel(Request $request)
+    {
+        $user = Auth::user();
+        $clientId = $request->get('client_id');
+
+        $query = \App\Models\InboundDetail::with(['inbound.client', 'brand', 'storageLevel.bin.rak.zone', 'productGroup'])
+            ->select('inbound_detail.*')
+            ->join('inbound', 'inbound_detail.inbound_id', '=', 'inbound.id');
+
+        if (!$user->isAdminWMS()) {
+            /** @var \App\Models\User $user */
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->where(function ($q) use ($accessibleIds) {
+                $q->whereIn('inbound.client_id', $accessibleIds)
+                    ->orWhereNull('inbound.client_id');
+            });
+        }
+        
+        if ($clientId) {
+            $query->where('inbound.client_id', $clientId);
+        }
+
+        $data = $query->latest()->get();
+        $sns = $data->pluck('serial_number')->toArray();
+        $inventories = \App\Models\Inventory::whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+        $outbounds = \App\Models\OutboundDetail::with('outbound')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+
+        $filename = "stock-statement-" . date('Y-m-d') . ".xls";
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+
+        echo "<table border='1'>";
+        echo "<thead><tr><th>No</th><th>SN</th><th>Part Name</th><th>Inbound Ref</th><th>Receive Date</th><th>Status</th><th>Outbound Ref</th><th>Outbound Date</th></tr></thead>";
+        echo "<tbody>";
+        foreach ($data as $index => $item) {
+            $inventory = $inventories->get($item->serial_number);
+            $outbound = $outbounds->get($item->serial_number);
+            $status = ($inventory && $inventory->qty > 0) ? 'In Inventory' : ($outbound ? 'Outbound' : 'Unknown');
+            
+            echo "<tr>";
+            echo "<td>" . ($index + 1) . "</td>";
+            echo "<td>'" . $item->serial_number . "</td>";
+            echo "<td>" . $item->part_name . "</td>";
+            echo "<td>" . ($item->inbound->number ?? '-') . "</td>";
+            echo "<td>" . ($item->inbound->received_date ?? '-') . "</td>";
+            echo "<td>" . $status . "</td>";
+            echo "<td>" . ($outbound->outbound->number ?? '-') . "</td>";
+            echo "<td>" . ($outbound->outbound->outbound_date ?? '-') . "</td>";
+            echo "</tr>";
+        }
+        echo "</tbody></table>";
+        exit;
     }
 
     public function storageInventory(Request $request): View
@@ -557,11 +801,15 @@ class InventoryController extends Controller
                 $items->where('client_id', $clientId);
             }
         } else {
+            /** @var \App\Models\User $user */
             $accessibleIds = $user->getAccessibleClientIds();
             if ($clientId && in_array($clientId, $accessibleIds)) {
                 $items->where('client_id', $clientId);
             } else {
-                $items->whereIn('client_id', $accessibleIds);
+                $items->where(function ($q) use ($accessibleIds) {
+                    $q->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
             }
         }
 
@@ -606,11 +854,15 @@ class InventoryController extends Controller
                 $query->where('inventory.client_id', $clientId);
             }
         } else {
+            /** @var \App\Models\User $user */
             $accessibleIds = $user->getAccessibleClientIds();
             if ($clientId && in_array($clientId, $accessibleIds)) {
                 $query->where('inventory.client_id', $clientId);
             } else {
-                $query->whereIn('inventory.client_id', $accessibleIds);
+                $query->where(function ($q) use ($accessibleIds) {
+                    $q->whereIn('inventory.client_id', $accessibleIds)
+                        ->orWhereNull('inventory.client_id');
+                });
             }
         }
 
@@ -683,6 +935,50 @@ class InventoryController extends Controller
         exit;
     }
 
+    public function storageInventoryExportPdf(Request $request)
+    {
+        $title = 'Storage Inventory Report';
+        $clientId = $request->get('client_id');
+        $user = Auth::user();
+
+        $query = \App\Models\Inventory::query()
+            ->join('storage_level', 'inventory.storage_level_id', '=', 'storage_level.id')
+            ->join('storage_bin', 'storage_level.storage_bin_id', '=', 'storage_bin.id')
+            ->join('storage_rak', 'storage_bin.storage_rak_id', '=', 'storage_rak.id')
+            ->join('storage_zone', 'storage_rak.storage_zone_id', '=', 'storage_zone.id')
+            ->leftJoin('client', 'inventory.client_id', '=', 'client.id')
+            ->select(
+                'inventory.*',
+                'storage_zone.name as zone_name',
+                'storage_rak.name as rak_name',
+                'storage_bin.name as bin_name',
+                'storage_level.name as level_name',
+                'client.name as client_name'
+            )
+            ->where('inventory.qty', '>', 0);
+
+        if (!$user->isAdminWMS()) {
+            /** @var \App\Models\User $user */
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->where(function ($q) use ($accessibleIds) {
+                $q->whereIn('inventory.client_id', $accessibleIds)
+                    ->orWhereNull('inventory.client_id');
+            });
+        }
+        
+        if ($clientId) {
+            $query->where('inventory.client_id', $clientId);
+        }
+
+        $data = $query->orderBy('storage_zone.name')
+            ->orderBy('storage_rak.name')
+            ->orderBy('storage_bin.name')
+            ->orderBy('storage_level.name')
+            ->get();
+
+        return view('inventory.storage-inventory-pdf', compact('title', 'data'));
+    }
+
     public function history(Request $request): View
     {
         $title = 'Inventory History';
@@ -693,7 +989,11 @@ class InventoryController extends Controller
         $query = \App\Models\OutboundDetail::with(['outbound.client', 'inventory.storageLevel.bin.rak.zone'])
             ->whereHas('outbound', function ($q) use ($user, $clientId) {
                 if (!$user->isAdminWMS()) {
-                    $q->whereIn('client_id', $user->getAccessibleClientIds());
+                    /** @var \App\Models\User $user */
+                    $q->where(function ($sub) use ($user) {
+                        $sub->whereIn('client_id', $user->getAccessibleClientIds())
+                            ->orWhereNull('client_id');
+                    });
                 }
                 if ($clientId) {
                     $q->where('client_id', $clientId);
@@ -708,6 +1008,76 @@ class InventoryController extends Controller
         $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
 
         return view('inventory.history', compact('title', 'history', 'clients'));
+    }
+
+    public function historyPdf(Request $request)
+    {
+        $title = 'Inventory History Report (Outbound)';
+        $user = Auth::user();
+        $clientId = $request->get('client_id');
+
+        $query = \App\Models\OutboundDetail::with(['outbound.client', 'inventory.storageLevel.bin.rak.zone']);
+        
+        $query->whereHas('outbound', function ($q) use ($user, $clientId) {
+            if (!$user->isAdminWMS()) {
+                /** @var \App\Models\User $user */
+                $q->where(function ($sub) use ($user) {
+                    $sub->whereIn('client_id', $user->getAccessibleClientIds())
+                        ->orWhereNull('client_id');
+                });
+            }
+            if ($clientId) {
+                $q->where('client_id', $clientId);
+            }
+        });
+
+        $data = $query->latest()->get();
+
+        return view('inventory.history-pdf', compact('title', 'data'));
+    }
+
+    public function historyExcel(Request $request)
+    {
+        $user = Auth::user();
+        $clientId = $request->get('client_id');
+
+        $query = \App\Models\OutboundDetail::with(['outbound.client', 'inventory.storageLevel.bin.rak.zone']);
+        
+        $query->whereHas('outbound', function ($q) use ($user, $clientId) {
+            if (!$user->isAdminWMS()) {
+                /** @var \App\Models\User $user */
+                $q->where(function ($sub) use ($user) {
+                    $sub->whereIn('client_id', $user->getAccessibleClientIds())
+                        ->orWhereNull('client_id');
+                });
+            }
+            if ($clientId) {
+                $q->where('client_id', $clientId);
+            }
+        });
+
+        $data = $query->latest()->get();
+
+        $filename = "inventory-history-" . date('Y-m-d') . ".xls";
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+
+        echo "<table border='1'>";
+        echo "<thead><tr><th>No</th><th>Date</th><th>Outbound No</th><th>Client</th><th>SN</th><th>Part Name</th><th>Condition</th></tr></thead>";
+        echo "<tbody>";
+        foreach ($data as $index => $item) {
+            echo "<tr>";
+            echo "<td>" . ($index + 1) . "</td>";
+            echo "<td>" . ($item->outbound->outbound_date ?? '-') . "</td>";
+            echo "<td>" . ($item->outbound->number ?? '-') . "</td>";
+            echo "<td>" . ($item->outbound->client->name ?? '-') . "</td>";
+            echo "<td>'" . $item->serial_number . "</td>";
+            echo "<td>" . ($item->inventory->part_name ?? '-') . "</td>";
+            echo "<td>" . $item->condition . "</td>";
+            echo "</tr>";
+        }
+        echo "</tbody></table>";
+        exit;
     }
 
     public function editSn()

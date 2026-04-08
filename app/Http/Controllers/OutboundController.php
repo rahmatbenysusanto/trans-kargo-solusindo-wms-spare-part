@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Client;
+use App\Models\Inventory;
 use App\Models\Outbound;
 use App\Models\OutboundDetail;
 use App\Models\ProductGroup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -16,10 +18,26 @@ class OutboundController extends Controller
     public function index(Request $request): View
     {
         $title = 'Outbound';
-        $data = Outbound::with('client')
-            ->when($request->client_id, function ($query) use ($request) {
-                return $query->where('client_id', $request->client_id);
-            })
+        $query = Outbound::with('client');
+        $user = Auth::user();
+
+        if ($user->isAdminWMS()) {
+            if ($request->client_id) {
+                $query->where('client_id', $request->client_id);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($request->client_id && in_array($request->client_id, $accessibleIds)) {
+                $query->where('client_id', $request->client_id);
+            } else {
+                $query->where(function ($q) use ($accessibleIds) {
+                    $q->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            }
+        }
+
+        $data = $query
             ->when($request->category, function ($query) use ($request) {
                 return $query->where('category', $request->category);
             })
@@ -326,6 +344,7 @@ class OutboundController extends Controller
             $clientId = $request->get('client_id');
             $query = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'brand', 'productGroup'])
                 ->where('qty', '>', 0)
+                ->where('condition', '!=', 'faulty')
                 ->whereNotIn('status', [
                     'Shipped / Outbound',
                     'Out for Replacement/ Support',

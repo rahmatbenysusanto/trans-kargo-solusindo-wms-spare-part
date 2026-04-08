@@ -102,12 +102,15 @@
         <div class="card shadow-sm border-0">
             <div class="card-header bg-label-primary d-flex justify-content-between align-items-center py-3">
                 <h5 class="card-title mb-0 fw-bold">Inventory Master Report (Stock Statement)</h5>
-                <div class="d-flex gap-2">
-                    <button id="btnExportExcel" class="btn btn-success btn-sm">
-                        <i class="ti tabler-file-spreadsheet me-1"></i> Export Excel
-                    </button>
-                    <span class="badge bg-primary rounded-pill">{{ $inboundData->total() }} Records</span>
+                <div class="ms-auto me-3 btn-group">
+                    <a href="{{ route('inventory.stock.statement.excel', request()->all()) }}" class="btn btn-success btn-sm">
+                        <i class="ti tabler-file-spreadsheet me-1"></i> Excel
+                    </a>
+                    <a href="{{ route('inventory.stock.statement.pdf', request()->all()) }}" class="btn btn-primary btn-sm" target="_blank">
+                        <i class="ti tabler-file-description me-1"></i> PDF
+                    </a>
                 </div>
+                <span class="badge bg-primary rounded-pill">{{ $inboundData->total() }} Records</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -234,24 +237,10 @@
 
 @section('js')
     <script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
-    <script src="https://cdn.rawgit.com/rainabba/jquery-table2excel/1.1.0/dist/jquery.table2excel.min.js"></script>
     <script>
         $(document).ready(function() {
             $('.select2').select2({
                 theme: 'bootstrap-5'
-            });
-
-            $('#btnExportExcel').click(function() {
-                $("#statementTable").table2excel({
-                    exclude: ".noExl",
-                    name: "InventoryStockStatement",
-                    filename: "InventoryStockStatement-" + new Date().toISOString().replace(
-                        /[\-\:\.]/g, "") + ".xls",
-                    fileext: ".xls",
-                    exclude_img: true,
-                    exclude_links: true,
-                    exclude_inputs: true
-                });
             });
         });
     </script>

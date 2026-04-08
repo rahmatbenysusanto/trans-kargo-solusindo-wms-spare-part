@@ -43,7 +43,8 @@ class CycleCountController extends Controller
                 });
             } else {
                 $data->whereHas('inventory', function ($q) use ($accessibleIds) {
-                    $q->whereIn('client_id', $accessibleIds);
+                    $q->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
                 });
             }
         }
@@ -84,7 +85,8 @@ class CycleCountController extends Controller
                 });
             } else {
                 $baseQuery->whereHas('inventory', function ($q) use ($accessibleIds) {
-                    $q->whereIn('client_id', $accessibleIds);
+                    $q->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
                 });
             }
         }
@@ -96,5 +98,104 @@ class CycleCountController extends Controller
         ];
 
         return view('inventory.cycle-count.index', compact('title', 'data', 'startDate', 'endDate', 'summary', 'type', 'clients', 'clientId'));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $title = 'Cycle Count Report';
+        $user = Auth::user();
+        $startDate = $request->get('start_date', Carbon::today()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::today()->format('Y-m-d'));
+        $type = $request->get('type');
+        $clientId = $request->get('client_id');
+
+        $query = InventoryHistory::whereBetween('created_at', [
+            Carbon::parse($startDate)->startOfDay(),
+            Carbon::parse($endDate)->endOfDay()
+        ])
+            ->whereIn('type', ['Inbound', 'Outbound', 'Movement'])
+            ->with(['inventory.product.brand', 'inventory.product.productGroup', 'inventory.client']);
+
+        if (!$user->isAdminWMS()) {
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            });
+        }
+        
+        if ($clientId) {
+            $query->whereHas('inventory', function ($q) use ($clientId) {
+                $q->where('client_id', $clientId);
+            });
+        }
+
+        $data = $query->when($type, function ($q) use ($type) {
+                return $q->where('type', $type);
+            })
+            ->latest()->get();
+
+        return view('inventory.cycle-count.pdf', compact('title', 'data', 'startDate', 'endDate'));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $user = Auth::user();
+        $startDate = $request->get('start_date', Carbon::today()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::today()->format('Y-m-d'));
+        $type = $request->get('type');
+        $clientId = $request->get('client_id');
+
+        $query = InventoryHistory::whereBetween('created_at', [
+            Carbon::parse($startDate)->startOfDay(),
+            Carbon::parse($endDate)->endOfDay()
+        ])
+            ->whereIn('type', ['Inbound', 'Outbound', 'Movement'])
+            ->with(['inventory.product.brand', 'inventory.product.productGroup', 'inventory.client']);
+
+        if (!$user->isAdminWMS()) {
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            });
+        }
+        
+        if ($clientId) {
+            $query->whereHas('inventory', function ($q) use ($clientId) {
+                $q->where('client_id', $clientId);
+            });
+        }
+
+        $data = $query->when($type, function ($q) use ($type) {
+                return $q->where('type', $type);
+            })
+            ->latest()->get();
+
+        $filename = "cycle-count-" . date('Y-m-d') . ".xls";
+        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+
+        echo "<table border='1'>";
+        echo "<thead><tr><th>No</th><th>Date</th><th>Type</th><th>SN</th><th>Asset ID</th><th>Part Name</th><th>Description</th><th>User</th></tr></thead>";
+        echo "<tbody>";
+        foreach ($data as $index => $item) {
+            echo "<tr>";
+            echo "<td>" . ($index + 1) . "</td>";
+            echo "<td>" . $item->created_at . "</td>";
+            echo "<td>" . $item->type . "</td>";
+            echo "<td>'" . $item->serial_number . "</td>";
+            echo "<td>" . ($item->inventory->unique_id ?? '-') . "</td>";
+            echo "<td>" . ($item->inventory->part_name ?? '-') . "</td>";
+            echo "<td>" . $item->description . "</td>";
+            echo "<td>" . $item->user . "</td>";
+            echo "</tr>";
+        }
+        echo "</tbody></table>";
+        exit;
     }
 }

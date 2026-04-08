@@ -34,6 +34,14 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header d-flex justify-content-between align-items-center border-bottom py-3">
                     <h5 class="card-title mb-0 fw-bold"><i class="ti tabler-history me-2 text-primary"></i>Inventory History (Outbound)</h5>
+                    <div class="btn-group">
+                        <a href="{{ route('inventory.history.excel', request()->all()) }}" class="btn btn-sm btn-success">
+                            <i class="ti tabler-file-spreadsheet me-1"></i> Excel
+                        </a>
+                        <a href="{{ route('inventory.history.pdf', request()->all()) }}" class="btn btn-sm btn-primary" target="_blank">
+                            <i class="ti tabler-file-description me-1"></i> PDF
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body pt-3">
                     <form action="{{ url()->current() }}" method="GET">

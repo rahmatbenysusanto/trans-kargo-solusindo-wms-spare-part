@@ -18,6 +18,7 @@ class DashboardController extends Controller
 {
     private function applyClientFilter($query, $clientId, $column = 'client_id')
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $model = $query->getModel();
 
@@ -31,7 +32,10 @@ class DashboardController extends Controller
                 if ($clientId && in_array($clientId, $accessibleIds)) {
                     $q->where($column, $clientId);
                 } else {
-                    $q->whereIn($column, $accessibleIds);
+                    $q->where(function ($sub) use ($column, $accessibleIds) {
+                        $sub->whereIn($column, $accessibleIds)
+                            ->orWhereNull($column);
+                    });
                 }
             }
         };

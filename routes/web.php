@@ -91,21 +91,38 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/list/{id}', 'show')->name('inventory.show');
 
         Route::get('/stock-movement', 'stockMovement')->name('inventory.stock.movement');
+        Route::get('/stock-movement/pdf', 'stockMovementPdf')->name('inventory.stock.movement.pdf');
+        Route::get('/stock-movement/excel', 'stockMovementExcel')->name('inventory.stock.movement.excel');
+
         Route::get('/product-movement', 'productMovementIndex')->name('inventory.product.movement');
         Route::get('/product-movement/process', 'productMovementProcess')->name('inventory.product.movement.process');
         Route::post('/product-movement/update', 'productMovementUpdate')->name('inventory.product.movement.update');
+
         Route::get('/product-summary', 'productSummary')->name('inventory.product.summary');
+        Route::get('/product-summary/pdf', 'productSummaryPdf')->name('inventory.product.summary.pdf');
+        Route::get('/product-summary/excel', 'productSummaryExcel')->name('inventory.product.summary.excel');
+        
         Route::get('/product-summary/detail', 'productSummaryDetail')->name('inventory.product.summary.detail');
+        
         Route::get('/stock-statement', 'stockStatement')->name('inventory.stock.statement');
+        Route::get('/stock-statement/pdf', 'stockStatementPdf')->name('inventory.stock.statement.pdf');
+        Route::get('/stock-statement/excel', 'stockStatementExcel')->name('inventory.stock.statement.excel');
         Route::get('/storage', 'storageInventory')->name('inventory.storage');
         Route::get('/storage/detail', 'storageInventoryDetail')->name('inventory.storage.detail');
         Route::get('/storage/export-excel', 'storageInventoryExportExcel')->name('inventory.storage.export-excel');
+        Route::get('/storage/export-pdf', 'storageInventoryExportPdf')->name('inventory.storage.export-pdf');
         Route::get('/history', 'history')->name('inventory.history');
+        Route::get('/history/pdf', 'historyPdf')->name('inventory.history.pdf');
+        Route::get('/history/excel', 'historyExcel')->name('inventory.history.excel');
         Route::get('/edit-sn', 'editSn')->name('inventory.edit.sn');
         Route::post('/edit-sn', 'updateSn')->name('inventory.update.sn');
     });
 
-    Route::get('/inventory/cycle-count', [\App\Http\Controllers\CycleCountController::class, 'index'])->name('inventory.cycle-count');
+    Route::prefix('/inventory/cycle-count')->controller(\App\Http\Controllers\CycleCountController::class)->group(function () {
+        Route::get('/', 'index')->name('inventory.cycle-count');
+        Route::get('/pdf', 'exportPdf')->name('inventory.cycle-count.pdf');
+        Route::get('/excel', 'exportExcel')->name('inventory.cycle-count.excel');
+    });
 
     Route::prefix('/outbound')->controller(OutboundController::class)->group(function () {
         Route::get('/', 'index')->name('outbound.index');

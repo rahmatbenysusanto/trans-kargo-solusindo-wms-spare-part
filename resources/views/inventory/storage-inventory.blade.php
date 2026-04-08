@@ -42,8 +42,11 @@
                             <input type="text" class="form-control" name="search" value="{{ request()->get('search') }}"
                                 placeholder="Search Zone, Rak, Bin, Level ...">
                             <button class="btn btn-primary" type="submit">Filter</button>
-                            <a href="{{ route('inventory.storage.export-excel', request()->all()) }}" class="btn btn-success">
+                            <a href="{{ route('inventory.storage.export-excel', request()->all()) }}" class="btn btn-success" title="Export Excel">
                                 <i class="ti tabler-file-spreadsheet"></i>
+                            </a>
+                            <a href="{{ route('inventory.storage.export-pdf', request()->all()) }}" class="btn btn-primary" title="Export PDF" target="_blank">
+                                <i class="ti tabler-file-description"></i>
                             </a>
                         </div>
                     </form>

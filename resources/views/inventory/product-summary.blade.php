@@ -24,8 +24,15 @@
         <div class="col-12">
             <div class="card mb-4 shadow-sm">
                 <div class="card-header border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 fw-bold"><i class="ti tabler-packages me-2 text-primary"></i>Product Stock
-                        Summary</h5>
+                    <h5 class="card-title mb-0 fw-bold"><i class="ti tabler-packages me-2 text-primary"></i>Product Stock Summary</h5>
+                    <div class="ms-auto me-3 btn-group">
+                        <a href="{{ route('inventory.product.summary.excel', request()->all()) }}" class="btn btn-sm btn-success">
+                            <i class="ti tabler-file-spreadsheet me-1"></i> Excel
+                        </a>
+                        <a href="{{ route('inventory.product.summary.pdf', request()->all()) }}" class="btn btn-sm btn-primary" target="_blank">
+                            <i class="ti tabler-file-description me-1"></i> PDF
+                        </a>
+                    </div>
                     <form action="{{ url()->current() }}" method="GET" class="d-flex gap-2">
                         @if (Auth::user()->isAdminWMS() || Auth::user()->clients->count() > 1)
                             <select name="client_id" class="form-select form-select-sm" onchange="this.form.submit()"

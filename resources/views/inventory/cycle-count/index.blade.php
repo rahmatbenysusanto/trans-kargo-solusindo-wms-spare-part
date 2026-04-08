@@ -13,9 +13,14 @@
                     <p class="text-muted mb-0">Detailed log of all inventory changes and location shifts</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button id="btnExportExcel" class="btn btn-label-success fw-bold px-3">
-                        <i class="ti tabler-file-spreadsheet me-2"></i> Export Excel
-                    </button>
+                    <div class="btn-group">
+                        <a href="{{ route('inventory.cycle-count.excel', request()->all()) }}" class="btn btn-success fw-bold">
+                            <i class="ti tabler-file-spreadsheet me-1"></i> Excel
+                        </a>
+                        <a href="{{ route('inventory.cycle-count.pdf', request()->all()) }}" class="btn btn-primary fw-bold" target="_blank">
+                            <i class="ti tabler-file-description me-1"></i> PDF
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

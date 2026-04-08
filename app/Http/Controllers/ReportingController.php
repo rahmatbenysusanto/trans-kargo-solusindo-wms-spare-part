@@ -7,15 +7,31 @@ use App\Models\InventoryHistory;
 use App\Models\OutboundDetail;
 use App\Models\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReportingController extends Controller
 {
     public function stockOnHand(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         $query = Inventory::with(['client', 'storageLevel.bin.rak.zone']);
 
-        if ($request->client_id) {
-            $query->where('client_id', $request->client_id);
+        $user = Auth::user();
+        if ($user->isAdminWMS()) {
+            if ($request->client_id) {
+                $query->where('client_id', $request->client_id);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($request->client_id && in_array($request->client_id, $accessibleIds)) {
+                $query->where('client_id', $request->client_id);
+            } else {
+                $query->where(function ($q) use ($accessibleIds) {
+                    $q->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            }
         }
 
         if ($request->search) {
@@ -29,7 +45,7 @@ class ReportingController extends Controller
         }
 
         $data = $query->where('qty', '>', 0)->latest()->paginate(20);
-        $clients = Client::all();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
         $title = 'Stock on Hand';
 
         return view('reporting.stock_on_hand', compact('data', 'clients', 'title'));
@@ -38,6 +54,17 @@ class ReportingController extends Controller
     public function movementHistory(Request $request)
     {
         $query = InventoryHistory::with(['inventory.client']);
+        $user = Auth::user();
+
+        if (!$user->isAdminWMS()) {
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            });
+        }
 
         if ($request->sn) {
             $query->where('serial_number', 'like', "%$request->sn%");
@@ -62,10 +89,27 @@ class ReportingController extends Controller
         // Utilization is typically focused on outbound for support/incidents
         $query = OutboundDetail::with(['outbound.client']);
 
-        if ($request->client_id) {
-            $query->whereHas('outbound', function ($q) use ($request) {
-                $q->where('client_id', $request->client_id);
-            });
+        $user = Auth::user();
+        if ($user->isAdminWMS()) {
+            if ($request->client_id) {
+                $query->whereHas('outbound', function ($q) use ($request) {
+                    $q->where('client_id', $request->client_id);
+                });
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            if ($request->client_id && in_array($request->client_id, $accessibleIds)) {
+                $query->whereHas('outbound', function ($q) use ($request) {
+                    $q->where('client_id', $request->client_id);
+                });
+            } else {
+                $query->whereHas('outbound', function ($q) use ($accessibleIds) {
+                    $q->where(function ($sub) use ($accessibleIds) {
+                        $sub->whereIn('client_id', $accessibleIds)
+                            ->orWhereNull('client_id');
+                    });
+                });
+            }
         }
 
         if ($request->start_date && $request->end_date) {
@@ -75,7 +119,7 @@ class ReportingController extends Controller
         }
 
         $data = $query->latest()->paginate(20);
-        $clients = Client::all();
+        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
         $title = 'Utilization Report';
 
         return view('reporting.utilization', compact('data', 'clients', 'title'));
