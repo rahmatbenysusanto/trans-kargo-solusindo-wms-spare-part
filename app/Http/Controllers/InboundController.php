@@ -198,12 +198,12 @@ class InboundController extends Controller
         return strtoupper(substr(Str::slug($text, ''), 0, $length));
     }
 
-    public static function generateUniqueId(): string
+    public static function generateUniqueId(array $exclude = []): string
     {
         $id = date('YmdHis') . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
         
-        // Check if the generated ID already exists in either InboundDetail or Inventory
-        while (InboundDetail::where('wh_asset_number', $id)->exists() || Inventory::where('unique_id', $id)->exists()) {
+        // Check if the generated ID already exists in either InboundDetail, Inventory, or our current batch list
+        while (in_array($id, $exclude) || InboundDetail::where('wh_asset_number', $id)->exists() || Inventory::where('unique_id', $id)->exists()) {
             $id = date('YmdHis') . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
         }
 
@@ -246,21 +246,28 @@ class InboundController extends Controller
             $products = $request->post('products');
             $storageLevelId = $request->post('storage_level_id');
 
+            $usedIds = [];
             foreach ($products as $id) {
                 $inboundDetail = InboundDetail::findOrFail($id);
                 $inbound = Inbound::find($inboundDetail->inbound_id);
 
-                // Initial Inventory check
-                $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)->first();
+                // Initial Inventory check (by SN or by existing WH Asset Number)
+                $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)
+                    ->when($inboundDetail->wh_asset_number, function($q) use ($inboundDetail) {
+                        return $q->orWhere('unique_id', $inboundDetail->wh_asset_number);
+                    })
+                    ->first();
 
                 // Generate or Fetch WH Asset Number
                 if (!$inboundDetail->wh_asset_number) {
                     if ($checkInventory && $checkInventory->unique_id) {
                         $inboundDetail->wh_asset_number = $checkInventory->unique_id;
                     } else {
-                        $inboundDetail->wh_asset_number = self::generateUniqueId();
+                        $inboundDetail->wh_asset_number = self::generateUniqueId($usedIds);
                     }
                 }
+
+                $usedIds[] = $inboundDetail->wh_asset_number;
 
                 $inboundDetail->storage_level_id = $storageLevelId;
                 $inboundDetail->save();
@@ -269,12 +276,20 @@ class InboundController extends Controller
                 if ($checkInventory) {
                     $inventoryId = $checkInventory->id;
                     $checkInventory->update([
-                        'unique_id'         => $inboundDetail->wh_asset_number, // Ensure sync
+                        'unique_id'         => $inboundDetail->wh_asset_number,
+                        'client_id'         => $inbound->client_id,
                         'storage_level_id'  => $storageLevelId,
+                        'product_id'        => $inboundDetail->product_id,
+                        'brand_id'          => $inboundDetail->brand_id,
+                        'product_group_id'  => $inboundDetail->product_group_id,
                         'qty'               => 1,
+                        'part_name'         => $inboundDetail->part_name,
+                        'part_number'       => $inboundDetail->part_number,
+                        'part_description'  => $inboundDetail->description,
+                        'serial_number'     => $inboundDetail->serial_number,
+                        'parent_serial_number' => $inboundDetail->parent_sn ?? ($inboundDetail->old_serial_number ?? $checkInventory->parent_serial_number),
                         'status'            => 'available',
                         'condition'         => $inboundDetail->condition,
-                        'parent_serial_number' => $inboundDetail->parent_sn ?? ($inboundDetail->old_serial_number ?? $checkInventory->parent_serial_number)
                     ]);
                 } else {
                     $createInventory = Inventory::create([
