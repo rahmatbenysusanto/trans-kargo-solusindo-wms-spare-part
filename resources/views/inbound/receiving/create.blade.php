@@ -237,6 +237,7 @@
                 partDescription: document.getElementById('partDescription').value,
                 serialNumber: sn,
                 parentSn: parentSn,
+                oldSerialNumber: document.getElementById('oldSerialNumber') ? document.getElementById('oldSerialNumber').value : null,
                 whAssetNumber: document.getElementById('whAssetNumber').value || generateUniqueId(),
                 productGroup: productGroup,
                 brand: brand,
@@ -495,6 +496,9 @@
             $('#brand').val(product.brand).trigger('change');
             $('#condition').val(product.condition).trigger('change');
             document.getElementById('parentSn').value = product.parentSn ?? '';
+            if (document.getElementById('oldSerialNumber')) {
+                document.getElementById('oldSerialNumber').value = product.oldSerialNumber ?? '';
+            }
             document.getElementById('whAssetNumber').value = product.whAssetNumber ?? '';
             document.getElementById('stockStatus').value = product.stockStatus ?? 'Available';
             document.getElementById('stagingDate').value = product.stagingDate ?? '';
@@ -546,6 +550,7 @@
             $('#brand').val('').trigger('change');
             $('#condition').val('New').trigger('change');
             document.getElementById('parentSn').value = '';
+            if (document.getElementById('oldSerialNumber')) document.getElementById('oldSerialNumber').value = '';
             document.getElementById('whAssetNumber').value = '';
             document.getElementById('stockStatus').value = 'Available';
             document.getElementById('stagingDate').value = '';
@@ -899,6 +904,10 @@
                             <div class="mb-3">
                                 <label class="form-label">Parent SN (Optional)</label>
                                 <input type="text" class="form-control" id="parentSn" placeholder="Parent SN ...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Old Serial Number / Replacing SN (RMA)</label>
+                                <input type="text" class="form-control text-primary fw-bold" id="oldSerialNumber" placeholder="B Serial Number ...">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Warehouse Asset ID</label>

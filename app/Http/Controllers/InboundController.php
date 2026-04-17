@@ -200,7 +200,14 @@ class InboundController extends Controller
 
     public static function generateUniqueId(): string
     {
-        return date('YmdHi') . str_pad(mt_rand(0, 999), 3, '0', STR_PAD_LEFT);
+        $id = date('YmdHis') . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
+        
+        // Check if the generated ID already exists in either InboundDetail or Inventory
+        while (InboundDetail::where('wh_asset_number', $id)->exists() || Inventory::where('unique_id', $id)->exists()) {
+            $id = date('YmdHis') . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
+        }
+
+        return $id;
     }
 
     private static function getRomanMonth($month)
@@ -240,17 +247,29 @@ class InboundController extends Controller
             $storageLevelId = $request->post('storage_level_id');
 
             foreach ($products as $id) {
-                InboundDetail::where('id', $id)->update([
-                    'storage_level_id' => $storageLevelId
-                ]);
-
-                $inboundDetail = InboundDetail::find($id);
+                $inboundDetail = InboundDetail::findOrFail($id);
                 $inbound = Inbound::find($inboundDetail->inbound_id);
-                // Update Inventory Data
+
+                // Initial Inventory check
                 $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)->first();
+
+                // Generate or Fetch WH Asset Number
+                if (!$inboundDetail->wh_asset_number) {
+                    if ($checkInventory && $checkInventory->unique_id) {
+                        $inboundDetail->wh_asset_number = $checkInventory->unique_id;
+                    } else {
+                        $inboundDetail->wh_asset_number = self::generateUniqueId();
+                    }
+                }
+
+                $inboundDetail->storage_level_id = $storageLevelId;
+                $inboundDetail->save();
+
+                // Update or Create Inventory Data
                 if ($checkInventory) {
                     $inventoryId = $checkInventory->id;
-                    Inventory::where('serial_number', $inboundDetail->serial_number)->update([
+                    $checkInventory->update([
+                        'unique_id'         => $inboundDetail->wh_asset_number, // Ensure sync
                         'storage_level_id'  => $storageLevelId,
                         'qty'               => 1,
                         'status'            => 'available',
@@ -258,11 +277,8 @@ class InboundController extends Controller
                         'parent_serial_number' => $inboundDetail->parent_sn ?? ($inboundDetail->old_serial_number ?? $checkInventory->parent_serial_number)
                     ]);
                 } else {
-                    $brand = Brand::find($inboundDetail->brand_id);
-                    $productGroup = ProductGroup::find($inboundDetail->product_group_id);
-
                     $createInventory = Inventory::create([
-                        'unique_id'         => $inboundDetail->wh_asset_number ?? self::generateUniqueId(),
+                        'unique_id'         => $inboundDetail->wh_asset_number,
                         'client_id'         => $inbound->client_id,
                         'storage_level_id'  => $storageLevelId,
                         'product_id'        => $inboundDetail->product_id,
@@ -271,7 +287,7 @@ class InboundController extends Controller
                         'qty'               => 1,
                         'part_name'         => $inboundDetail->part_name,
                         'part_number'       => $inboundDetail->part_number,
-                        'part_description'  => $inboundDetail->part_description,
+                        'part_description'  => $inboundDetail->description,
                         'serial_number'     => $inboundDetail->serial_number,
                         'parent_serial_number' => $inboundDetail->parent_sn ?? $inboundDetail->old_serial_number,
                         'status'            => 'available',
@@ -621,7 +637,7 @@ class InboundController extends Controller
                 'part_number'       => $product['partNumber'],
                 'description'       => $product['partDescription'] ?? '',
                 'qty'               => 1,
-                'wh_asset_number'   => $product['whAssetNumber'] ?? self::generateUniqueId(),
+                'wh_asset_number'   => $product['whAssetNumber'] ?? null,
                 'serial_number'     => $product['serialNumber'],
                 'old_serial_number' => $product['oldSerialNumber'] ?? null,
                 'parent_sn'         => $product['parentSn'] ?? null,

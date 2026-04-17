@@ -151,8 +151,9 @@
             } catch (e) {}
         });
 
+        const category = document.getElementById('category').value;
         const url =
-            `{{ route('outbound.get.inventory') }}?client_id=${clientId}&search=${search}&exclude_ids=${excludeIds.join(',')}`;
+            `{{ route('outbound.get.inventory') }}?client_id=${clientId}&search=${search}&exclude_ids=${excludeIds.join(',')}&category=${category}`;
 
         fetch(url)
             .then(r => {

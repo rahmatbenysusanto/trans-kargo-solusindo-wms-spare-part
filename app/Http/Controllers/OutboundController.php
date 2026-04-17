@@ -344,7 +344,9 @@ class OutboundController extends Controller
             $clientId = $request->get('client_id');
             $query = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'brand', 'productGroup'])
                 ->where('qty', '>', 0)
-                ->where('condition', '!=', 'faulty')
+                ->when(!in_array($request->category, ['RMA', 'Faulty', 'Spare from/to Replacement']), function ($query) {
+                    return $query->where('condition', '!=', 'faulty');
+                })
                 ->whereNotIn('status', [
                     'Shipped / Outbound',
                     'Out for Replacement/ Support',
