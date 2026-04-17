@@ -198,24 +198,69 @@ class InboundController extends Controller
         return strtoupper(substr(Str::slug($text, ''), 0, $length));
     }
 
-    public static function generateUniqueId(array $exclude = []): string
+    public static function generateUniqueId($date = null, array $exclude = []): string
     {
-        $id = date('YmdHis') . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
-        
-        // Check if the generated ID already exists in either InboundDetail, Inventory, or our current batch list
-        while (in_array($id, $exclude) || InboundDetail::where('wh_asset_number', $id)->exists() || Inventory::where('unique_id', $id)->exists()) {
-            $id = date('YmdHis') . str_pad(mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
+        $prefix = $date ? date('ymd', strtotime($date)) : date('ymd');
+
+        // Find last assigned sequence for this prefix in Inventory
+        $lastInventory = Inventory::where('unique_id', 'like', $prefix . '%')
+            ->whereRaw('LENGTH(unique_id) = 10')
+            ->orderBy('unique_id', 'desc')
+            ->first();
+
+        // Find last assigned sequence for this prefix in InboundDetail
+        $lastInbound = InboundDetail::where('wh_asset_number', 'like', $prefix . '%')
+            ->whereRaw('LENGTH(wh_asset_number) = 10')
+            ->orderBy('wh_asset_number', 'desc')
+            ->first();
+
+        // Get the latest ID between both tables
+        $lastIdInDb = null;
+        if ($lastInventory && $lastInbound) {
+            $lastIdInDb = max($lastInventory->unique_id, $lastInbound->wh_asset_number);
+        } else {
+            $lastIdInDb = $lastInventory ? $lastInventory->unique_id : ($lastInbound ? $lastInbound->wh_asset_number : null);
         }
 
-        return $id;
+        // Also check if there's a higher ID in the exclude list (the current processing batch)
+        $lastIdFinal = $lastIdInDb;
+        if (!empty($exclude)) {
+            $lastExcluded = collect($exclude)
+                ->filter(fn($id) => str_starts_with($id, $prefix) && strlen($id) === 10)
+                ->sortDesc()
+                ->first();
+            if ($lastExcluded) {
+                $lastIdFinal = $lastIdFinal ? max($lastIdFinal, $lastExcluded) : $lastExcluded;
+            }
+        }
+
+        $nextSequence = 1;
+        if ($lastIdFinal && str_starts_with($lastIdFinal, $prefix)) {
+            // Extract the sequence part and increment (the last 4 digits)
+            $lastSequenceStr = substr($lastIdFinal, 6);
+            if (is_numeric($lastSequenceStr)) {
+                $nextSequence = (int) $lastSequenceStr + 1;
+            }
+        }
+
+        return $prefix . str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
     }
 
     private static function getRomanMonth($month)
     {
         $roman = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V',
-            6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X',
-            11 => 'XI', 12 => 'XII'
+            1 => 'I',
+            2 => 'II',
+            3 => 'III',
+            4 => 'IV',
+            5 => 'V',
+            6 => 'VI',
+            7 => 'VII',
+            8 => 'VIII',
+            9 => 'IX',
+            10 => 'X',
+            11 => 'XI',
+            12 => 'XII'
         ];
         return $roman[(int)$month] ?? 'I';
     }
@@ -225,7 +270,7 @@ class InboundController extends Controller
         $year = date('Y');
         $monthRoman = self::getRomanMonth(date('n'));
         $format = "/RN/WH/$monthRoman/$year";
-        
+
         $lastInbound = Inbound::where('number', 'like', "%/RN/WH/%/$year")->latest()->first();
         $lastSerial = 0;
         if ($lastInbound) {
@@ -253,7 +298,7 @@ class InboundController extends Controller
 
                 // Initial Inventory check (by SN or by existing WH Asset Number)
                 $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)
-                    ->when($inboundDetail->wh_asset_number, function($q) use ($inboundDetail) {
+                    ->when($inboundDetail->wh_asset_number, function ($q) use ($inboundDetail) {
                         return $q->orWhere('unique_id', $inboundDetail->wh_asset_number);
                     })
                     ->first();
@@ -263,7 +308,7 @@ class InboundController extends Controller
                     if ($checkInventory && $checkInventory->unique_id) {
                         $inboundDetail->wh_asset_number = $checkInventory->unique_id;
                     } else {
-                        $inboundDetail->wh_asset_number = self::generateUniqueId($usedIds);
+                        $inboundDetail->wh_asset_number = self::generateUniqueId(null, $usedIds);
                     }
                 }
 
@@ -474,7 +519,7 @@ class InboundController extends Controller
 
                 $lastSerial++;
                 $newNumber = str_pad($lastSerial, 6, '0', STR_PAD_LEFT) . $format;
-                
+
                 // Determine request type based on category roughly
                 $requestType = 'New PO';
                 if (stripos($category, 'RMA') !== false || stripos($category, 'Faulty') !== false || stripos($category, 'Replacement') !== false) {
