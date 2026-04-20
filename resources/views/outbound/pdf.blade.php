@@ -17,11 +17,11 @@
             <div class="row align-items-start mb-3">
                 <div class="col-6">
                     <div class="mb-1 text-dark small">DN NO : {{ $outbound->number }}</div>
-                    <div class="text-dark small">DATE &nbsp;&nbsp;: {{ date('d-m-Y', strtotime($outbound->outbound_date)) }}</div>
+                    <div class="text-dark small">DATE &nbsp;&nbsp;: {{ date('d-m-Y', strtotime($outbound->outbound_date)) }}
+                    </div>
                 </div>
                 <div class="col-6 text-end">
-                    <h4 class="fw-bold text-dark mb-0">NTTDATA</h4>
-                    <p class="text-muted" style="font-size: 10px;">Trusted Global Innovator</p>
+                    <img src="{{ asset('assets/image/ntt-data.png') }}" alt="NTT DATA Logo" style="height: 35px;">
                 </div>
             </div>
 
@@ -37,9 +37,9 @@
                     <p class="fw-bold text-dark mb-1 small">FROM :</p>
                     <div class="ps-2 border-start border-2 border-light">
                         <h6 class="fw-bold text-dark mb-1 small">NTT Data</h6>
-                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">WH Transkargo Solusindo 
-Pergudangan Tunas Daan Mogot Blok B2 No.11
-Batu Ceper Tangerang 12522.</p>
+                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">WH Transkargo Solusindo
+                            Pergudangan Tunas Daan Mogot Blok B2 No.11
+                            Batu Ceper Tangerang 12522.</p>
                         <p class="text-muted mb-0" style="font-size: 11px;">{{ $outbound->client_contact ?? '' }}</p>
                     </div>
                 </div>
@@ -47,7 +47,8 @@ Batu Ceper Tangerang 12522.</p>
                     <p class="fw-bold text-dark mb-1 small">DELIVER / SHIP TO :</p>
                     <div class="ps-2 border-start border-2 border-light">
                         <div class="text-dark fw-bold mb-1 small">{{ $outbound->ntt_requestor ?? 'NTT Data' }}</div>
-                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">{{ $outbound->pickup_address ?? '-' }}</p>
+                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">
+                            {{ $outbound->pickup_address ?? '-' }}</p>
                     </div>
                 </div>
             </div>
@@ -91,13 +92,16 @@ Batu Ceper Tangerang 12522.</p>
             <!-- Reference Line -->
             <div class="mt-3 p-2 bg-light border rounded">
                 <p class="mb-0 fw-bold text-dark" style="font-size: 11px;">
-                    Re: {{ $outbound->remarks ?? ($outbound->category . ' unit for ' . $outbound->request_type . ' || ' . ($outbound->itsm_number ?? $outbound->rma_number ?? '-')) }}
+                    Re:
+                    {{ $outbound->remarks ?? $outbound->category . ' unit for ' . $outbound->request_type . ' || ' . ($outbound->itsm_number ?? ($outbound->rma_number ?? '-')) }}
                 </p>
             </div>
 
             <!-- Note Text -->
             <div class="mt-2 text-wrap" style="max-width: 90%;">
-                <p class="text-muted italic mb-0" style="font-size: 10px;">Barang kembali harus sesuai dengan keadaan semula (komplit dengan box, accessories, buku manual, busa, plastik pembungkus dll) Kerusakan barang di tanggung oleh Peminjam.</p>
+                <p class="text-muted italic mb-0" style="font-size: 10px;">Barang kembali harus sesuai dengan keadaan semula
+                    (komplit dengan box, accessories, buku manual, busa, plastik pembungkus dll) Kerusakan barang di
+                    tanggung oleh Peminjam.</p>
             </div>
 
             <!-- Signatures -->
@@ -131,7 +135,8 @@ Batu Ceper Tangerang 12522.</p>
             <!-- Company Footer Address -->
             <div class="mt-4 pt-3 text-start border-top">
                 <p class="fw-bold mb-0 text-dark small">PT NTT DATA Indonesia</p>
-                <p class="text-muted mb-0" style="font-size: 10px;">DBS Tower 22nd Floor, Jl. Prof. Dr. Satrio Kav 3-5, Jakarta Selatan 12940 Indonesia</p>
+                <p class="text-muted mb-0" style="font-size: 10px;">DBS Tower 22nd Floor, Jl. Prof. Dr. Satrio Kav 3-5,
+                    Jakarta Selatan 12940 Indonesia</p>
                 <p class="text-muted mb-0" style="font-size: 10px;">Tel: +62 21 2922 8300 | Fax: +62 21 2922 8301</p>
             </div>
         </div>
@@ -142,35 +147,49 @@ Batu Ceper Tangerang 12522.</p>
             font-family: 'Inter', -apple-system, sans-serif !important;
             line-height: normal !important;
         }
+
         @media print {
             body {
                 background: white !important;
             }
-            .no-print, .navbar, .menu, footer {
+
+            .no-print,
+            .navbar,
+            .menu,
+            footer {
                 display: none !important;
             }
+
             #print-area {
                 width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
+
             .card {
                 border: none !important;
                 box-shadow: none !important;
             }
+
             .custom-pdf-table th {
                 background-color: #f8f9fa !important;
                 -webkit-print-color-adjust: exact;
             }
-            .table-bordered > :not(caption) > * > * {
+
+            .table-bordered> :not(caption)>*>* {
                 border-width: 1px !important;
                 border-color: #000 !important;
             }
         }
-        .custom-pdf-table th, .custom-pdf-table td {
+
+        .custom-pdf-table th,
+        .custom-pdf-table td {
             padding: 5px !important;
             border-color: #000 !important;
         }
-        .italic { font-style: italic; }
+
+        .italic {
+            font-style: italic;
+        }
     </style>
 @endsection
