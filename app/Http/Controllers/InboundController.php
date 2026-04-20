@@ -271,10 +271,26 @@ class InboundController extends Controller
         $monthRoman = self::getRomanMonth(date('n'));
         $format = "/RN/WH/$monthRoman/$year";
 
-        $lastInbound = Inbound::where('number', 'like', "%/RN/WH/%/$year")->latest()->first();
+        $lastInbound = Inbound::where('number', 'like', "%$format")->orderBy('number', 'desc')->first();
         $lastSerial = 0;
         if ($lastInbound) {
             $parts = explode('/', $lastInbound->number);
+            $lastSerial = (int) $parts[0];
+        }
+        $newSerial = str_pad($lastSerial + 1, 6, '0', STR_PAD_LEFT);
+        return "$newSerial$format";
+    }
+
+    public static function generateTksDnNumber(): string
+    {
+        $year = date('Y');
+        $monthRoman = self::getRomanMonth(date('n'));
+        $format = "/RN/WH/$monthRoman/$year";
+
+        $lastInbound = Inbound::where('tks_dn_number', 'like', "%$format")->orderBy('tks_dn_number', 'desc')->first();
+        $lastSerial = 0;
+        if ($lastInbound) {
+            $parts = explode('/', $lastInbound->tks_dn_number);
             $lastSerial = (int) $parts[0];
         }
         $newSerial = str_pad($lastSerial + 1, 6, '0', STR_PAD_LEFT);
@@ -497,11 +513,18 @@ class InboundController extends Controller
             $monthRoman = self::getRomanMonth(date('n'));
             $format = "/RN/WH/$monthRoman/$year";
 
-            $lastInbound = Inbound::where('number', 'like', "%/RN/WH/%/$year")->orderBy('id', 'desc')->first();
+            $lastInbound = Inbound::where('number', 'like', "%$format")->orderBy('number', 'desc')->first();
             $lastSerial = 0;
             if ($lastInbound) {
                 $parts = explode('/', $lastInbound->number);
                 $lastSerial = (int) $parts[0];
+            }
+
+            $lastInboundDn = Inbound::where('tks_dn_number', 'like', "%$format")->orderBy('tks_dn_number', 'desc')->first();
+            $lastSerialDn = 0;
+            if ($lastInboundDn) {
+                $partsDn = explode('/', $lastInboundDn->tks_dn_number);
+                $lastSerialDn = (int) $partsDn[0];
             }
 
             foreach ($receivings as $rec) {
@@ -519,6 +542,9 @@ class InboundController extends Controller
 
                 $lastSerial++;
                 $newNumber = str_pad($lastSerial, 6, '0', STR_PAD_LEFT) . $format;
+
+                $lastSerialDn++;
+                $newDnNumber = str_pad($lastSerialDn, 6, '0', STR_PAD_LEFT) . $format;
 
                 // Determine request type based on category roughly
                 $requestType = 'New PO';
@@ -541,6 +567,7 @@ class InboundController extends Controller
                     'sttb'                  => '-', // Not provided
                     'sap_po_number'         => $sapPo,
                     'itsm_number'           => $itsm,
+                    'tks_dn_number'         => $newDnNumber,
                     'vendor'                => 'Internal',
                     'qty'                   => count($products),
                     'received_date'         => $receiveDate,
@@ -628,7 +655,7 @@ class InboundController extends Controller
                 'sap_po_number'         => $request->post('sap_po_number') ? preg_replace('/\D/', '', $request->post('sap_po_number')) : null,
                 'ecapex_number'         => $request->post('ecapex_number'),
                 'vendor_dn_number'      => $request->post('vendor_dn_number'),
-                'tks_dn_number'         => $request->post('tks_dn_number'),
+                'tks_dn_number'         => $request->post('tks_dn_number') ?? self::generateTksDnNumber(),
                 'tks_invoice_number'    => $request->post('tks_invoice_number'),
                 'vendor'                => $request->post('vendor') ?? 'Internal',
                 'qty'                   => count($request->post('products')),

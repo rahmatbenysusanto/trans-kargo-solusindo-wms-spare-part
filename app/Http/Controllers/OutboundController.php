@@ -171,10 +171,26 @@ class OutboundController extends Controller
         $monthRoman = self::getRomanMonth(date('n'));
         $format = "/DN/WH/$monthRoman/$year";
 
-        $lastOutbound = Outbound::where('number', 'like', "%/DN/WH/%/$year")->latest()->first();
+        $lastOutbound = Outbound::where('number', 'like', "%$format")->orderBy('number', 'desc')->first();
         $lastSerial = 0;
         if ($lastOutbound) {
             $parts = explode('/', $lastOutbound->number);
+            $lastSerial = (int) $parts[0];
+        }
+        $newSerial = str_pad($lastSerial + 1, 6, '0', STR_PAD_LEFT);
+        return "$newSerial$format";
+    }
+
+    public static function generateTksDnNumber(): string
+    {
+        $year = date('Y');
+        $monthRoman = self::getRomanMonth(date('n'));
+        $format = "/DN/WH/$monthRoman/$year";
+
+        $lastOutbound = Outbound::where('tks_dn_number', 'like', "%$format")->orderBy('tks_dn_number', 'desc')->first();
+        $lastSerial = 0;
+        if ($lastOutbound) {
+            $parts = explode('/', $lastOutbound->tks_dn_number);
             $lastSerial = (int) $parts[0];
         }
         $newSerial = str_pad($lastSerial + 1, 6, '0', STR_PAD_LEFT);
@@ -204,7 +220,7 @@ class OutboundController extends Controller
                 'pickup_address' => $request->post('pickup_address'),
                 'number' => $request->post('number') ?? self::generateOutboundNumber(), // PO# system ref
                 'ntt_dn_number' => $request->post('ntt_dn_number'),
-                'tks_dn_number' => $request->post('tks_dn_number'),
+                'tks_dn_number' => $request->post('tks_dn_number') ?? self::generateTksDnNumber(),
                 'tks_invoice_number' => $request->post('tks_invoice_number'),
                 'rma_number' => $request->post('rma_number'),
                 'itsm_number' => $request->post('itsm_number'),
