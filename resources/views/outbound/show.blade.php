@@ -103,6 +103,15 @@
                 </div>
             </div>
 
+            <div class="card mb-4 shadow-sm border border-light-subtle">
+                <div class="card-header bg-label-info py-2 px-3 border-bottom">
+                    <h6 class="card-title mb-0 text-white fw-bold small"><i class="ti tabler-message-2 me-2"></i>Print Reference / Remarks</h6>
+                </div>
+                <div class="card-body p-3">
+                    <p class="mb-0 text-dark small" style="white-space: pre-wrap;">{{ $outbound->remarks ?? 'No remarks provided.' }}</p>
+                </div>
+            </div>
+
             <div class="card shadow-sm border-0">
                 <div class="card-header border-bottom bg-light py-2 px-3 d-flex justify-content-between align-items-center">
                     <h6 class="card-title mb-0 small fw-bold">Product Details</h6>

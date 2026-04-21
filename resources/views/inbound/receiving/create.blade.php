@@ -289,6 +289,7 @@
                 vendor: document.getElementById('vendor').value,
                 date: document.getElementById('date').value,
                 received_by: document.getElementById('received_by').value,
+                remarks: document.getElementById('remarks').value,
             };
 
             // Check visibility of fields
@@ -580,7 +581,7 @@
             const category = document.getElementById('category').value;
 
             // Hide all dynamic fields first
-            $('.field-ntt-requestor, .field-request-date, .field-sttb, .field-ntt-rn, .field-sap-po, .field-ecapex, .field-rma, .field-itsm, .field-tks-dn, .field-tks-inv, .field-vendor-dn, .field-po-ref, .field-client, .field-client-contact, .field-pickup-address, .field-vendor, .field-courier-dn, .field-courier-inv, .field-received-date, .field-received-by')
+            $('.field-ntt-requestor, .field-request-date, .field-sttb, .field-ntt-rn, .field-sap-po, .field-ecapex, .field-rma, .field-itsm, .field-tks-dn, .field-tks-inv, .field-vendor-dn, .field-po-ref, .field-client, .field-client-contact, .field-pickup-address, .field-vendor, .field-courier-dn, .field-courier-inv, .field-received-date, .field-received-by, .field-remarks')
                 .hide();
 
             if (category === 'New PO') {
@@ -588,26 +589,26 @@
                 $('.field-ecapex, .field-sap-po, .field-vendor-dn, .field-received-date, .field-received-by').show();
             } else if (category === 'Spare Migration') {
                 // Row 10: Received Date (21), Processed By (29)
-                $('.field-received-date, .field-received-by').show();
+                $('.field-received-date, .field-received-by, .field-remarks').show();
             } else if (category === 'Faulty') {
                 // Row 13: Requestor (4), Req Date (5), NTT RN# (20), Received Date (21), TKS DN (24), TKS Invoice (25), ITSM (27), Processed By (29), Client Contact (31), Pickup Address (32)
-                $('.field-ntt-requestor, .field-request-date, .field-ntt-rn, .field-received-date, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client, .field-client-contact, .field-pickup-address')
+                $('.field-ntt-requestor, .field-request-date, .field-ntt-rn, .field-received-date, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client, .field-client-contact, .field-pickup-address, .field-remarks')
                     .show();
             } else if (category === 'RMA') {
                 // Row 7: Requestor (4), Req Date (5), Vendor DN (19), Received Date (21), ITSM (27), RMA# (28), Processed By (29)
-                $('.field-ntt-requestor, .field-request-date, .field-vendor-dn, .field-received-date, .field-itsm, .field-rma, .field-received-by, .field-client')
+                $('.field-ntt-requestor, .field-request-date, .field-vendor-dn, .field-received-date, .field-itsm, .field-rma, .field-received-by, .field-client, .field-remarks')
                     .show();
             } else if (category === 'Spare from/to Replacement') {
                 // Row 8: Requestor (4), Req Date (5), NTT RN# (20), Received Date (21), TKS DN (24), TKS Inv (25), ITSM (27), Processed By (29), Client Contact (31), Pickup Address (32)
-                $('.field-ntt-requestor, .field-request-date, .field-ntt-rn, .field-received-date, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client, .field-client-contact, .field-pickup-address')
+                $('.field-ntt-requestor, .field-request-date, .field-ntt-rn, .field-received-date, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client, .field-client-contact, .field-pickup-address, .field-remarks')
                     .show();
             } else if (category === 'Spare from/to Loan') {
                 // Row 4: Requestor (4), Req Date (5), Vendor DN (19), NTT RN# (20), TKS DN (24), TKS Inv (25), ITSM (27), Processed By (29), Client Contact (31), Pickup Address (32)
-                $('.field-ntt-requestor, .field-request-date, .field-vendor-dn, .field-ntt-rn, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client, .field-client-contact, .field-pickup-address')
+                $('.field-ntt-requestor, .field-request-date, .field-vendor-dn, .field-ntt-rn, .field-tks-dn, .field-tks-inv, .field-itsm, .field-received-by, .field-client, .field-client-contact, .field-pickup-address, .field-remarks')
                     .show();
             } else if (category === 'Spare Write-off') {
                 // Row 5: Received Date (21)
-                $('.field-received-date').show();
+                $('.field-received-date, .field-remarks').show();
             }
         }
 
@@ -757,6 +758,10 @@
                             <label class="form-label">Received By</label>
                             <input type="text" class="form-control" name="received_by" id="received_by"
                                 placeholder="Received By ...">
+                        </div>
+                        <div class="col-12 mb-3 field-remarks">
+                            <label class="form-label">Remarks</label>
+                            <textarea class="form-control" name="remarks" id="remarks" rows="3" placeholder="Free text for notes/remarks..."></textarea>
                         </div>
                     </div>
                 </div>

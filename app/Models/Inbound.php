@@ -40,7 +40,8 @@ class Inbound extends Model
         'received_date',
         'received_by',
         'status',
-        'shipment_status'
+        'shipment_status',
+        'remarks'
     ];
 
     public function details(): HasMany

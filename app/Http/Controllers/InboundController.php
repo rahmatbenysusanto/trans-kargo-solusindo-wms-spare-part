@@ -572,6 +572,7 @@ class InboundController extends Controller
                     'qty'                   => count($products),
                     'received_date'         => $receiveDate,
                     'received_by'           => $receivedBy,
+                    'remarks'               => $rec['remarks'] ?? 'Bulk Imported',
                     'status'                => 'new'
                 ]);
 
@@ -661,6 +662,7 @@ class InboundController extends Controller
                 'qty'                   => count($request->post('products')),
                 'received_date'         => $request->post('receivedDate'),
                 'received_by'           => $request->post('receivedBy'),
+                'remarks'               => $request->post('remarks'),
                 'status'                => 'new'
             ]);
 

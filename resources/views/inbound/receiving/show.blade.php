@@ -195,6 +195,18 @@
             </div>
         </div>
 
+        <!-- Remarks Card -->
+        <div class="col-12 mb-3">
+            <div class="card shadow-sm border border-light-subtle">
+                <div class="card-header bg-label-info py-2 px-3 border-bottom">
+                    <h6 class="card-title mb-0 text-white small fw-bold"><i class="ti tabler-message-2 me-2"></i>Remarks / Internal Notes</h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="text-dark small" style="white-space: pre-wrap;">{{ $inbound->remarks ?? 'No remarks provided.' }}</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Product Table Card -->
         <div class="col-12">
             <div class="card shadow-sm border-0">
