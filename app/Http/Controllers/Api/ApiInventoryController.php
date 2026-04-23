@@ -253,4 +253,55 @@ class ApiInventoryController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /api/inventory/check-outbounded
+     * Check if a serial number or unique_id exists and has been outbounded.
+     */
+    public function checkOutbounded(Request $request)
+    {
+        $search = $request->get('search');
+        if (!$search) {
+            return response()->json(['status' => false, 'message' => 'Search term is required']);
+        }
+
+        // Find in Inventory (master data)
+        $inventory = Inventory::where('serial_number', $search)
+            ->orWhere('unique_id', $search)
+            ->first();
+
+        if (!$inventory) {
+            return response()->json(['status' => false, 'message' => 'Item not found in master data.']);
+        }
+
+        // Check if outbounded (qty = 0 OR has outbound history)
+        $isOutbounded = ($inventory->qty == 0) || OutboundDetail::where('serial_number', $inventory->serial_number)->exists();
+
+        if (!$isOutbounded) {
+            return response()->json([
+                'status' => false, 
+                'message' => 'Item found but is still IN STOCK. Replacement is only allowed for outbounded items.',
+                'data' => [
+                    'serial_number' => $inventory->serial_number,
+                    'unique_id'     => $inventory->unique_id,
+                    'qty'           => $inventory->qty
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Item validated and ready for replacement.',
+            'data'   => [
+                'id'                   => $inventory->id,
+                'unique_id'            => $inventory->unique_id,
+                'serial_number'        => $inventory->serial_number,
+                'part_name'            => $inventory->part_name,
+                'part_number'          => $inventory->part_number,
+                'part_description'     => $inventory->part_description,
+                'brand'                => $inventory->brand->name ?? '-',
+                'product_group'        => $inventory->productGroup->name ?? '-',
+            ]
+        ]);
+    }
 }

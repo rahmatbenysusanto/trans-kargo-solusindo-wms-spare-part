@@ -53,7 +53,7 @@
 
         function downloadTemplate() {
             const headers = [
-                ["Product Number (SKU)", "Product Description", "Qty", "Serial Number (SN)", "Product Group", "Received Date", "Stock Category", "ITSM#", "SAP PO#", "Brand", "Box / Pallet"]
+                ["Product Number (SKU)", "Product Description", "Qty", "Serial Number (SN)", "Parent SN", "Product Group", "Received Date", "Stock Category", "ITSM#", "SAP PO#", "Brand", "Old SN", "Old WH Asset"]
             ];
             const dataExample = [
                 ["WS-C2960-48TT-L", "CATALYST 2960 48 LAN B", 1, "FOC1133Z5GC", "Switches", "20/03/18", "RMA", "SVO121024758", "4500463812", "CISCO", "Pallet 8"],
@@ -145,7 +145,9 @@
                             group: findIdx(row, ['group']),
                             brand: findIdx(row, ['brand']),
                             date: findIdx(row, ['date']),
-                            asset: findIdx(row, ['warehouse asset', 'asset#', 'wh asset'])
+                            parent_sn: findIdx(row, ['parent sn']),
+                            old_sn: findIdx(row, ['old sn', 'replacing sn']),
+                            old_asset: findIdx(row, ['old wh asset', 'old asset', 'previous asset'])
                         };
 
                         let currentScore = 0;
@@ -240,9 +242,11 @@
                         partNumber: pn,
                         partDescription: desc,
                         serialNumber: sn,
+                        parentSn: val('parent_sn'),
                         productGroup: grp,
                         brand: brd,
-                        whAssetNumber: val('asset') || generateUniqueId(),
+                        oldSerialNumber: val('old_sn'),
+                        oldWhAsset: val('old_asset'),
                         condition: 'New',
                         qty: 1
                     });
@@ -337,7 +341,9 @@
                             ${p.serialNumber}
                             ${p.isDuplicate ? '<br><span class="badge bg-danger mt-1"><i class="ti tabler-alert-circle"></i> Duplicate</span>' : ''}
                         </td>
-                        <td><span class="badge bg-label-info">${p.whAssetNumber}</span></td>
+                        <td>${p.parentSn || '-'}</td>
+                        <td>${p.oldSerialNumber || '-'}</td>
+                        <td><span class="badge bg-label-info">${p.oldWhAsset || '-'}</span></td>
                         <td>${p.brand}</td>
                         <td>${p.productGroup}</td>
                         <td class="text-center">
@@ -494,12 +500,14 @@
                                 <li class="col-6 mb-1"><i class="ti tabler-point text-primary"></i> <span class="header-required">Serial Number (SN)</span></li>
                                 <li class="col-6 mb-1"><i class="ti tabler-point text-primary"></i> <span class="header-required">Stock Category</span></li>
                                 <li class="col-6 mb-1"><i class="ti tabler-point text-primary"></i> <span class="header-required">SAP PO# or ITSM#</span></li>
+                                <li class="col-6 mb-1"><i class="ti tabler-point"></i> Parent SN (Freetext)</li>
                                 <li class="col-6 mb-1"><i class="ti tabler-point"></i> Product Description</li>
                                 <li class="col-6 mb-1"><i class="ti tabler-point"></i> Qty</li>
                                 <li class="col-6 mb-1"><i class="ti tabler-point"></i> Product Group</li>
                                 <li class="col-6 mb-1"><i class="ti tabler-point"></i> Received Date</li>
                                 <li class="col-6 mb-1"><i class="ti tabler-point"></i> Brand</li>
-                                <li class="col-6 mb-1"><i class="ti tabler-point"></i> Box / Pallet</li>
+                                <li class="col-6 mb-1"><i class="ti tabler-point text-warning"></i> Old SN (For Replacement)</li>
+                                <li class="col-6 mb-1"><i class="ti tabler-point text-warning"></i> Old WH Asset (For Replacement)</li>
                             </ul>
                         </div>
                         <div class="col-md-5 border-start ps-4">
@@ -578,7 +586,9 @@
                                     <th>SKU / Part Number</th>
                                     <th>Product Description</th>
                                     <th>Serial Number</th>
-                                    <th>Warehouse Asset ID</th>
+                                    <th>Parent SN</th>
+                                    <th>Old SN</th>
+                                    <th>Old WH Asset</th>
                                     <th>Brand</th>
                                     <th>Group</th>
                                     <th class="text-center">Action</th>

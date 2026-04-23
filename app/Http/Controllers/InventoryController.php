@@ -287,6 +287,11 @@ class InventoryController extends Controller
         ])
             ->findOrFail($id);
 
+        $parentInventory = null;
+        if ($inventory->parent_serial_number) {
+            $parentInventory = \App\Models\Inventory::where('serial_number', $inventory->parent_serial_number)->first();
+        }
+
         $sn = $inventory->serial_number;
 
         // Fetch unified history
@@ -329,7 +334,7 @@ class InventoryController extends Controller
 
         $history = $history->sortByDesc('date')->values();
 
-        return view('inventory.inventory-list.show', compact('title', 'inventory', 'history'));
+        return view('inventory.inventory-list.show', compact('title', 'inventory', 'history', 'parentInventory'));
     }
 
     public function productMovementIndex(): View

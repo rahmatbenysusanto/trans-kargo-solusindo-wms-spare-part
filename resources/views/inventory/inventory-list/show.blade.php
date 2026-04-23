@@ -106,7 +106,13 @@
                         </div>
                         <div class="col-6">
                             <span class="detail-label">Old / Parent SN</span>
-                            <span class="detail-value text-muted">{{ $inventory->parent_serial_number ?: '-' }}</span>
+                            @if ($parentInventory)
+                                <a href="{{ route('inventory.show', $parentInventory->id) }}" class="detail-value text-danger fw-bold">
+                                    <i class="ti tabler-link me-1"></i>{{ $inventory->parent_serial_number }}
+                                </a>
+                            @else
+                                <span class="detail-value text-muted">{{ $inventory->parent_serial_number ?: '-' }}</span>
+                            @endif
                         </div>
                         <div class="col-6">
                             <span class="detail-label">Condition</span>

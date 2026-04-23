@@ -729,6 +729,7 @@ class InboundController extends Controller
                 'wh_asset_number'   => $product['whAssetNumber'] ?? null,
                 'serial_number'     => $product['serialNumber'],
                 'old_serial_number' => $product['oldSerialNumber'] ?? null,
+                'old_wh_asset_number' => $product['oldWhAsset'] ?? null,
                 'parent_sn'         => $product['parentSn'] ?? null,
                 'condition'         => $product['condition'],
                 'stock_status'      => $product['stockStatus'] ?? 'Available',
@@ -744,9 +745,96 @@ class InboundController extends Controller
                 'type' => 'Receiving',
                 'category' => $inbound->category,
                 'reference_number' => $inbound->number,
-                'description' => "Received item via {$inbound->category} (Ref: {$inbound->number})" . (isset($product['oldSerialNumber']) && $product['oldSerialNumber'] ? " - Linked to SN: {$product['oldSerialNumber']}" : ""),
+                'description' => "Received item via {$inbound->category} (Ref: {$inbound->number})" . (isset($product['parentSn']) && $product['parentSn'] ? " - Linked to SN: {$product['parentSn']}" : ""),
                 'user' => $inbound->received_by,
             ]);
         }
+    }
+
+    public function checkOutbounded(Request $request)
+    {
+        $search = $request->get('search');
+        if (!$search) {
+            return response()->json(['status' => false, 'message' => 'Search term is required']);
+        }
+
+        $inventory = \App\Models\Inventory::where('serial_number', $search)
+            ->orWhere('unique_id', $search)
+            ->first();
+
+        if (!$inventory) {
+            return response()->json(['status' => false, 'message' => 'Item not found in master data.']);
+        }
+
+        $isOutbounded = ($inventory->qty == 0) || \App\Models\OutboundDetail::where('serial_number', $inventory->serial_number)->exists();
+
+        if (!$isOutbounded) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Item found but is still IN STOCK. Replacement is only allowed for outbounded items.',
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => [
+                'serial_number' => $inventory->serial_number,
+                'unique_id'     => $inventory->unique_id,
+                'part_name'     => $inventory->part_name,
+                'part_number'   => $inventory->part_number,
+                'brand'         => $inventory->brand->name ?? '-',
+                'product_group' => $inventory->productGroup->name ?? '-',
+            ]
+        ]);
+    }
+
+    public function searchOutbounded(Request $request)
+    {
+        $search = $request->get('search');
+        $clientId = $request->get('client_id');
+
+        \Log::info("Search Outbounded called", ['search' => $search, 'client_id' => $clientId]);
+
+        $query = \App\Models\Inventory::query();
+        
+        // Ensure it has been outbounded (qty 0)
+        $query->where('qty', 0);
+
+        if ($clientId) {
+            $query->where(function($q) use ($clientId) {
+                $q->where('client_id', $clientId)
+                  ->orWhereNull('client_id');
+            });
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('serial_number', 'like', "%$search%")
+                    ->orWhere('unique_id', 'like', "%$search%")
+                    ->orWhere('part_name', 'like', "%$search%")
+                    ->orWhere('part_number', 'like', "%$search%");
+            });
+        }
+
+        $results = $query->with(['brand', 'productGroup'])->limit(30)->get();
+
+        \Log::info("Search Results count: " . $results->count());
+
+        return response()->json([
+            'status' => true,
+            'results' => $results->map(function ($item) {
+                return [
+                    'id' => $item->serial_number,
+                    'text' => $item->serial_number . ' | ' . $item->unique_id . ' (' . ($item->part_name ?: $item->part_number) . ')',
+                    'serial_number' => $item->serial_number,
+                    'unique_id' => $item->unique_id,
+                    'part_name' => $item->part_name,
+                    'part_number' => $item->part_number,
+                    'part_description' => $item->part_description,
+                    'brand' => $item->brand->name ?? '-',
+                    'product_group' => $item->productGroup->name ?? '-',
+                ];
+            })
+        ]);
     }
 }

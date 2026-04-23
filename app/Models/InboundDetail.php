@@ -22,6 +22,7 @@ class InboundDetail extends Model
         'wh_asset_number',
         'serial_number',
         'old_serial_number',
+        'old_wh_asset_number',
         'parent_sn',
         'condition',
         'stock_status',

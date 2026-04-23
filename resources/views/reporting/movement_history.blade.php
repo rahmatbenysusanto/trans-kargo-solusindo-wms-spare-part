@@ -83,9 +83,13 @@
                             <thead class="bg-label-primary text-uppercase small fw-bold">
                                 <tr>
                                     <th class="ps-4">Timestamp</th>
+                                    <th>Client</th>
                                     <th>Activity & Reference</th>
                                     <th>Serial Number</th>
-                                    <th>Product Details</th>
+                                    <th>WH Asset Number</th>
+                                    <th>Part Name</th>
+                                    <th>Part Number</th>
+                                    <th>Part Description</th>
                                     <th>Movement Path</th>
                                     <th class="pe-4 text-center">User</th>
                                 </tr>
@@ -102,6 +106,9 @@
                                             </div>
                                         </td>
                                         <td>
+                                            <span class="fw-bold text-dark small">{{ $history->inventory->client->name ?? '-' }}</span>
+                                        </td>
+                                        <td>
                                             <div class="d-flex align-items-center mb-1">
                                                 @php
                                                     $typeClass = 'bg-label-success';
@@ -115,23 +122,30 @@
                                                     }
                                                 @endphp
                                                 <span class="badge {{ $typeClass }} p-1 rounded-circle me-2"><i
-                                                        class="ti tabler-{{ $typeIcon }} fs-6"></i></span>
+                                                         class="ti tabler-{{ $typeIcon }} fs-6"></i></span>
                                                 <span class="fw-bold text-dark">{{ $history->type }}</span>
                                             </div>
                                             <span class="badge bg-light text-muted border-light-subtle py-1 px-2 fw-bold"
                                                 style="font-size: 0.65rem;">REF:
                                                 {{ $history->reference_number ?? 'SYSTEM' }}</span>
                                         </td>
-                                        <td><span
-                                                class="fw-bold text-primary font-monospace">{{ $history->serial_number }}</span>
+                                        <td>
+                                            <span class="fw-bold text-primary font-monospace" style="font-size: 0.85rem;">{{ $history->serial_number }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted font-monospace fw-bold" style="font-size: 0.85rem;">{{ $history->inventory->unique_id ?? '-' }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span
-                                                    class="fw-bold text-dark small">{{ $history->inventory->part_name ?? 'Unknown' }}</span>
-                                                <small class="text-muted" style="font-size: 0.65rem;">CAT:
-                                                    {{ $history->category }}</small>
+                                                <span class="fw-bold text-dark small">{{ $history->inventory->part_name ?? 'Unknown' }}</span>
+                                                <small class="text-muted" style="font-size: 0.65rem;">CAT: {{ $history->category }}</small>
                                             </div>
+                                        </td>
+                                        <td>
+                                            <span class="text-dark small">{{ $history->inventory->part_number ?? '-' }}</span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ $history->inventory->part_description ?? '-' }}</small>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
@@ -161,7 +175,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-5">
+                                        <td colspan="10" class="text-center py-5">
                                             <div class="py-5 opacity-50">
                                                 <i class="ti tabler-history-off fs-1 mb-3"></i>
                                                 <h5 class="fw-bold">No History Found</h5>

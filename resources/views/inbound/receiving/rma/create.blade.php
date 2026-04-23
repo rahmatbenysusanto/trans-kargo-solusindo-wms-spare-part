@@ -68,6 +68,41 @@
                 allowClear: true,
                 width: '100%'
             });
+
+            $('#searchOldItem').select2({
+                dropdownParent: $('#addProductModal'),
+                placeholder: "-- Search Old SN / Asset --",
+                allowClear: true,
+                width: '100%',
+                ajax: {
+                    url: '{{ route('receiving.search-outbounded') }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            search: params.term,
+                            client_id: $('#client_id').val()
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.results
+                        };
+                    },
+                    cache: true
+                }
+            }).on('select2:select', function(e) {
+                const data = e.params.data;
+                $('#partName').val(data.part_name);
+                $('#partNumber').val(data.part_number);
+                $('#partDescription').val(data.part_description);
+                $('#brand').val(data.brand).trigger('change');
+                $('#productGroup').val(data.product_group).trigger('change');
+                
+                // Show old details
+                $('#oldSerialNumber').val(data.serial_number);
+                $('#oldWhAssetDisplay').val(data.unique_id);
+            });
         });
 
         localStorage.clear();
@@ -76,7 +111,7 @@
         function downloadTemplate() {
             const headers = [
                 ["Part Name", "Part Number", "Product Description", "Brand", "Brand Group", "Serial Number",
-                    "Old Serial Number", "Condition"
+                    "Parent SN", "Old SN", "Old WH Asset", "Condition"
                 ]
             ];
             const worksheet = XLSX.utils.aoa_to_sheet(headers);
@@ -138,7 +173,9 @@
                             partDescription: row["Product Description"] || row["Product Description"] || row[
                                 "Material Description"] || "",
                             serialNumber: sn,
-                            oldSerialNumber: row["Old Serial Number"] || "",
+                            parentSn: String(row["Parent SN"] || "").trim(),
+                            oldSerialNumber: String(row["Old SN"] || "").trim(),
+                            oldWhAsset: String(row["Old WH Asset"] || "").trim(),
                             productGroup: groupName,
                             brand: brandName,
                             condition: row["Condition"] || "New",
@@ -216,7 +253,9 @@
                 partNumber: document.getElementById('partNumber').value,
                 partDescription: document.getElementById('partDescription').value,
                 serialNumber: sn,
-                oldSerialNumber: document.getElementById('oldSerialNumber').value.trim(),
+                parentSn: document.getElementById('parentSn').value,
+                oldSerialNumber: document.getElementById('oldSerialNumber').value,
+                oldWhAsset: document.getElementById('oldWhAssetDisplay').value,
                 productGroup: document.getElementById('productGroup').value,
                 brand: document.getElementById('brand').value,
                 condition: document.getElementById('condition').value,
@@ -233,6 +272,10 @@
             renderProducts();
             $('#addProductModal').modal('hide');
             resetForm();
+        }
+
+        function validateOldSn() {
+            // Deprecated
         }
 
         function submitPO() {
@@ -340,7 +383,9 @@
                     <td>${product.productGroup}</td>
                     <td>${product.partDescription}</td>
                     <td>${product.serialNumber}</td>
+                    <td>${product.parentSn || '-'}</td>
                     <td>${product.oldSerialNumber || '-'}</td>
+                    <td>${product.oldWhAsset || '-'}</td>
                     <td>
                         <select class="form-control form-control-sm" onchange="updateProductCondition(${index}, this.value)">
                             <option value="New" ${product.condition === 'New' ? 'selected' : ''}>New</option>
@@ -415,7 +460,11 @@
             document.getElementById('partNumber').value = product.partNumber;
             document.getElementById('partDescription').value = product.partDescription;
             document.getElementById('serialNumber').value = product.serialNumber;
+            
+            document.getElementById('parentSn').value = product.parentSn || '';
             document.getElementById('oldSerialNumber').value = product.oldSerialNumber || '';
+            document.getElementById('oldWhAssetDisplay').value = product.oldWhAsset || '';
+            document.getElementById('oldSnStatus').innerHTML = '';
 
             $('#productGroup').val(product.productGroup).trigger('change');
             $('#brand').val(product.brand).trigger('change');
@@ -463,11 +512,15 @@
             document.getElementById('partNumber').value = '';
             document.getElementById('partDescription').value = '';
             document.getElementById('serialNumber').value = '';
+            document.getElementById('parentSn').value = '';
             document.getElementById('oldSerialNumber').value = '';
+            document.getElementById('oldWhAssetDisplay').value = '';
+            document.getElementById('oldSnStatus').innerHTML = '';
 
             $('#productGroup').val('').trigger('change');
             $('#brand').val('').trigger('change');
             $('#condition').val('New').trigger('change');
+            $('#searchOldItem').val(null).trigger('change');
 
             document.getElementById('addProductModalLabel').innerText = 'Add Product';
             document.getElementById('saveProductBtn').innerText = 'Add Product';
@@ -551,7 +604,9 @@
                                     <th>Group</th>
                                     <th>Product Description</th>
                                     <th>Serial Number</th>
-                                    <th>Old Serial Number</th>
+                                    <th>Parent SN</th>
+                                    <th>Old SN</th>
+                                    <th>Old WH Asset</th>
                                     <th>
                                         Condition
                                         <select class="form-control form-control-sm mt-1"
@@ -643,6 +698,10 @@
                                     <option value="Spare Migration">Spare Migration</option>
                                 </select>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">Parent SN (Optional / Freetext)</label>
+                                <input type="text" class="form-control" id="parentSn" placeholder="Type Parent SN ...">
+                            </div>
                         </div>
                         <div class="col-6">
                             <div class="mb-3">
@@ -665,9 +724,21 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Old Serial Number</label>
-                                <input type="text" class="form-control" id="oldSerialNumber"
-                                    placeholder="Old Serial Number ...">
+                                <label class="form-label">Search Old Item (Replacement Only)</label>
+                                <select class="form-control" id="searchOldItem">
+                                    <option value="">-- Search Old SN / Asset --</option>
+                                </select>
+                                <div id="oldSnStatus" class="mt-1" style="font-size: 0.75rem; display:none;"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">Old SN</label>
+                                    <input type="text" class="form-control" id="oldSerialNumber" readonly placeholder="Auto-filled...">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">Old WH Asset</label>
+                                    <input type="text" class="form-control" id="oldWhAssetDisplay" readonly placeholder="Auto-filled...">
+                                </div>
                             </div>
                         </div>
                     </div>

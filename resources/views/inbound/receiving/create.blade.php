@@ -79,6 +79,41 @@
                 allowClear: true,
                 width: '100%'
             });
+
+            $('#searchOldItem').select2({
+                dropdownParent: $('#addProductModal'),
+                placeholder: "-- Search Old SN / Asset --",
+                allowClear: true,
+                width: '100%',
+                ajax: {
+                    url: '{{ route('receiving.search-outbounded') }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            search: params.term,
+                            client_id: $('#client_id').val()
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.results
+                        };
+                    },
+                    cache: true
+                }
+            }).on('select2:select', function(e) {
+                const data = e.params.data;
+                $('#partName').val(data.part_name);
+                $('#partNumber').val(data.part_number);
+                $('#partDescription').val(data.part_description);
+                $('#brand').val(data.brand).trigger('change');
+                $('#productGroup').val(data.product_group).trigger('change');
+                
+                // Show old details
+                $('#oldSerialNumber').val(data.serial_number);
+                $('#oldWhAssetDisplay').val(data.unique_id);
+            });
         });
 
         localStorage.clear();
@@ -236,9 +271,9 @@
                 partNumber: document.getElementById('partNumber').value,
                 partDescription: document.getElementById('partDescription').value,
                 serialNumber: sn,
-                parentSn: parentSn,
-                oldSerialNumber: document.getElementById('oldSerialNumber') ? document.getElementById('oldSerialNumber').value : null,
-                whAssetNumber: document.getElementById('whAssetNumber').value || generateUniqueId(),
+                parentSn: document.getElementById('parentSn').value,
+                oldSerialNumber: document.getElementById('oldSerialNumber').value,
+                oldWhAsset: document.getElementById('oldWhAssetDisplay').value,
                 productGroup: productGroup,
                 brand: brand,
                 condition: document.getElementById('condition').value,
@@ -398,6 +433,9 @@
                 snCounts[sn] = (snCounts[sn] || 0) + 1;
             });
 
+            const category = document.getElementById('category').value;
+            const isReplacement = (category === 'Spare from/to Replacement' || category === 'Faulty' || category === 'RMA' || category === 'Spare from/to Loan');
+
             pageItems.forEach((product, i) => {
                 const index = start + i;
                 const isDuplicate = snCounts[product.serialNumber] > 1;
@@ -409,8 +447,9 @@
                     <td class="py-1">${product.productGroup}</td>
                     <td class="py-1">${product.partDescription}</td>
                     <td class="py-1"><span class="fw-bold text-dark">${product.serialNumber}</span></td>
-                    <td class="py-1 text-muted small">${product.parentSn || '-'}</td>
-                    <td class="py-1"><span class="badge bg-label-info">${product.whAssetNumber}</span></td>
+                    <td class="py-1 col-old-asset" style="display: ${isReplacement ? '' : 'none'}">${product.parentSn || '-'}</td>
+                    <td class="py-1 col-old-asset" style="display: ${isReplacement ? '' : 'none'}">${product.oldSerialNumber || '-'}</td>
+                    <td class="py-1 col-old-asset" style="display: ${isReplacement ? '' : 'none'}"><span class="badge bg-label-info">${product.oldWhAsset || '-'}</span></td>
                     <td class="py-1 text-center">1</td>
                     <td class="py-1">
                         <select class="form-select form-select-sm py-0" style="font-size: 0.75rem;" onchange="updateProductCondition(${index}, this.value)">
@@ -496,11 +535,11 @@
             $('#productGroup').val(product.productGroup).trigger('change');
             $('#brand').val(product.brand).trigger('change');
             $('#condition').val(product.condition).trigger('change');
-            document.getElementById('parentSn').value = product.parentSn ?? '';
-            if (document.getElementById('oldSerialNumber')) {
-                document.getElementById('oldSerialNumber').value = product.oldSerialNumber ?? '';
-            }
-            document.getElementById('whAssetNumber').value = product.whAssetNumber ?? '';
+            
+            document.getElementById('parentSn').value = product.parentSn || '';
+            document.getElementById('oldSerialNumber').value = product.oldSerialNumber || '';
+            document.getElementById('oldWhAssetDisplay').value = product.oldWhAsset || '';
+            
             document.getElementById('stockStatus').value = product.stockStatus ?? 'Available';
             document.getElementById('stagingDate').value = product.stagingDate ?? '';
 
@@ -551,9 +590,8 @@
             $('#brand').val('').trigger('change');
             $('#condition').val('New').trigger('change');
             document.getElementById('parentSn').value = '';
-            if (document.getElementById('oldSerialNumber')) document.getElementById('oldSerialNumber').value = '';
-            document.getElementById('whAssetNumber').value = '';
-            document.getElementById('stockStatus').value = 'Available';
+            document.getElementById('oldSerialNumber').value = '';
+            document.getElementById('oldWhAssetDisplay').value = '';
             document.getElementById('stagingDate').value = '';
 
             document.getElementById('addProductModalLabel').innerText = 'Add Product';
@@ -609,6 +647,17 @@
             } else if (category === 'Spare Write-off') {
                 // Row 5: Received Date (21)
                 $('.field-received-date, .field-remarks').show();
+            }
+
+            const isReplacement = (category === 'Spare from/to Replacement' || category === 'Faulty' || category === 'RMA' || category === 'Spare from/to Loan');
+            if (isReplacement) {
+                $('.field-old-asset').show();
+                $('.field-new-asset').hide();
+                $('.col-old-asset').show();
+            } else {
+                $('.field-old-asset').hide();
+                $('.field-new-asset').hide();
+                $('.col-old-asset').hide();
             }
         }
 
@@ -804,8 +853,9 @@
                                     <th class="text-white">Group</th>
                                     <th class="text-white">Product Description</th>
                                     <th class="text-white">Serial Number</th>
-                                    <th class="text-white">Parent SN</th>
-                                    <th class="text-white">Warehouse Asset ID</th>
+                                    <th class="text-white col-old-asset" style="display:none;">Parent SN</th>
+                                    <th class="text-white col-old-asset" style="display:none;">Old SN</th>
+                                    <th class="text-white col-old-asset" style="display:none;">Old WH Asset</th>
                                     <th class="text-white text-center">Qty</th>
                                     <th class="text-white" width="130">Condition</th>
                                     <th class="text-white text-center" width="80">Action</th>
@@ -907,15 +957,27 @@
                                     placeholder="Serial Number ...">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Parent SN (Optional)</label>
-                                <input type="text" class="form-control" id="parentSn" placeholder="Parent SN ...">
+                                <label class="form-label">Parent SN (Optional / Freetext)</label>
+                                <input type="text" class="form-control" id="parentSn" placeholder="Type Parent SN ...">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Old Serial Number / Replacing SN (RMA)</label>
-                                <input type="text" class="form-control text-primary fw-bold" id="oldSerialNumber" placeholder="B Serial Number ...">
+                            <div class="mb-3 field-old-asset" style="display:none;">
+                                <label class="form-label">Search Old Item (Replacement Only)</label>
+                                <select class="form-control" id="searchOldItem">
+                                    <option value="">-- Search Old SN / Asset --</option>
+                                </select>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Warehouse Asset ID</label>
+                            <div class="row field-old-asset" style="display:none;">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">Old SN</label>
+                                    <input type="text" class="form-control" id="oldSerialNumber" readonly placeholder="Auto-filled...">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">Old WH Asset</label>
+                                    <input type="text" class="form-control" id="oldWhAssetDisplay" readonly placeholder="Auto-filled...">
+                                </div>
+                            </div>
+                            <div class="mb-3 field-new-asset" style="display:none;">
+                                <label class="form-label">WH Asset#</label>
                                 <input type="text" class="form-control" id="whAssetNumber"
                                     placeholder="Asset Number ...">
                             </div>

@@ -28,6 +28,7 @@ class Inventory extends Model
         'part_description',
         'serial_number',
         'parent_serial_number',
+        'old_wh_asset_number',
         'status',
         'last_staging_date',
         'last_movement_date',

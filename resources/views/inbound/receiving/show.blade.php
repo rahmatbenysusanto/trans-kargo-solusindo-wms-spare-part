@@ -229,7 +229,8 @@
                                     <th class="py-2 px-3 text-center">Qty</th>
                                     <th class="py-2 px-3">Serial Number</th>
                                     <th class="py-2 px-3">Parent SN</th>
-                                    <th class="py-2 px-3">WH Asset ID</th>
+                                    <th class="py-2 px-3">Old SN</th>
+                                    <th class="py-2 px-3">Old WH Asset</th>
                                     <th class="py-2 px-3">Stock Status</th>
                                     <th class="py-2 px-3 text-center">Condition</th>
                                     <th class="py-2 px-3">Location</th>
@@ -253,10 +254,10 @@
                                         <td class="py-2 px-3 text-center fw-bold">{{ $detail->qty }}</td>
                                         <td class="py-2 px-3"><span
                                                 class="fw-bold text-primary">{{ $detail->serial_number }}</span></td>
-                                        <td class="py-2 px-3 small">
-                                            {{ $detail->parent_sn ?? ($detail->old_serial_number ?? '-') }}</td>
+                                        <td class="py-2 px-3 small">{{ $detail->parent_sn ?? '-' }}</td>
+                                        <td class="py-2 px-3 small">{{ $detail->old_serial_number ?? '-' }}</td>
                                         <td class="py-2 px-3"><span class="fw-bold text-primary"
-                                                style="font-size: 0.75rem;">{{ $detail->wh_asset_number ?? '-' }}</span>
+                                                style="font-size: 0.75rem;">{{ $detail->old_wh_asset_number ?? '-' }}</span>
                                         </td>
                                         <td class="py-2 px-3">
                                             @php

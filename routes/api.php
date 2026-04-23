@@ -41,6 +41,7 @@ Route::middleware('jwt')->group(function () {
         Route::get('/', 'index');
         Route::get('/stock-statement', 'stockStatement');
         Route::get('/cycle-count', 'cycleCount');
+        Route::get('/check-outbounded', 'checkOutbounded');
     });
 
     // Outbound
