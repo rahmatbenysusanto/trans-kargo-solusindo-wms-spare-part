@@ -159,46 +159,46 @@
 
                 jsonData.forEach(row => {
                     const sn = String(row["Serial Number"] || row["Serial Number (SN)"] || "").trim();
-                    if (!sn) return;
+                    // if (!sn) return; // Allow empty SN
 
-                    if (existingSn.has(sn)) {
+                    if (sn && existingSn.has(sn)) {
                         duplicates.push(sn);
+                    } else {
+                        const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || row[
+                                "Product Group"] || "")
+                            .trim();
+                        const excelBrand = (row["Brand"] || row["Manufacturer"] || row["Brand (Brand)"] || "")
+                            .trim();
+
+                        const groupKey = excelGroup.toLowerCase();
+                        const brandKey = excelBrand.toLowerCase();
+
+                        // Case-insensitive Validation
+                        const groupName = masterProductGroups.get(groupKey) || excelGroup;
+                        const brandName = masterBrands.get(brandKey) || excelBrand;
+
+                        if (sn) existingSn.add(sn);
+                        products.push({
+                            partName: row["Part Name"] || row["Material Description"] || row[
+                                "Material"] || row["Product Number (SKU)"] || "",
+                            partNumber: row["Product Number"] || row["Part Number"] || row[
+                                "Part Number/SKU"] || row[
+                                "Material"] || row["Product Number (SKU)"] || "",
+                            partDescription: row["Product Description"] || row["Product Description"] ||
+                                row[
+                                    "Material Description"] || row["Product Description"] || "",
+                            serialNumber: sn,
+                            parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
+                            whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
+                                "Asset#"] || generateUniqueId(),
+                            productGroup: groupName,
+                            brand: brandName,
+                            condition: row["Condition"] || "New",
+                            stockStatus: row["Stock Status"] || row["Status"] || "Available",
+                            stagingDate: row["Staging Date"] || "",
+                            qty: row["QTY"] || 1,
+                        });
                     }
-
-                    const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || row[
-                            "Product Group"] || "")
-                        .trim();
-                    const excelBrand = (row["Brand"] || row["Manufacturer"] || row["Brand (Brand)"] || "")
-                        .trim();
-
-                    const groupKey = excelGroup.toLowerCase();
-                    const brandKey = excelBrand.toLowerCase();
-
-                    // Case-insensitive Validation
-                    const groupName = masterProductGroups.get(groupKey) || excelGroup;
-                    const brandName = masterBrands.get(brandKey) || excelBrand;
-
-                    existingSn.add(sn);
-                    products.push({
-                        partName: row["Part Name"] || row["Material Description"] || row[
-                            "Material"] || row["Product Number (SKU)"] || "",
-                        partNumber: row["Product Number"] || row["Part Number"] || row[
-                            "Part Number/SKU"] || row[
-                            "Material"] || row["Product Number (SKU)"] || "",
-                        partDescription: row["Product Description"] || row["Product Description"] ||
-                            row[
-                                "Material Description"] || row["Product Description"] || "",
-                        serialNumber: sn,
-                        parentSn: row["Parent SN"] || row["Parent Serial Number"] || "",
-                        whAssetNumber: row["Warehouse Asset#"] || row["WH Asset#"] || row[
-                            "Asset#"] || generateUniqueId(),
-                        productGroup: groupName,
-                        brand: brandName,
-                        condition: row["Condition"] || "New",
-                        stockStatus: row["Stock Status"] || row["Status"] || "Available",
-                        stagingDate: row["Staging Date"] || "",
-                        qty: row["QTY"] || 1,
-                    });
                 });
 
                 localStorage.setItem('products', JSON.stringify(products));
@@ -246,17 +246,17 @@
             const productGroup = document.getElementById('productGroup').value.trim();
             const parentSn = document.getElementById('parentSn').value.trim();
 
-            if (!sn || !brand || !productGroup) {
+            if (!brand || !productGroup) {
                 Swal.fire({
                     title: 'Error',
-                    text: 'Serial Number, Brand, and Product Group are required!',
+                    text: 'Brand and Product Group are required!',
                     icon: 'error'
                 });
                 return;
             }
 
             // Validation for unique serial number
-            const isDuplicate = products.some((p, index) => p.serialNumber === sn && index !== editingIndex);
+            const isDuplicate = sn && products.some((p, index) => p.serialNumber === sn && index !== editingIndex);
             if (isDuplicate) {
                 Swal.fire({
                     title: 'Duplicate Serial Number',
@@ -430,7 +430,9 @@
             const snCounts = {};
             products.forEach(p => {
                 const sn = p.serialNumber;
-                snCounts[sn] = (snCounts[sn] || 0) + 1;
+                if (sn) {
+                    snCounts[sn] = (snCounts[sn] || 0) + 1;
+                }
             });
 
             const category = document.getElementById('category').value;
@@ -438,7 +440,7 @@
 
             pageItems.forEach((product, i) => {
                 const index = start + i;
-                const isDuplicate = snCounts[product.serialNumber] > 1;
+                const isDuplicate = product.serialNumber && snCounts[product.serialNumber] > 1;
                 html += `
                 <tr class="${isDuplicate ? 'table-danger' : ''}">
                     <td class="py-1">${index + 1}</td>
@@ -446,7 +448,7 @@
                     <td class="py-1">${product.brand}</td>
                     <td class="py-1">${product.productGroup}</td>
                     <td class="py-1">${product.partDescription}</td>
-                    <td class="py-1"><span class="fw-bold text-dark">${product.serialNumber}</span></td>
+                    <td class="py-1"><span class="fw-bold text-dark">${product.serialNumber || '<span class="badge bg-label-secondary">Auto Generated</span>'}</span></td>
                     <td class="py-1 col-old-asset" style="display: ${isReplacement ? '' : 'none'}">${product.parentSn || '-'}</td>
                     <td class="py-1 col-old-asset" style="display: ${isReplacement ? '' : 'none'}">${product.oldSerialNumber || '-'}</td>
                     <td class="py-1 col-old-asset" style="display: ${isReplacement ? '' : 'none'}"><span class="badge bg-label-info">${product.oldWhAsset || '-'}</span></td>

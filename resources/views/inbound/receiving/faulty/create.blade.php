@@ -148,9 +148,9 @@
 
                 jsonData.forEach(row => {
                     const sn = String(row["Serial Number"] || "").trim();
-                    if (!sn) return;
+                    // if (!sn) return; // Allow empty SN
 
-                    if (existingSn.has(sn)) {
+                    if (sn && existingSn.has(sn)) {
                         duplicates.push(sn);
                     } else {
                         const excelGroup = (row["Brand Group"] || row["Product Group"] || row["Group"] || "")
@@ -164,7 +164,7 @@
                         const groupName = masterProductGroups.get(groupKey) || excelGroup;
                         const brandName = masterBrands.get(brandKey) || excelBrand;
 
-                        existingSn.add(sn);
+                        if (sn) existingSn.add(sn);
                         products.push({
                             partName: row["Part Name"] || row["Material Description"] || row[
                                 "Material"] || "",
@@ -228,17 +228,17 @@
             const brand = document.getElementById('brand').value.trim();
             const productGroup = document.getElementById('productGroup').value.trim();
 
-            if (!sn || !brand || !productGroup) {
+            if (!brand || !productGroup) {
                 Swal.fire({
                     title: 'Error',
-                    text: 'Serial Number, Brand, and Product Group are required',
+                    text: 'Brand and Product Group are required',
                     icon: 'error'
                 });
                 return;
             }
 
             // Validation for unique serial number
-            const isDuplicate = products.some((p, index) => p.serialNumber === sn && index !== editingIndex);
+            const isDuplicate = sn && products.some((p, index) => p.serialNumber === sn && index !== editingIndex);
             if (isDuplicate) {
                 Swal.fire({
                     title: 'Duplicate Serial Number',
@@ -392,7 +392,7 @@
                     <td>${product.brand}</td>
                     <td>${product.productGroup}</td>
                     <td>${product.partDescription}</td>
-                    <td>${product.serialNumber}</td>
+                    <td>${product.serialNumber || '<span class="badge bg-label-secondary">Auto Generated</span>'}</td>
                     <td>${product.parentSn || '-'}</td>
                     <td>${product.oldSerialNumber || '-'}</td>
                     <td>${product.oldWhAsset || '-'}</td>

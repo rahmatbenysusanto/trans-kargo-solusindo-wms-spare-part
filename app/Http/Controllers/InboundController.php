@@ -719,6 +719,11 @@ class InboundController extends Controller
                 $productId = $createProduct->id;
             }
 
+            $serialNumber = $product['serialNumber'] ?? null;
+            if (empty($serialNumber)) {
+                $serialNumber = 'TKS_' . strtoupper(Str::random(10));
+            }
+
             InboundDetail::create([
                 'inbound_id'        => $inbound->id,
                 'product_id'        => $productId,
@@ -727,7 +732,7 @@ class InboundController extends Controller
                 'description'       => $product['partDescription'] ?? '',
                 'qty'               => 1,
                 'wh_asset_number'   => $product['whAssetNumber'] ?? null,
-                'serial_number'     => $product['serialNumber'],
+                'serial_number'     => $serialNumber,
                 'old_serial_number' => $product['oldSerialNumber'] ?? null,
                 'old_wh_asset_number' => $product['oldWhAsset'] ?? null,
                 'parent_sn'         => $product['parentSn'] ?? null,
@@ -741,7 +746,7 @@ class InboundController extends Controller
 
             \App\Models\InventoryHistory::create([
                 'inventory_id' => null, // Linked later during Put Away
-                'serial_number' => $product['serialNumber'],
+                'serial_number' => $serialNumber,
                 'type' => 'Receiving',
                 'category' => $inbound->category,
                 'reference_number' => $inbound->number,
