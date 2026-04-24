@@ -16,7 +16,7 @@
             <!-- Header -->
             <div class="row align-items-start mb-3">
                 <div class="col-6">
-                    <div class="mb-1 text-dark small">DN NO : {{ $outbound->number }}</div>
+                    <div class="mb-1 text-dark small">DN NO : {{ $outbound->tks_dn_number }}</div>
                     <div class="text-dark small">DATE &nbsp;&nbsp;: {{ date('d-m-Y', strtotime($outbound->outbound_date)) }}
                     </div>
                 </div>
@@ -27,7 +27,7 @@
 
             <!-- Title -->
             <div class="text-center my-3 py-1">
-                <h5 class="fw-bold text-dark mb-0 text-decoration-underline" style="letter-spacing: 1px;">RETURN NOTE</h5>
+                <h5 class="fw-bold text-dark mb-0 text-decoration-underline" style="letter-spacing: 1px;">DELIVERY NOTE</h5>
                 <p class="text-muted small italic mb-0">Services Department</p>
             </div>
 
@@ -36,19 +36,19 @@
                 <div class="col-7">
                     <p class="fw-bold text-dark mb-1 small">FROM :</p>
                     <div class="ps-2 border-start border-2 border-light">
-                        <div class="text-dark fw-bold mb-1 small">{{ $outbound->ntt_requestor ?? 'NTT Data' }}</div>
-                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">
-                            {{ $outbound->pickup_address ?? '-' }}</p>
-                    </div>
-                </div>
-                <div class="col-5">
-                    <p class="fw-bold text-dark mb-1 small">DELIVER / SHIP TO :</p>
-                    <div class="ps-2 border-start border-2 border-light">
                         <h6 class="fw-bold text-dark mb-1 small">NTT Data</h6>
                         <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">WH Transkargo Solusindo
                             Pergudangan Tunas Daan Mogot Blok B2 No.11
                             Batu Ceper Tangerang 12522.</p>
                         <p class="text-muted mb-0" style="font-size: 11px;">{{ $outbound->client_contact ?? '' }}</p>
+                    </div>
+                </div>
+                <div class="col-5">
+                    <p class="fw-bold text-dark mb-1 small">DELIVER / SHIP TO :</p>
+                    <div class="ps-2 border-start border-2 border-light">
+                        <div class="text-dark fw-bold mb-1 small">{{ $outbound->ntt_requestor ?? 'NTT Data' }}</div>
+                        <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">
+                            {{ $outbound->pickup_address ?? '-' }}</p>
                     </div>
                 </div>
             </div>
