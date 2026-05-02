@@ -19,7 +19,7 @@
             tbody.innerHTML = '';
 
             if (products.length === 0) {
-                const colspan = (category === 'RMA' || category === 'Faulty' || category === 'Spare from/to Replacement') ?
+                const colspan = (category === 'RMA' || category === 'Faulty' || category === 'Spare from/to Replacement' || category === 'Spare from/to Loan') ?
                     9 : 8;
                 tbody.innerHTML = `
                     <tr>
@@ -34,7 +34,7 @@
 
             products.forEach((product, index) => {
                 let extraCol = '';
-                if (category === 'RMA' || category === 'Faulty' || category === 'Spare from/to Replacement') {
+                if (category === 'RMA' || category === 'Faulty' || category === 'Spare from/to Replacement' || category === 'Spare from/to Loan') {
                     extraCol = `
                     <td>
                         <div class="input-group input-group-sm">
@@ -283,7 +283,7 @@
             // Update table headers/columns
             const rmaCol = document.getElementById('rmaHeaderCol');
             if (rmaCol) {
-                if (category === 'RMA' || category === 'Faulty' || category === 'Spare from/to Replacement') {
+                if (category === 'RMA' || category === 'Faulty' || category === 'Spare from/to Replacement' || category === 'Spare from/to Loan') {
                     rmaCol.style.display = 'table-cell';
                 } else {
                     rmaCol.style.display = 'none';

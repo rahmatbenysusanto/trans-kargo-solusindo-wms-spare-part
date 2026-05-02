@@ -401,6 +401,11 @@ class InboundController extends Controller
                     'user' => Auth::user()->name,
                     'to_location' => $locationName
                 ]);
+
+                // Automatically clear Old SN in Outbound if this SN was a replacement target
+                // This satisfies the request to have Old SN "disappear" once it's back in WH
+                \App\Models\OutboundDetail::where('old_serial_number', $inboundDetail->serial_number)
+                    ->update(['old_serial_number' => null]);
             }
 
             // Check if all products in this inbound are already put away
@@ -703,7 +708,9 @@ class InboundController extends Controller
             $brand = Brand::firstOrCreate(['name' => $product['brand']]);
             $productGroup = ProductGroup::firstOrCreate(['name' => $product['productGroup']]);
 
-            $findProduct = Product::where('part_name', $product['partName'])
+            $partName = $product['partName'] ?: ($product['partNumber'] ?: ($product['partDescription'] ?: 'Unknown Product'));
+
+            $findProduct = Product::where('part_name', $partName)
                 ->where('brand_id', $brand->id)
                 ->where('product_group_id', $productGroup->id)
                 ->first();
@@ -712,7 +719,7 @@ class InboundController extends Controller
                 $productId = $findProduct->id;
             } else {
                 $createProduct = Product::create([
-                    'part_name'         => $product['partName'],
+                    'part_name'         => $partName,
                     'brand_id'          => $brand->id,
                     'product_group_id'  => $productGroup->id,
                 ]);

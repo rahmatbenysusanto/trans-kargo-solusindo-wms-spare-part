@@ -66,12 +66,13 @@
                                         </td>
                                         <td class="text-end pe-4">
                                             <button class="btn btn-sm btn-icon btn-primary rounded-circle shadow-sm"
-                                                onclick="moveRight({{ $item->id }}, '{{ addslashes($item->part_name) }}', '{{ $item->serial_number }}', '{{ addslashes($item->unique_id ?? '-') }}', '{{ addslashes($item->client->name ?? '-') }}')"
+                                                onclick="moveRight({{ $item->id }}, '{{ addslashes($item->part_name) }}', '{{ $item->serial_number }}', '{{ addslashes($item->unique_id ?? '-') }}', '{{ addslashes($item->client->name ?? '-') }}', '{{ $item->condition }}')"
                                                 data-id="{{ $item->id }}"
                                                 data-name="{{ addslashes($item->part_name) }}"
                                                 data-sn="{{ $item->serial_number }}"
                                                 data-unique="{{ addslashes($item->unique_id ?? '-') }}"
                                                 data-client="{{ addslashes($item->client->name ?? '-') }}"
+                                                data-condition="{{ $item->condition }}"
                                                 data-bs-toggle="tooltip" title="Move Item">
                                                 <i class="ti tabler-chevron-right"></i>
                                             </button>
@@ -115,13 +116,14 @@
                             <thead class="sticky-top bg-white z-1 shadow-sm">
                                 <tr>
                                     <th class="ps-4">Product Details</th>
+                                    <th>Condition</th>
                                     <th class="text-end pe-4">Action</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0" id="selectedTableBody">
                                 <!-- Selected items will appear here -->
                                 <tr id="empty-state-row">
-                                    <td colspan="2" class="text-center py-5">
+                                    <td colspan="3" class="text-center py-5">
                                         <div class="empty bg-transparent">
                                             <div class="empty-icon text-muted mb-3">
                                                 <div
@@ -137,6 +139,18 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="p-3 border-top bg-lighter d-flex justify-content-between align-items-center gap-2">
+                        <small class="fw-bold text-muted">Bulk Update Condition:</small>
+                        <select class="form-select form-select-sm w-auto" id="bulkCondition" onchange="bulkUpdateCondition(this.value)">
+                            <option value="">-- Select Condition --</option>
+                            <option value="Good">Good</option>
+                            <option value="Faulty">Faulty</option>
+                            <option value="New">New</option>
+                            <option value="Refurbished">Refurbished</option>
+                            <option value="Write-off Needed">Write-off Needed</option>
+                        </select>
                     </div>
 
                     <div class="p-4 bg-white border-top mt-auto rounded-bottom">
@@ -222,7 +236,7 @@
             }
         }
 
-        function moveRight(id, name, sn, unique_id, client) {
+        function moveRight(id, name, sn, unique_id, client, condition) {
             if (selectedProducts.includes(id)) return;
 
             selectedProducts.push(id);
@@ -240,6 +254,15 @@
                         <span class="badge bg-label-info border"><i class="ti tabler-scan me-1"></i>${sn}</span>
                     </div>
                 </div>
+            </td>
+            <td>
+                <select class="form-select form-select-sm product-condition" data-id="${id}">
+                    <option value="Good" ${condition === 'Good' ? 'selected' : ''}>Good</option>
+                    <option value="Faulty" ${condition === 'Faulty' ? 'selected' : ''}>Faulty</option>
+                    <option value="New" ${condition === 'New' ? 'selected' : ''}>New</option>
+                    <option value="Refurbished" ${condition === 'Refurbished' ? 'selected' : ''}>Refurbished</option>
+                    <option value="Write-off Needed" ${condition === 'Write-off Needed' ? 'selected' : ''}>Write-off Needed</option>
+                </select>
             </td>
             <td class="text-end pe-4">
                 <button class="btn btn-sm btn-icon btn-danger rounded-circle shadow-sm" onclick="moveLeft(${id})">
@@ -280,9 +303,17 @@
                         btn.getAttribute('data-name'),
                         btn.getAttribute('data-sn'),
                         btn.getAttribute('data-unique'),
-                        btn.getAttribute('data-client')
+                        btn.getAttribute('data-client'),
+                        btn.getAttribute('data-condition')
                     );
                 }
+            });
+        }
+
+        function bulkUpdateCondition(condition) {
+            if (!condition) return;
+            document.querySelectorAll('.product-condition').forEach(select => {
+                select.value = condition;
             });
         }
 
@@ -402,6 +433,10 @@
                             },
                             body: JSON.stringify({
                                 products: selectedProducts,
+                                conditions: Array.from(document.querySelectorAll('.product-condition')).reduce((acc, el) => {
+                                    acc[el.dataset.id] = el.value;
+                                    return acc;
+                                }, {}),
                                 storage_level_id: storageLevelId
                             })
                         })

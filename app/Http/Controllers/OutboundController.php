@@ -378,7 +378,11 @@ class OutboundController extends Controller
                         ->orWhereNull('client_id');
                 });
             } else {
-                $query->whereNull('client_id');
+                // If category is RMA, Faulty, or Loan, don't strictly filter by NULL client
+                // because items usually belong to a client but the UI might hide the client selector
+                if (!in_array($request->category, ['RMA', 'Faulty', 'Spare from/to Replacement', 'Spare from/to Loan'])) {
+                    $query->whereNull('client_id');
+                }
             }
 
             if ($request->search) {

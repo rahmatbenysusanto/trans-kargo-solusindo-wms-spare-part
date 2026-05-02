@@ -267,7 +267,7 @@
             }
 
             const product = {
-                partName: document.getElementById('partName').value,
+                partName: document.getElementById('partName').value || document.getElementById('partDescription').value || document.getElementById('partNumber').value,
                 partNumber: document.getElementById('partNumber').value,
                 partDescription: document.getElementById('partDescription').value,
                 serialNumber: sn,

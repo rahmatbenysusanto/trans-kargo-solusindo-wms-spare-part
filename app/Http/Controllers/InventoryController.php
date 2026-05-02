@@ -396,9 +396,12 @@ class InventoryController extends Controller
             foreach ($request->products as $id) {
                 $inventory = \App\Models\Inventory::findOrFail($id);
                 $oldStorageLevelId = $inventory->storage_level_id;
+                $oldCondition = $inventory->condition;
+                $newCondition = $request->conditions[$id] ?? $oldCondition;
 
                 $inventory->update([
                     'storage_level_id' => $request->storage_level_id,
+                    'condition' => $newCondition,
                     'last_movement_date' => now()
                 ]);
 
@@ -408,7 +411,7 @@ class InventoryController extends Controller
                     'to_storage_level_id' => $request->storage_level_id,
                     'user_id' => Auth::id(),
                     'type' => 'Movement',
-                    'description' => 'Product moved by ' . Auth::user()->name
+                    'description' => 'Product moved by ' . Auth::user()->name . ($oldCondition != $newCondition ? " (Condition changed from $oldCondition to $newCondition)" : "")
                 ]);
 
                 $toStorage = \App\Models\StorageLevel::with('bin.rak.zone')->find($request->storage_level_id);
@@ -417,13 +420,18 @@ class InventoryController extends Controller
                 $fromStorage = \App\Models\StorageLevel::with('bin.rak.zone')->find($oldStorageLevelId);
                 $fromName = $fromStorage ? "{$fromStorage->bin->rak->zone->name}-{$fromStorage->bin->rak->name}-{$fromStorage->bin->name}-{$fromStorage->name}" : 'N/A';
 
+                $historyDesc = "Unit moved from [$fromName] to [$toName]";
+                if ($oldCondition != $newCondition) {
+                    $historyDesc .= ". Condition updated: $oldCondition -> $newCondition";
+                }
+
                 \App\Models\InventoryHistory::create([
                     'inventory_id' => $id,
                     'serial_number' => $inventory->serial_number,
                     'type' => 'Movement',
                     'category' => 'Location Change',
                     'reference_number' => '-',
-                    'description' => "Unit moved from [$fromName] to [$toName]",
+                    'description' => $historyDesc,
                     'user' => Auth::user()->name,
                     'from_location' => $fromName,
                     'to_location' => $toName

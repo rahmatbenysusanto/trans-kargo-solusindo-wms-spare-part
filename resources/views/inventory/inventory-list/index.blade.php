@@ -145,11 +145,18 @@
                                         </td>
                                         <td>
                                             @if ($item->storageLevel)
-                                                <span class="text-muted" style="font-size: 0.72rem;">
-                                                    {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
-                                                </span>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <span class="badge bg-label-success p-1" title="Put Away Complete">
+                                                        <i class="ti tabler-check fs-7"></i> PA
+                                                    </span>
+                                                    <span class="text-muted" style="font-size: 0.72rem;">
+                                                        {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
+                                                    </span>
+                                                </div>
                                             @else
-                                                <span class="text-muted small">Not Assigned</span>
+                                                <span class="badge bg-label-warning p-1" title="Still in Staging">
+                                                    <i class="ti tabler-clock fs-7"></i> Pending PA
+                                                </span>
                                             @endif
                                         </td>
                                         <td><span
