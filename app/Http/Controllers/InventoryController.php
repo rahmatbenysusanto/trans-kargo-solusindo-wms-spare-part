@@ -62,11 +62,22 @@ class InventoryController extends Controller
             return $query->where('condition', $request->condition);
         })
             ->when($request->search, function ($query) use ($request) {
-                return $query->where(function ($q) use ($request) {
-                    $q->where('unique_id', 'like', '%' . $request->search . '%')
-                        ->orWhere('part_name', 'like', '%' . $request->search . '%')
-                        ->orWhere('serial_number', 'like', '%' . $request->search . '%')
-                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                $searchStr = trim($request->search);
+                if (str_contains($searchStr, ',') || str_contains($searchStr, "\n") || str_contains($searchStr, "\r") || str_contains($searchStr, ';')) {
+                    $searchTerms = array_filter(array_map('trim', preg_split('/[\r\n,;]+/', $searchStr)));
+                    if (!empty($searchTerms)) {
+                        return $query->where(function ($q) use ($searchTerms) {
+                            $q->whereIn('unique_id', $searchTerms)
+                                ->orWhereIn('serial_number', $searchTerms)
+                                ->orWhereIn('part_number', $searchTerms);
+                        });
+                    }
+                }
+                return $query->where(function ($q) use ($searchStr) {
+                    $q->where('unique_id', 'like', '%' . $searchStr . '%')
+                        ->orWhere('part_name', 'like', '%' . $searchStr . '%')
+                        ->orWhere('serial_number', 'like', '%' . $searchStr . '%')
+                        ->orWhere('part_number', 'like', '%' . $searchStr . '%');
                 });
             })
             ->latest()
@@ -94,11 +105,22 @@ class InventoryController extends Controller
             return $query->where('condition', $request->condition);
         })
             ->when($request->search, function ($query) use ($request) {
-                return $query->where(function ($q) use ($request) {
-                    $q->where('unique_id', 'like', '%' . $request->search . '%')
-                        ->orWhere('part_name', 'like', '%' . $request->search . '%')
-                        ->orWhere('serial_number', 'like', '%' . $request->search . '%')
-                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                $searchStr = trim($request->search);
+                if (str_contains($searchStr, ',') || str_contains($searchStr, "\n") || str_contains($searchStr, "\r") || str_contains($searchStr, ';')) {
+                    $searchTerms = array_filter(array_map('trim', preg_split('/[\r\n,;]+/', $searchStr)));
+                    if (!empty($searchTerms)) {
+                        return $query->where(function ($q) use ($searchTerms) {
+                            $q->whereIn('unique_id', $searchTerms)
+                                ->orWhereIn('serial_number', $searchTerms)
+                                ->orWhereIn('part_number', $searchTerms);
+                        });
+                    }
+                }
+                return $query->where(function ($q) use ($searchStr) {
+                    $q->where('unique_id', 'like', '%' . $searchStr . '%')
+                        ->orWhere('part_name', 'like', '%' . $searchStr . '%')
+                        ->orWhere('serial_number', 'like', '%' . $searchStr . '%')
+                        ->orWhere('part_number', 'like', '%' . $searchStr . '%');
                 });
             })
             ->latest()
@@ -123,11 +145,22 @@ class InventoryController extends Controller
             return $query->where('condition', $request->condition);
         })
             ->when($request->search, function ($query) use ($request) {
-                return $query->where(function ($q) use ($request) {
-                    $q->where('unique_id', 'like', '%' . $request->search . '%')
-                        ->orWhere('part_name', 'like', '%' . $request->search . '%')
-                        ->orWhere('serial_number', 'like', '%' . $request->search . '%')
-                        ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                $searchStr = trim($request->search);
+                if (str_contains($searchStr, ',') || str_contains($searchStr, "\n") || str_contains($searchStr, "\r") || str_contains($searchStr, ';')) {
+                    $searchTerms = array_filter(array_map('trim', preg_split('/[\r\n,;]+/', $searchStr)));
+                    if (!empty($searchTerms)) {
+                        return $query->where(function ($q) use ($searchTerms) {
+                            $q->whereIn('unique_id', $searchTerms)
+                                ->orWhereIn('serial_number', $searchTerms)
+                                ->orWhereIn('part_number', $searchTerms);
+                        });
+                    }
+                }
+                return $query->where(function ($q) use ($searchStr) {
+                    $q->where('unique_id', 'like', '%' . $searchStr . '%')
+                        ->orWhere('part_name', 'like', '%' . $searchStr . '%')
+                        ->orWhere('serial_number', 'like', '%' . $searchStr . '%')
+                        ->orWhere('part_number', 'like', '%' . $searchStr . '%');
                 });
             })
             ->latest()

@@ -94,8 +94,8 @@
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold">Search (SN, Asset#, Part Name)</label>
                                 <div class="input-group input-group-sm">
-                                    <input type="text" class="form-control" name="search"
-                                        value="{{ request('search') }}" placeholder="Enter keyword...">
+                                    <textarea class="form-control" name="search" rows="1"
+                                        placeholder="Enter keyword or paste multiple SNs...">{{ request('search') }}</textarea>
                                     <button class="btn btn-primary" type="submit">Filter</button>
                                 </div>
                             </div>

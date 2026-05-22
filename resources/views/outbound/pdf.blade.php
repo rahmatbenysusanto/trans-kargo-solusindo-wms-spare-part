@@ -1,4 +1,4 @@
-@extends('layout.index')
+@extends('layout.pdf')
 @section('title', 'Print Outbound Report')
 
 @section('content')
@@ -46,7 +46,9 @@
                 <div class="col-5">
                     <p class="fw-bold text-dark mb-1 small">DELIVER / SHIP TO :</p>
                     <div class="ps-2 border-start border-2 border-light">
-                        <h6 class="fw-bold mb-0 text-dark small">{{ $outbound->client->name }}</h6>
+                        <h6 class="fw-bold mb-0 text-dark small">
+                            {{ in_array($outbound->category, ['Faulty', 'RMA']) ? 'DHL Supply Chain' : ($outbound->client?->name ?? '') }}
+                        </h6>
                         <div class="text-dark fw-bold mb-1 small">{{ $outbound->client_contact }}</div>
                         <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">
                             {{ $outbound->pickup_address ?? ($outbound->client->address ?? '-') }}</p>
@@ -156,9 +158,21 @@
 
             .no-print,
             .navbar,
-            .menu,
+            .layout-navbar,
+            #layout-navbar,
+            .layout-menu,
+            #layout-menu,
+            aside,
+            nav,
             footer {
                 display: none !important;
+            }
+
+            .layout-page,
+            .content-wrapper,
+            .container-p-y {
+                padding: 0 !important;
+                margin: 0 !important;
             }
 
             #print-area {

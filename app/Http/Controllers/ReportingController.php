@@ -67,7 +67,14 @@ class ReportingController extends Controller
         }
 
         if ($request->sn) {
-            $query->where('serial_number', 'like', "%$request->sn%");
+            $sn = $request->sn;
+            $query->where(function ($q) use ($sn) {
+                $q->where('serial_number', 'like', "%$sn%")
+                  ->orWhereHas('inventory', function ($invQuery) use ($sn) {
+                      $invQuery->where('part_number', 'like', "%$sn%")
+                               ->orWhere('unique_id', 'like', "%$sn%");
+                  });
+            });
         }
 
         if ($request->start_date && $request->end_date) {

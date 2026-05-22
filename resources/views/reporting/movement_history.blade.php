@@ -30,12 +30,12 @@
                     <form action="{{ route('reporting.movement-history') }}" method="GET">
                         <div class="row align-items-end g-3">
                             <div class="col-md-3">
-                                <label class="form-label small fw-bold text-dark">SERIAL NUMBER</label>
+                                <label class="form-label small fw-bold text-dark">SEARCH (SN, ASSET#, PART NUMBER)</label>
                                 <div class="input-group input-group-merge">
                                     <span class="input-group-text bg-white border-light-subtle"><i
-                                            class="ti tabler-barcode text-primary"></i></span>
+                                            class="ti tabler-search text-primary"></i></span>
                                     <input type="text" class="form-control border-light-subtle" name="sn"
-                                        value="{{ request('sn') }}" placeholder="Search SN...">
+                                        value="{{ request('sn') }}" placeholder="Search keyword...">
                                 </div>
                             </div>
                             <div class="col-md-2">
@@ -106,7 +106,7 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="fw-bold text-dark small">{{ $history->inventory->client->name ?? '-' }}</span>
+                                            <span class="fw-bold text-dark small">{{ $history->inventory?->client?->name ?? '-' }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center mb-1">
@@ -133,19 +133,19 @@
                                             <span class="fw-bold text-primary font-monospace" style="font-size: 0.85rem;">{{ $history->serial_number }}</span>
                                         </td>
                                         <td>
-                                            <span class="text-muted font-monospace fw-bold" style="font-size: 0.85rem;">{{ $history->inventory->unique_id ?? '-' }}</span>
+                                            <span class="text-muted font-monospace fw-bold" style="font-size: 0.85rem;">{{ $history->inventory?->unique_id ?? '-' }}</span>
                                         </td>
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span class="fw-bold text-dark small">{{ $history->inventory->part_name ?? 'Unknown' }}</span>
+                                                <span class="fw-bold text-dark small">{{ $history->inventory?->part_name ?? 'Unknown' }}</span>
                                                 <small class="text-muted" style="font-size: 0.65rem;">CAT: {{ $history->category }}</small>
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="text-dark small">{{ $history->inventory->part_number ?? '-' }}</span>
+                                            <span class="text-dark small">{{ $history->inventory?->part_number ?? '-' }}</span>
                                         </td>
                                         <td>
-                                            <small class="text-muted" style="font-size: 0.75rem;">{{ $history->inventory->part_description ?? '-' }}</small>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ $history->inventory?->part_description ?? '-' }}</small>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">

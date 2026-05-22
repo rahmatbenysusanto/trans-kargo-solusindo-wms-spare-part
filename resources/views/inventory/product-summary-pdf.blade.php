@@ -1,4 +1,4 @@
-@extends('layout.index')
+@extends('layout.pdf')
 @section('title', 'Product Summary Report')
 
 @section('content')
