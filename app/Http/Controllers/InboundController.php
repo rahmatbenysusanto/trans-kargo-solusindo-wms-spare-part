@@ -313,11 +313,17 @@ class InboundController extends Controller
             DB::beginTransaction();
             $products = $request->post('products');
             $storageLevelId = $request->post('storage_level_id');
+            $notes = $request->post('notes', []); // array keyed by detail id
 
             $usedIds = [];
             foreach ($products as $id) {
                 $inboundDetail = InboundDetail::findOrFail($id);
                 $inbound = Inbound::find($inboundDetail->inbound_id);
+
+                // Save notes if provided
+                if (isset($notes[$id]) && !empty($notes[$id])) {
+                    $inboundDetail->notes = $notes[$id];
+                }
 
                 // Initial Inventory check (by SN or by existing WH Asset Number)
                 $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)

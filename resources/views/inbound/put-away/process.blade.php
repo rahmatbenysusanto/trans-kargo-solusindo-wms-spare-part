@@ -184,12 +184,13 @@
                                 <tr>
                                     <th>Part Name</th>
                                     <th>Serial / WH Asset ID</th>
+                                    <th>Notes</th>
                                     <th width="50" class="text-center">Remove</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr id="emptyPlaceholder">
-                                    <td colspan="3" class="empty-placeholder">
+                                    <td colspan="4" class="empty-placeholder">
                                         <i class="ti tabler-package-import d-block mb-1 fs-3"></i>
                                         Select items from the left to start shelving process
                                     </td>
@@ -311,6 +312,10 @@
                     <td>
                         <div class="font-monospace small font-bold">${sn}</div>
                         <div class="text-primary fw-bold" style="font-size: 0.68rem;">${asset || '-'}</div>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" id="note-${id}"
+                            placeholder="Optional notes..." style="min-width: 120px; font-size: 0.78rem;">
                     </td>
                     <td class="text-center">
                         <button class="btn btn-xs btn-label-danger move-btn mx-auto" onclick="moveLeft(${id})">
@@ -434,6 +439,16 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.showLoading();
+
+                    // Collect notes per product
+                    let notes = {};
+                    selectedProducts.forEach(id => {
+                        const noteInput = document.getElementById(`note-${id}`);
+                        if (noteInput && noteInput.value.trim()) {
+                            notes[id] = noteInput.value.trim();
+                        }
+                    });
+
                     fetch('{{ route('receiving.put.away.update') }}', {
                             method: 'POST',
                             headers: {
@@ -442,7 +457,8 @@
                             },
                             body: JSON.stringify({
                                 products: selectedProducts,
-                                storage_level_id: storageLevelId
+                                storage_level_id: storageLevelId,
+                                notes: notes
                             })
                         })
                         .then(response => response.json())

@@ -326,6 +326,17 @@
                                 <span class="detail-value small">{{ $firstInbound->delivery_date ?? '-' }}</span>
                             </div>
                         </div>
+
+                        @if ($firstInboundDetail->notes)
+                        <div class="row g-2 pt-2 mt-2 border-top">
+                            <div class="col-12">
+                                <span class="detail-label">Notes</span>
+                                <div class="p-2 bg-light rounded border small text-dark fw-medium" style="white-space: pre-line;">
+                                    {{ $firstInboundDetail->notes }}
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             @endif

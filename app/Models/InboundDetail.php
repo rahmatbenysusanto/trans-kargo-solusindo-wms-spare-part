@@ -26,6 +26,7 @@ class InboundDetail extends Model
         'parent_sn',
         'condition',
         'stock_status',
+        'notes',
         'storage_level_id',
         'staging_date',
         'brand_id',
