@@ -177,7 +177,7 @@ class InventoryController extends Controller
         echo "<th>No</th>";
         echo "<th>Warehouse Asset ID</th>";
         echo "<th>Part Name</th>";
-        echo "<th>Part Number</th>";
+        echo "<th>Part Description</th>";
         echo "<th>Serial Number</th>";
         echo "<th>Brand</th>";
         echo "<th>Product Group</th>";
@@ -198,7 +198,7 @@ class InventoryController extends Controller
             echo "<td>" . ($index + 1) . "</td>";
             echo "<td>{$item->unique_id}</td>";
             echo "<td>{$item->part_name}</td>";
-            echo "<td>{$item->part_number}</td>";
+            echo "<td>{$item->part_description}</td>";
             echo "<td>'{$item->serial_number}</td>";
             echo "<td>{$brand}</td>";
             echo "<td>{$group}</td>";
@@ -703,7 +703,7 @@ class InventoryController extends Controller
                     ->orWhereNull('inbound.client_id');
             });
         }
-        
+
         if ($clientId) {
             $query->where('inbound.client_id', $clientId);
         }
@@ -728,6 +728,9 @@ class InventoryController extends Controller
     {
         $user = Auth::user();
         $clientId = $request->get('client_id');
+        $category = $request->get('category');
+        $requestType = $request->get('request_type');
+        $search = $request->get('search');
 
         $query = \App\Models\InboundDetail::with(['inbound.client', 'brand', 'storageLevel.bin.rak.zone', 'productGroup'])
             ->select('inbound_detail.*')
@@ -741,40 +744,125 @@ class InventoryController extends Controller
                     ->orWhereNull('inbound.client_id');
             });
         }
-        
+
         if ($clientId) {
             $query->where('inbound.client_id', $clientId);
         }
 
+        $query->when($category, function ($q) use ($category) {
+            return $q->where('inbound.category', $category);
+        })
+            ->when($requestType, function ($q) use ($requestType) {
+                return $q->where('inbound.request_type', $requestType);
+            })
+            ->when($search, function ($q) use ($search) {
+                return $q->where(function ($sq) use ($search) {
+                    $sq->where('inbound_detail.serial_number', 'like', '%' . $search . '%')
+                        ->orWhere('inbound_detail.part_name', 'like', '%' . $search . '%')
+                        ->orWhere('inbound_detail.part_number', 'like', '%' . $search . '%')
+                        ->orWhere('inbound.number', 'like', '%' . $search . '%');
+                });
+            });
+
         $data = $query->latest()->get();
         $sns = $data->pluck('serial_number')->toArray();
-        $inventories = \App\Models\Inventory::whereIn('serial_number', $sns)->get()->keyBy('serial_number');
+        $inventories = \App\Models\Inventory::with('storageLevel.bin.rak.zone')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
         $outbounds = \App\Models\OutboundDetail::with('outbound')->whereIn('serial_number', $sns)->get()->keyBy('serial_number');
 
         $filename = "stock-statement-" . date('Y-m-d') . ".xls";
         header("Content-Type: application/vnd.ms-excel");
         header("Content-Disposition: attachment; filename=\"$filename\"");
 
-        echo "<table border='1'>";
-        echo "<thead><tr><th>No</th><th>SN</th><th>Part Name</th><th>Inbound Ref</th><th>Receive Date</th><th>Status</th><th>Outbound Ref</th><th>Outbound Date</th></tr></thead>";
-        echo "<tbody>";
+        echo '<table border="1">';
+        echo '<thead><tr>';
+        echo '<th>No</th>';
+        echo '<th>Movement Category</th>';
+        echo '<th>Stock Category</th>';
+        echo '<th>Request Type</th>';
+        echo '<th>NTT Requestor</th>';
+        echo '<th>Request Date</th>';
+        echo '<th>Product Group</th>';
+        echo '<th>Brand</th>';
+        echo '<th>Product Number (SKU)</th>';
+        echo '<th>Product Description</th>';
+        echo '<th>Serial Number (SN)</th>';
+        echo '<th>Parent SN</th>';
+        echo '<th>Qty</th>';
+        echo '<th>WH Asset Number</th>';
+        echo '<th>Stock Status</th>';
+        echo '<th>Stock Condition</th>';
+        echo '<th>Stock Location (Rack/Bin/Level)</th>';
+        echo '<th>eCapex #</th>';
+        echo '<th>SAP PO #</th>';
+        echo '<th>Vendor DN #</th>';
+        echo '<th>NTT RN #</th>';
+        echo '<th>Received Date</th>';
+        echo '<th>NTT DN #</th>';
+        echo '<th>Delivery Date</th>';
+        echo '<th>Trans Kargo DN #</th>';
+        echo '<th>Trans Kargo Invoice #</th>';
+        echo '<th>Staging Date</th>';
+        echo '<th>ITSM #</th>';
+        echo '<th>RMA #</th>';
+        echo '<th>Processed By</th>';
+        echo '<th>Client Name</th>';
+        echo '<th>Client Contact</th>';
+        echo '<th>Pickup Address</th>';
+        echo '<th>Shipment Status</th>';
+        echo '</tr></thead>';
+        echo '<tbody>';
         foreach ($data as $index => $item) {
             $inventory = $inventories->get($item->serial_number);
             $outbound = $outbounds->get($item->serial_number);
-            $status = ($inventory && $inventory->qty > 0) ? 'In Inventory' : ($outbound ? 'Outbound' : 'Unknown');
-            
-            echo "<tr>";
-            echo "<td>" . ($index + 1) . "</td>";
-            echo "<td>'" . $item->serial_number . "</td>";
-            echo "<td>" . $item->part_name . "</td>";
-            echo "<td>" . ($item->inbound->number ?? '-') . "</td>";
-            echo "<td>" . ($item->inbound->received_date ?? '-') . "</td>";
-            echo "<td>" . $status . "</td>";
-            echo "<td>" . ($outbound->outbound->number ?? '-') . "</td>";
-            echo "<td>" . ($outbound->outbound->outbound_date ?? '-') . "</td>";
-            echo "</tr>";
+            $isOutbound = (bool) $outbound;
+            $movementCategory = $isOutbound ? 'Outbound' : 'Inbound';
+
+            $location = '-';
+            if ($item->storageLevel) {
+                $location = $item->storageLevel->bin->rak->zone->name . '-'
+                    . $item->storageLevel->bin->rak->name . '-'
+                    . $item->storageLevel->bin->name . '-'
+                    . $item->storageLevel->name;
+            }
+
+            echo '<tr>';
+            echo '<td style="text-align:center">' . ($index + 1) . '</td>';
+            echo '<td>' . $movementCategory . '</td>';
+            echo '<td>' . ($item->inbound->category ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->request_type ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->ntt_requestor ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->request_date ? \Carbon\Carbon::parse($item->inbound->request_date)->format('d/m/Y') : '-') . '</td>';
+            echo '<td>' . ($item->productGroup->name ?? '-') . '</td>';
+            echo '<td>' . ($item->brand->name ?? '-') . '</td>';
+            echo '<td>' . $item->part_number . '</td>';
+            echo '<td>' . $item->part_name . '</td>';
+            echo '<td> ' . $item->serial_number . '</td>';
+            echo '<td>' . ($item->parent_sn ?? ($item->old_serial_number ?? '-')) . '</td>';
+            echo '<td style="text-align:center">' . $item->qty . '</td>';
+            echo '<td>' . ($inventory->unique_id ?? ($item->wh_asset_number ?? '-')) . '</td>';
+            echo '<td>' . $item->stock_status . '</td>';
+            echo '<td>' . $item->condition . '</td>';
+            echo '<td>' . $location . '</td>';
+            echo '<td>' . ($item->inbound->ecapex_number ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->sap_po_number ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->vendor_dn_number ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->ntt_rn_number ?? ($item->inbound->number ?? '-')) . '</td>';
+            echo '<td>' . ($item->inbound->received_date ? \Carbon\Carbon::parse($item->inbound->received_date)->format('d/m/Y') : '-') . '</td>';
+            echo '<td>' . ($item->inbound->ntt_dn_number ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->delivery_date ? \Carbon\Carbon::parse($item->inbound->delivery_date)->format('d/m/Y') : '-') . '</td>';
+            echo '<td>' . ($item->inbound->tks_dn_number ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->tks_invoice_number ?? '-') . '</td>';
+            echo '<td>' . ($item->staging_date ? \Carbon\Carbon::parse($item->staging_date)->format('d/m/Y') : '-') . '</td>';
+            echo '<td>' . ($item->inbound->itsm_number ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->rma_number ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->received_by ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->client->name ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->client_contact ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->pickup_address ?? '-') . '</td>';
+            echo '<td>' . ($item->inbound->shipment_status ?? 'N/A') . '</td>';
+            echo '</tr>';
         }
-        echo "</tbody></table>";
+        echo '</tbody></table>';
         exit;
     }
 
@@ -1011,7 +1099,7 @@ class InventoryController extends Controller
                     ->orWhereNull('inventory.client_id');
             });
         }
-        
+
         if ($clientId) {
             $query->where('inventory.client_id', $clientId);
         }
@@ -1063,7 +1151,7 @@ class InventoryController extends Controller
         $clientId = $request->get('client_id');
 
         $query = \App\Models\OutboundDetail::with(['outbound.client', 'inventory.storageLevel.bin.rak.zone']);
-        
+
         $query->whereHas('outbound', function ($q) use ($user, $clientId) {
             if (!$user->isAdminWMS()) {
                 /** @var \App\Models\User $user */
@@ -1088,7 +1176,7 @@ class InventoryController extends Controller
         $clientId = $request->get('client_id');
 
         $query = \App\Models\OutboundDetail::with(['outbound.client', 'inventory.storageLevel.bin.rak.zone']);
-        
+
         $query->whereHas('outbound', function ($q) use ($user, $clientId) {
             if (!$user->isAdminWMS()) {
                 /** @var \App\Models\User $user */

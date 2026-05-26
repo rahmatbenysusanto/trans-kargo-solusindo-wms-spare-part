@@ -115,7 +115,7 @@
                                     <th>Warehouse Asset ID</th>
                                     <th>Serial Number</th>
                                     <th>Part Name</th>
-                                    <th>Part Number</th>
+                                    <th>Part Description</th>
                                     <th>Brand</th>
                                     <th>Group</th>
                                     <th>Location</th>
@@ -137,7 +137,7 @@
                                         </td>
                                         <td style="max-width: 200px; white-space: normal;"><span
                                                 class="fw-medium">{{ $item->part_name }}</span></td>
-                                        <td>{{ $item->part_number }}</td>
+                                        <td>{{ $item->part_description }}</td>
                                         <td><span class="badge bg-label-dark"
                                                 style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
                                         <td><span class="badge bg-label-secondary"
@@ -243,35 +243,35 @@
                     <head>
                         <title>Print QR Code - ${uniqueId}</title>
                         <style>
-                            @page { 
-                                margin: 0; 
-                                size: 50mm 40mm; 
+                            @page {
+                                margin: 0;
+                                size: 50mm 40mm;
                             }
-                            body { 
-                                margin: 0; 
-                                padding: 5px; 
-                                display: flex; 
-                                flex-direction: column; 
-                                align-items: center; 
-                                justify-content: center; 
-                                font-family: sans-serif; 
-                                height: 40mm; 
+                            body {
+                                margin: 0;
+                                padding: 5px;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                font-family: sans-serif;
+                                height: 40mm;
                                 width: 50mm;
                                 background-color: white;
                                 overflow: hidden;
                             }
-                            .unique-id { 
-                                font-size: 13px; 
-                                font-weight: bold; 
-                                margin-bottom: 2px; 
+                            .unique-id {
+                                font-size: 13px;
+                                font-weight: bold;
+                                margin-bottom: 2px;
                                 letter-spacing: 0.5px;
                             }
-                            #qrcode { 
-                                margin-bottom: 2px; 
+                            #qrcode {
+                                margin-bottom: 2px;
                             }
-                            .details { 
-                                font-size: 9px; 
-                                text-align: center; 
+                            .details {
+                                font-size: 9px;
+                                text-align: center;
                                 line-height: 1.2;
                             }
                         </style>
@@ -288,7 +288,7 @@
                             window.onload = function() {
                                 new QRCode(document.getElementById("qrcode"), {
                                     text: "{{ url('/scan') }}/" + "${uniqueId}",
-                                    width: 80, 
+                                    width: 80,
                                     height: 80
                                 });
                                 setTimeout(() => { window.print(); window.close(); }, 500);
