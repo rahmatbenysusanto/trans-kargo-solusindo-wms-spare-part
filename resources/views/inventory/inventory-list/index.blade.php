@@ -27,6 +27,34 @@
             font-family: 'Monaco', 'Consolas', monospace;
             font-size: 0.75rem;
         }
+
+        .filter-row input,
+        .filter-row select {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.3rem;
+            height: auto;
+            width: 100%;
+            min-width: 0;
+            border: 1px solid #e0e0e0;
+        }
+
+        .filter-row th {
+            padding: 0.25rem 0.3rem !important;
+            vertical-align: top;
+        }
+
+        .filter-row .filter-btn {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            height: auto;
+            line-height: 1.4;
+        }
+
+        .filter-row input:focus,
+        .filter-row select:focus {
+            border-color: #8f94fb;
+            box-shadow: 0 0 0 1px #8f94fb;
+        }
     </style>
 @endsection
 
@@ -49,7 +77,7 @@
                 </div>
                 <div class="card-body pt-3">
                     <form action="{{ url()->current() }}" method="GET">
-                        <div class="row g-2">
+                        <div class="row g-2 mb-3">
                             @if (Auth::user()->isAdminWMS() || Auth::user()->clients->count() > 1)
                                 <div class="col-md-2">
                                     <label class="form-label small fw-bold">Client</label>
@@ -65,168 +93,190 @@
                                     </select>
                                 </div>
                             @endif
-                            <div class="col-md-2">
-                                <label class="form-label small fw-bold">Status</label>
-                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                    <option value="">All Statuses</option>
-                                    @foreach ($statuses as $status)
-                                        <option value="{{ $status }}"
-                                            {{ request('status') == $status ? 'selected' : '' }}>
-                                            {{ $status }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label small fw-bold">Condition</label>
-                                <select name="condition" class="form-select form-select-sm" onchange="this.form.submit()">
-                                    <option value="">All Conditions</option>
-                                    @foreach ($conditions as $condition)
-                                        @if ($condition)
-                                            <option value="{{ $condition }}"
-                                                {{ request('condition') == $condition ? 'selected' : '' }}>
-                                                {{ $condition }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">Search (SN, Asset#, Part Name)</label>
-                                <div class="input-group input-group-sm">
-                                    <textarea class="form-control" name="search" rows="1"
-                                        placeholder="Enter keyword or paste multiple SNs...">{{ request('search') }}</textarea>
-                                    <button class="btn btn-primary" type="submit">Filter</button>
-                                </div>
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <a href="{{ url()->current() }}" class="btn btn-sm btn-label-secondary w-100">Reset</a>
+                            <div class="col-md-<?php echo (Auth::user()->isAdminWMS() || Auth::user()->clients->count() > 1) ? '10' : '12'; ?> d-flex align-items-end justify-content-end">
+                                <a href="{{ url()->current() }}" class="btn btn-sm btn-label-secondary">
+                                    <i class="ti tabler-refresh me-1"></i> Reset Filters
+                                </a>
                             </div>
                         </div>
-                    </form>
 
-                    <hr class="my-3">
-
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped table-compact table-sm text-nowrap align-middle">
-                            <thead class="table-light border-top">
-                                <tr>
-                                    <th width="30">#</th>
-                                    <th>Warehouse Asset ID</th>
-                                    <th>Serial Number</th>
-                                    <th>Part Name</th>
-                                    <th>Part Description</th>
-                                    <th>Brand</th>
-                                    <th>Group</th>
-                                    <th>Location</th>
-                                    <th>Stock Condition</th>
-                                    <th>Staging Condition</th>
-                                    <th>Status</th>
-                                    <th>Check Date</th>
-                                    <th>Activity</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($inventory as $item)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-compact table-sm text-nowrap align-middle">
+                                <thead class="table-light border-top">
                                     <tr>
-                                        <td>{{ $loop->iteration + ($inventory->currentPage() - 1) * $inventory->perPage() }}
-                                        </td>
-                                        <td><span class="text-mono fw-bold text-primary">{{ $item->unique_id }}</span></td>
-                                        <td><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span>
-                                        </td>
-                                        <td style="max-width: 200px; white-space: normal;"><span
-                                                class="fw-medium">{{ $item->part_name }}</span></td>
-                                        <td>{{ $item->part_description }}</td>
-                                        <td><span class="badge bg-label-dark"
-                                                style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
-                                        <td><span class="badge bg-label-secondary"
-                                                style="font-size: 0.65rem;">{{ $item->productGroup->name ?? '-' }}</span>
-                                        </td>
-                                        <td>
-                                            @if ($item->storageLevel)
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <span class="badge bg-label-success p-1" title="Put Away Complete">
-                                                        <i class="ti tabler-check fs-7"></i> PA
+                                        <th width="30">#</th>
+                                        <th>Warehouse Asset ID</th>
+                                        <th>Serial Number</th>
+                                        <th>Part Name</th>
+                                        <th>Part Description</th>
+                                        <th>Brand</th>
+                                        <th>Group</th>
+                                        <th>Location</th>
+                                        <th>Stock Condition</th>
+                                        <th>Staging Condition</th>
+                                        <th>Status</th>
+                                        <th>Check Date</th>
+                                        <th>Activity</th>
+                                        <th class="text-center" width="70">Action</th>
+                                    </tr>
+                                    <!-- Excel-like filter row -->
+                                    <tr class="filter-row">
+                                        <th></th>
+                                        <th><input type="text" name="filter[unique_id]" class="form-control" placeholder="ID..." value="{{ request('filter.unique_id') }}" onkeydown="if(event.key==='Enter'){this.form.submit();}"></th>
+                                        <th><input type="text" name="filter[serial_number]" class="form-control" placeholder="SN..." value="{{ request('filter.serial_number') }}" onkeydown="if(event.key==='Enter'){this.form.submit();}"></th>
+                                        <th><input type="text" name="filter[part_name]" class="form-control" placeholder="Part..." value="{{ request('filter.part_name') }}" onkeydown="if(event.key==='Enter'){this.form.submit();}"></th>
+                                        <th><input type="text" name="filter[part_description]" class="form-control" placeholder="Desc..." value="{{ request('filter.part_description') }}" onkeydown="if(event.key==='Enter'){this.form.submit();}"></th>
+                                        <th>
+                                            <select name="filter[brand]" class="form-select" onchange="this.form.submit()">
+                                                <option value="">All</option>
+                                                @foreach ($brands as $id => $name)
+                                                    <option value="{{ $id }}" {{ request('filter.brand') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </th>
+                                        <th>
+                                            <select name="filter[group]" class="form-select" onchange="this.form.submit()">
+                                                <option value="">All</option>
+                                                @foreach ($groups as $id => $name)
+                                                    <option value="{{ $id }}" {{ request('filter.group') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </th>
+                                        <th><input type="text" name="filter[location]" class="form-control" placeholder="Loc..." value="{{ request('filter.location') }}" onkeydown="if(event.key==='Enter'){this.form.submit();}"></th>
+                                        <th>
+                                            <select name="filter[condition]" class="form-select" onchange="this.form.submit()">
+                                                <option value="">All</option>
+                                                @foreach ($conditions as $cond)
+                                                    <option value="{{ $cond }}" {{ request('filter.condition') == $cond ? 'selected' : '' }}>{{ $cond }}</option>
+                                                @endforeach
+                                            </select>
+                                        </th>
+                                        <th>
+                                            <select name="filter[staging_condition]" class="form-select" onchange="this.form.submit()">
+                                                <option value="">All</option>
+                                                @foreach ($stagingConditions as $cond)
+                                                    <option value="{{ $cond }}" {{ request('filter.staging_condition') == $cond ? 'selected' : '' }}>{{ $cond }}</option>
+                                                @endforeach
+                                            </select>
+                                        </th>
+                                        <th>
+                                            <select name="filter[status]" class="form-select" onchange="this.form.submit()">
+                                                <option value="">All</option>
+                                                @foreach ($statuses as $stat)
+                                                    <option value="{{ $stat }}" {{ request('filter.status') == $stat ? 'selected' : '' }}>{{ $stat }}</option>
+                                                @endforeach
+                                            </select>
+                                        </th>
+                                        <th><input type="text" name="filter[check_date]" class="form-control" placeholder="Date..." value="{{ request('filter.check_date') }}" onkeydown="if(event.key==='Enter'){this.form.submit();}"></th>
+                                        <th><input type="text" name="filter[activity]" class="form-control" placeholder="Date..." value="{{ request('filter.activity') }}" onkeydown="if(event.key==='Enter'){this.form.submit();}"></th>
+                                        <th class="text-center">
+                                            <button type="submit" class="btn btn-primary filter-btn">
+                                                <i class="ti tabler-search"></i>
+                                            </button>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($inventory as $item)
+                                        <tr>
+                                            <td>{{ $loop->iteration + ($inventory->currentPage() - 1) * $inventory->perPage() }}
+                                            </td>
+                                            <td><span class="text-mono fw-bold text-primary">{{ $item->unique_id }}</span></td>
+                                            <td><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span>
+                                            </td>
+                                            <td style="max-width: 200px; white-space: normal;"><span
+                                                    class="fw-medium">{{ $item->part_name }}</span></td>
+                                            <td>{{ $item->part_description }}</td>
+                                            <td><span class="badge bg-label-dark"
+                                                    style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
+                                            <td><span class="badge bg-label-secondary"
+                                                    style="font-size: 0.65rem;">{{ $item->productGroup->name ?? '-' }}</span>
+                                            </td>
+                                            <td>
+                                                @if ($item->storageLevel)
+                                                    <div class="d-flex align-items-center gap-1">
+                                                        <span class="badge bg-label-success p-1" title="Put Away Complete">
+                                                            <i class="ti tabler-check fs-7"></i> PA
+                                                        </span>
+                                                        <span class="text-muted" style="font-size: 0.72rem;">
+                                                            {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
+                                                        </span>
+                                                    </div>
+                                                @else
+                                                    <span class="badge bg-label-warning p-1" title="Still in Staging">
+                                                        <i class="ti tabler-clock fs-7"></i> Pending PA
                                                     </span>
-                                                    <span class="text-muted" style="font-size: 0.72rem;">
-                                                        {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
-                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td><span
+                                                    class="badge {{ $item->condition == 'New' ? 'bg-label-info' : 'bg-label-secondary' }} badge-status">{{ $item->condition ?? '-' }}</span>
+                                            </td>
+                                            <td>
+                                                @if($item->staging_condition)
+                                                <span class="badge bg-label-dark badge-status">{{ $item->staging_condition }}</span>
+                                                @else
+                                                <span class="text-muted small">-</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $bgClass = 'bg-label-secondary';
+                                                    switch (strtolower($item->status)) {
+                                                        case 'available':
+                                                            $bgClass = 'bg-label-success';
+                                                            break;
+                                                        case 'staging':
+                                                            $bgClass = 'bg-label-info';
+                                                            break;
+                                                        case 'out for replacement/ support':
+                                                            $bgClass = 'bg-label-warning';
+                                                            break;
+                                                        case 'out for loan':
+                                                            $bgClass = 'bg-label-primary';
+                                                            break;
+                                                        case 'out for return':
+                                                            $bgClass = 'bg-label-secondary';
+                                                            break;
+                                                        case 'write-off':
+                                                            $bgClass = 'bg-label-danger';
+                                                            break;
+                                                    }
+                                                @endphp
+                                                <span
+                                                    class="badge {{ $bgClass }} badge-status">{{ strtoupper($item->status) }}</span>
+                                            </td>
+                                            <td><small
+                                                    class="text-muted">{{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/Y') : '-' }}</small>
+                                            </td>
+                                            <td><small
+                                                    class="text-muted">{{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/Y') : '-' }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1 justify-content-center">
+                                                    <a href="{{ route('inventory.show', $item->id) }}"
+                                                        class="btn btn-icon btn-sm btn-label-primary">
+                                                        <i class="ti tabler-info-circle fs-6"></i>
+                                                    </a>
+                                                    <button
+                                                        onclick="printBarcode('{{ $item->unique_id }}', '{{ $item->part_number }}', '{{ $item->serial_number }}')"
+                                                        class="btn btn-icon btn-sm btn-label-info">
+                                                        <i class="ti tabler-printer fs-6"></i>
+                                                    </button>
                                                 </div>
-                                            @else
-                                                <span class="badge bg-label-warning p-1" title="Still in Staging">
-                                                    <i class="ti tabler-clock fs-7"></i> Pending PA
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td><span
-                                                class="badge {{ $item->condition == 'New' ? 'bg-label-info' : 'bg-label-secondary' }} badge-status">{{ $item->condition ?? '-' }}</span>
-                                        </td>
-                                        <td>
-                                            @if($item->staging_condition)
-                                            <span class="badge bg-label-dark badge-status">{{ $item->staging_condition }}</span>
-                                            @else
-                                            <span class="text-muted small">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @php
-                                                $bgClass = 'bg-label-secondary';
-                                                switch (strtolower($item->status)) {
-                                                    case 'available':
-                                                        $bgClass = 'bg-label-success';
-                                                        break;
-                                                    case 'staging':
-                                                        $bgClass = 'bg-label-info';
-                                                        break;
-                                                    case 'out for replacement/ support':
-                                                        $bgClass = 'bg-label-warning';
-                                                        break;
-                                                    case 'out for loan':
-                                                        $bgClass = 'bg-label-primary';
-                                                        break;
-                                                    case 'out for return':
-                                                        $bgClass = 'bg-label-secondary';
-                                                        break;
-                                                    case 'write-off':
-                                                        $bgClass = 'bg-label-danger';
-                                                        break;
-                                                }
-                                            @endphp
-                                            <span
-                                                class="badge {{ $bgClass }} badge-status">{{ strtoupper($item->status) }}</span>
-                                        </td>
-                                        <td><small
-                                                class="text-muted">{{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/Y') : '-' }}</small>
-                                        </td>
-                                        <td><small
-                                                class="text-muted">{{ $item->last_movement_date ? \Carbon\Carbon::parse($item->last_movement_date)->format('d/m/Y') : '-' }}</small>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex gap-1 justify-content-center">
-                                                <a href="{{ route('inventory.show', $item->id) }}"
-                                                    class="btn btn-icon btn-sm btn-label-primary">
-                                                    <i class="ti tabler-info-circle fs-6"></i>
-                                                </a>
-                                                <button
-                                                    onclick="printBarcode('{{ $item->unique_id }}', '{{ $item->part_number }}', '{{ $item->serial_number }}')"
-                                                    class="btn btn-icon btn-sm btn-label-info">
-                                                    <i class="ti tabler-printer fs-6"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="14" class="text-center py-5">No records found.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-3">
-                        {{ $inventory->links() }}
-                    </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="14" class="text-center py-5">No records found.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3">
+                            {{ $inventory->links() }}
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

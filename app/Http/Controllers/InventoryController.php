@@ -50,78 +50,129 @@ class InventoryController extends Controller
         $title = 'Inventory List';
         $clientId = $request->get('client_id');
         $user = Auth::user();
+        $filter = $request->get('filter', []);
 
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
-            ->when($request->status, function ($query) use ($request) {
-                return $query->where('status', $request->status);
-            });
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
 
         $this->applyClientFilter($inventory, $clientId);
 
-        $inventory = $inventory->when($request->condition, function ($query) use ($request) {
-            return $query->where('condition', $request->condition);
-        })
-            ->when($request->search, function ($query) use ($request) {
-                $searchStr = trim($request->search);
-                if (str_contains($searchStr, ',') || str_contains($searchStr, "\n") || str_contains($searchStr, "\r") || str_contains($searchStr, ';')) {
-                    $searchTerms = array_filter(array_map('trim', preg_split('/[\r\n,;]+/', $searchStr)));
-                    if (!empty($searchTerms)) {
-                        return $query->where(function ($q) use ($searchTerms) {
-                            $q->whereIn('unique_id', $searchTerms)
-                                ->orWhereIn('serial_number', $searchTerms)
-                                ->orWhereIn('part_number', $searchTerms);
-                        });
-                    }
-                }
-                return $query->where(function ($q) use ($searchStr) {
-                    $q->where('unique_id', 'like', '%' . $searchStr . '%')
-                        ->orWhere('part_name', 'like', '%' . $searchStr . '%')
-                        ->orWhere('serial_number', 'like', '%' . $searchStr . '%')
-                        ->orWhere('part_number', 'like', '%' . $searchStr . '%');
+        $inventory = $inventory
+            // Per-column filters
+            ->when(!empty($filter['unique_id']), function ($q) use ($filter) {
+                return $q->where('unique_id', 'like', '%' . $filter['unique_id'] . '%');
+            })
+            ->when(!empty($filter['serial_number']), function ($q) use ($filter) {
+                return $q->where('serial_number', 'like', '%' . $filter['serial_number'] . '%');
+            })
+            ->when(!empty($filter['part_name']), function ($q) use ($filter) {
+                return $q->where('part_name', 'like', '%' . $filter['part_name'] . '%');
+            })
+            ->when(!empty($filter['part_description']), function ($q) use ($filter) {
+                return $q->where('part_description', 'like', '%' . $filter['part_description'] . '%');
+            })
+            ->when(!empty($filter['brand']), function ($q) use ($filter) {
+                return $q->whereHas('product.brand', function ($sq) use ($filter) {
+                    $sq->where('brands.id', $filter['brand']);
                 });
             })
+            ->when(!empty($filter['group']), function ($q) use ($filter) {
+                return $q->whereHas('product.productGroup', function ($sq) use ($filter) {
+                    $sq->where('product_groups.id', $filter['group']);
+                });
+            })
+            ->when(!empty($filter['condition']), function ($q) use ($filter) {
+                return $q->where('condition', $filter['condition']);
+            })
+            ->when(!empty($filter['staging_condition']), function ($q) use ($filter) {
+                return $q->where('staging_condition', $filter['staging_condition']);
+            })
+            ->when(!empty($filter['status']), function ($q) use ($filter) {
+                return $q->where('status', $filter['status']);
+            })
+            ->when(!empty($filter['location']), function ($q) use ($filter) {
+                $s = $filter['location'];
+                return $q->whereHas('storageLevel.bin.rak.zone', function ($sq) use ($s) {
+                    $sq->where('storage_zone.name', 'like', "%$s%")
+                        ->orWhere('storage_rak.name', 'like', "%$s%")
+                        ->orWhere('storage_bin.name', 'like', "%$s%")
+                        ->orWhere('storage_level.name', 'like', "%$s%");
+                });
+            })
+            ->when(!empty($filter['check_date']), function ($q) use ($filter) {
+                return $q->where('last_staging_date', 'like', '%' . $filter['check_date'] . '%');
+            })
+            ->when(!empty($filter['activity']), function ($q) use ($filter) {
+                return $q->where('last_movement_date', 'like', '%' . $filter['activity'] . '%');
+            })
             ->latest()
-            ->paginate(15);
+            ->paginate(15)
+            ->appends(request()->query());
 
         $statuses = \App\Models\Inventory::select('status')->distinct()->pluck('status');
         $conditions = \App\Models\Inventory::select('condition')->distinct()->pluck('condition');
+        $stagingConditions = \App\Models\Inventory::select('staging_condition')->whereNotNull('staging_condition')->distinct()->orderBy('staging_condition')->pluck('staging_condition');
+        $brands = \App\Models\Brand::orderBy('name')->pluck('name', 'id');
+        $groups = \App\Models\ProductGroup::orderBy('name')->pluck('name', 'id');
         $clients = $user->getAvailableClients();
 
-        return view('inventory.inventory-list.index', compact('title', 'inventory', 'statuses', 'conditions', 'clients'));
+        return view('inventory.inventory-list.index', compact('title', 'inventory', 'statuses', 'conditions', 'stagingConditions', 'brands', 'groups', 'clients'));
     }
 
     public function exportPdf(Request $request): View
     {
         $clientId = $request->get('client_id');
+        $filter = $request->get('filter', []);
 
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
-            ->when($request->status, function ($query) use ($request) {
-                return $query->where('status', $request->status);
-            });
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
 
         $this->applyClientFilter($inventory, $clientId);
 
-        $inventory = $inventory->when($request->condition, function ($query) use ($request) {
-            return $query->where('condition', $request->condition);
-        })
-            ->when($request->search, function ($query) use ($request) {
-                $searchStr = trim($request->search);
-                if (str_contains($searchStr, ',') || str_contains($searchStr, "\n") || str_contains($searchStr, "\r") || str_contains($searchStr, ';')) {
-                    $searchTerms = array_filter(array_map('trim', preg_split('/[\r\n,;]+/', $searchStr)));
-                    if (!empty($searchTerms)) {
-                        return $query->where(function ($q) use ($searchTerms) {
-                            $q->whereIn('unique_id', $searchTerms)
-                                ->orWhereIn('serial_number', $searchTerms)
-                                ->orWhereIn('part_number', $searchTerms);
-                        });
-                    }
-                }
-                return $query->where(function ($q) use ($searchStr) {
-                    $q->where('unique_id', 'like', '%' . $searchStr . '%')
-                        ->orWhere('part_name', 'like', '%' . $searchStr . '%')
-                        ->orWhere('serial_number', 'like', '%' . $searchStr . '%')
-                        ->orWhere('part_number', 'like', '%' . $searchStr . '%');
+        $inventory = $inventory
+            ->when(!empty($filter['unique_id']), function ($q) use ($filter) {
+                return $q->where('unique_id', 'like', '%' . $filter['unique_id'] . '%');
+            })
+            ->when(!empty($filter['serial_number']), function ($q) use ($filter) {
+                return $q->where('serial_number', 'like', '%' . $filter['serial_number'] . '%');
+            })
+            ->when(!empty($filter['part_name']), function ($q) use ($filter) {
+                return $q->where('part_name', 'like', '%' . $filter['part_name'] . '%');
+            })
+            ->when(!empty($filter['part_description']), function ($q) use ($filter) {
+                return $q->where('part_description', 'like', '%' . $filter['part_description'] . '%');
+            })
+            ->when(!empty($filter['brand']), function ($q) use ($filter) {
+                return $q->whereHas('product.brand', function ($sq) use ($filter) {
+                    $sq->where('brands.id', $filter['brand']);
                 });
+            })
+            ->when(!empty($filter['group']), function ($q) use ($filter) {
+                return $q->whereHas('product.productGroup', function ($sq) use ($filter) {
+                    $sq->where('product_groups.id', $filter['group']);
+                });
+            })
+            ->when(!empty($filter['condition']), function ($q) use ($filter) {
+                return $q->where('condition', $filter['condition']);
+            })
+            ->when(!empty($filter['staging_condition']), function ($q) use ($filter) {
+                return $q->where('staging_condition', $filter['staging_condition']);
+            })
+            ->when(!empty($filter['status']), function ($q) use ($filter) {
+                return $q->where('status', $filter['status']);
+            })
+            ->when(!empty($filter['location']), function ($q) use ($filter) {
+                $s = $filter['location'];
+                return $q->whereHas('storageLevel.bin.rak.zone', function ($sq) use ($s) {
+                    $sq->where('storage_zone.name', 'like', "%$s%")
+                        ->orWhere('storage_rak.name', 'like', "%$s%")
+                        ->orWhere('storage_bin.name', 'like', "%$s%")
+                        ->orWhere('storage_level.name', 'like', "%$s%");
+                });
+            })
+            ->when(!empty($filter['check_date']), function ($q) use ($filter) {
+                return $q->where('last_staging_date', 'like', '%' . $filter['check_date'] . '%');
+            })
+            ->when(!empty($filter['activity']), function ($q) use ($filter) {
+                return $q->where('last_movement_date', 'like', '%' . $filter['activity'] . '%');
             })
             ->latest()
             ->get();
@@ -133,35 +184,58 @@ class InventoryController extends Controller
     public function exportExcel(Request $request)
     {
         $clientId = $request->get('client_id');
+        $filter = $request->get('filter', []);
 
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
-            ->when($request->status, function ($query) use ($request) {
-                return $query->where('status', $request->status);
-            });
+        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
 
         $this->applyClientFilter($inventory, $clientId);
 
-        $inventory = $inventory->when($request->condition, function ($query) use ($request) {
-            return $query->where('condition', $request->condition);
-        })
-            ->when($request->search, function ($query) use ($request) {
-                $searchStr = trim($request->search);
-                if (str_contains($searchStr, ',') || str_contains($searchStr, "\n") || str_contains($searchStr, "\r") || str_contains($searchStr, ';')) {
-                    $searchTerms = array_filter(array_map('trim', preg_split('/[\r\n,;]+/', $searchStr)));
-                    if (!empty($searchTerms)) {
-                        return $query->where(function ($q) use ($searchTerms) {
-                            $q->whereIn('unique_id', $searchTerms)
-                                ->orWhereIn('serial_number', $searchTerms)
-                                ->orWhereIn('part_number', $searchTerms);
-                        });
-                    }
-                }
-                return $query->where(function ($q) use ($searchStr) {
-                    $q->where('unique_id', 'like', '%' . $searchStr . '%')
-                        ->orWhere('part_name', 'like', '%' . $searchStr . '%')
-                        ->orWhere('serial_number', 'like', '%' . $searchStr . '%')
-                        ->orWhere('part_number', 'like', '%' . $searchStr . '%');
+        $inventory = $inventory
+            ->when(!empty($filter['unique_id']), function ($q) use ($filter) {
+                return $q->where('unique_id', 'like', '%' . $filter['unique_id'] . '%');
+            })
+            ->when(!empty($filter['serial_number']), function ($q) use ($filter) {
+                return $q->where('serial_number', 'like', '%' . $filter['serial_number'] . '%');
+            })
+            ->when(!empty($filter['part_name']), function ($q) use ($filter) {
+                return $q->where('part_name', 'like', '%' . $filter['part_name'] . '%');
+            })
+            ->when(!empty($filter['part_description']), function ($q) use ($filter) {
+                return $q->where('part_description', 'like', '%' . $filter['part_description'] . '%');
+            })
+            ->when(!empty($filter['brand']), function ($q) use ($filter) {
+                return $q->whereHas('product.brand', function ($sq) use ($filter) {
+                    $sq->where('brands.id', $filter['brand']);
                 });
+            })
+            ->when(!empty($filter['group']), function ($q) use ($filter) {
+                return $q->whereHas('product.productGroup', function ($sq) use ($filter) {
+                    $sq->where('product_groups.id', $filter['group']);
+                });
+            })
+            ->when(!empty($filter['condition']), function ($q) use ($filter) {
+                return $q->where('condition', $filter['condition']);
+            })
+            ->when(!empty($filter['staging_condition']), function ($q) use ($filter) {
+                return $q->where('staging_condition', $filter['staging_condition']);
+            })
+            ->when(!empty($filter['status']), function ($q) use ($filter) {
+                return $q->where('status', $filter['status']);
+            })
+            ->when(!empty($filter['location']), function ($q) use ($filter) {
+                $s = $filter['location'];
+                return $q->whereHas('storageLevel.bin.rak.zone', function ($sq) use ($s) {
+                    $sq->where('storage_zone.name', 'like', "%$s%")
+                        ->orWhere('storage_rak.name', 'like', "%$s%")
+                        ->orWhere('storage_bin.name', 'like', "%$s%")
+                        ->orWhere('storage_level.name', 'like', "%$s%");
+                });
+            })
+            ->when(!empty($filter['check_date']), function ($q) use ($filter) {
+                return $q->where('last_staging_date', 'like', '%' . $filter['check_date'] . '%');
+            })
+            ->when(!empty($filter['activity']), function ($q) use ($filter) {
+                return $q->where('last_movement_date', 'like', '%' . $filter['activity'] . '%');
             })
             ->latest()
             ->get();
