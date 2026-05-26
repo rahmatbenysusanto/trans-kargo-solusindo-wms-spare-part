@@ -45,7 +45,7 @@ class ReportingController extends Controller
         }
 
         $data = $query->where('qty', '>', 0)->latest()->paginate(20);
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
         $title = 'Stock on Hand';
 
         return view('reporting.stock_on_hand', compact('data', 'clients', 'title'));
@@ -126,7 +126,7 @@ class ReportingController extends Controller
         }
 
         $data = $query->latest()->paginate(20);
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
         $title = 'Utilization Report';
 
         return view('reporting.utilization', compact('data', 'clients', 'title'));

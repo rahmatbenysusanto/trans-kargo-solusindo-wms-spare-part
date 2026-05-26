@@ -57,7 +57,7 @@ class DashboardController extends Controller
         $clientId = $request->get('client_id');
         $user = Auth::user();
 
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         // 1. Stock Overview by Status
         $stockQuery = Inventory::query();
@@ -149,7 +149,7 @@ class DashboardController extends Controller
         $clientId = $request->get('client_id');
         $user = Auth::user();
 
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $query = Outbound::with('client');
         $this->applyClientFilter($query, $clientId);
@@ -167,7 +167,7 @@ class DashboardController extends Controller
         $clientId = $request->get('client_id');
         $user = Auth::user();
 
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $query = InboundDetail::whereNotNull('old_serial_number');
         $this->applyClientFilter($query, $clientId);
@@ -183,7 +183,7 @@ class DashboardController extends Controller
         $clientId = $request->get('client_id');
         $user = Auth::user();
 
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $months = collect();
         for ($i = 11; $i >= 0; $i--) {
@@ -223,7 +223,7 @@ class DashboardController extends Controller
         $clientId = $request->get('client_id');
         $user = Auth::user();
 
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $query = Inventory::query();
         $this->applyClientFilter($query, $clientId);
@@ -463,7 +463,7 @@ class DashboardController extends Controller
 
         $statuses = Inventory::select('status')->distinct()->pluck('status');
         $conditions = Inventory::select('condition')->distinct()->pluck('condition');
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         return view('dashboard.reports.inventory-list', compact('title', 'inventory', 'statuses', 'conditions', 'clients'));
     }
@@ -494,7 +494,7 @@ class DashboardController extends Controller
             ->orderBy('part_name');
 
         $data = $query->paginate(15);
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         return view('dashboard.reports.product-summary', compact('title', 'data', 'clients'));
     }
@@ -503,7 +503,7 @@ class DashboardController extends Controller
     {
         $title = 'Summary Stock: Stock Statement';
         $user = Auth::user();
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
         $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
         $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
 
@@ -578,7 +578,7 @@ class DashboardController extends Controller
     {
         $title = 'Summary Stock: Cycle Count';
         $user = Auth::user();
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $startDate = $request->get('start_date', Carbon::today()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::today()->format('Y-m-d'));
@@ -665,7 +665,7 @@ class DashboardController extends Controller
         $title = 'Receiving Monitoring';
         $clientId = $request->get('client_id');
         $user = Auth::user();
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $query = Inbound::with('client')->latest();
         $this->applyClientFilter($query, $clientId);
@@ -697,7 +697,7 @@ class DashboardController extends Controller
         $title = 'Outbound Monitoring';
         $clientId = $request->get('client_id');
         $user = Auth::user();
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $query = Outbound::with('client')->latest();
         $this->applyClientFilter($query, $clientId);

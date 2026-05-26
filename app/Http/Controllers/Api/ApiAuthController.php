@@ -40,7 +40,7 @@ class ApiAuthController extends Controller
 
         $clientIds = $user->isAdminWMS()
             ? []
-            : $user->clients()->pluck('client_id')->toArray();
+            : $user->getAccessibleClientIds();
 
         $token = $this->generateToken([
             'sub'        => $user->id,

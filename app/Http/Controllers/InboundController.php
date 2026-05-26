@@ -65,7 +65,7 @@ class InboundController extends Controller
 
         $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
         $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
         $title = 'Receiving';
 
         return view('inbound.receiving.index', compact('title', 'inbound', 'categories', 'requestTypes', 'clients'));
@@ -184,7 +184,7 @@ class InboundController extends Controller
 
         $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
         $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
         $title = 'Put Away';
         return view('inbound.put-away.index', compact('title', 'inbound', 'categories', 'requestTypes', 'clients'));
     }

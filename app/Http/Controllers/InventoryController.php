@@ -85,7 +85,7 @@ class InventoryController extends Controller
 
         $statuses = \App\Models\Inventory::select('status')->distinct()->pluck('status');
         $conditions = \App\Models\Inventory::select('condition')->distinct()->pluck('condition');
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         return view('inventory.inventory-list.index', compact('title', 'inventory', 'statuses', 'conditions', 'clients'));
     }
@@ -505,7 +505,7 @@ class InventoryController extends Controller
             ->orderBy('part_name');
 
         $data = $query->paginate(15);
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         return view('inventory.product-summary', compact('title', 'data', 'clients'));
     }
@@ -609,7 +609,7 @@ class InventoryController extends Controller
     {
         $title = 'Inventory Stock Statement';
         $user = Auth::user();
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
         $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
         $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
 
@@ -827,7 +827,7 @@ class InventoryController extends Controller
             ->orderBy('storage_level.name')
             ->paginate(20);
 
-        $clients = $user->isAdminWMS() ? \App\Models\Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         return view('inventory.storage-inventory', compact('title', 'data', 'clients'));
     }
@@ -1051,7 +1051,7 @@ class InventoryController extends Controller
         }
 
         $history = $query->latest()->paginate(20);
-        $clients = $user->isAdminWMS() ? Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         return view('inventory.history', compact('title', 'history', 'clients'));
     }

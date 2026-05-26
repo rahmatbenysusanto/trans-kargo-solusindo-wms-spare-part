@@ -83,6 +83,23 @@ class User extends Authenticatable
         if ($this->isAdminWMS()) {
             return Client::pluck('id')->toArray();
         }
-        return $this->clients()->pluck('client_id')->toArray();
+
+        $assignedIds = $this->clients()->pluck('client_id')->toArray();
+
+        // If Client User has no specific client assignments, they can see all clients
+        return !empty($assignedIds) ? $assignedIds : Client::pluck('id')->toArray();
+    }
+
+    /**
+     * Get client list for dropdown (all if admin or no assignments, filtered otherwise)
+     */
+    public function getAvailableClients()
+    {
+        if ($this->isAdminWMS()) {
+            return Client::all();
+        }
+
+        $assignedClients = $this->clients;
+        return $assignedClients->isNotEmpty() ? $assignedClients : Client::all();
     }
 }

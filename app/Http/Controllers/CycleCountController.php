@@ -14,7 +14,7 @@ class CycleCountController extends Controller
     {
         $title = 'Cycle Count';
         $user = Auth::user();
-        $clients = $user->isAdminWMS() ? \App\Models\Client::all() : $user->clients;
+        $clients = $user->getAvailableClients();
 
         $startDate = $request->get('start_date', Carbon::today()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::today()->format('Y-m-d'));
