@@ -125,6 +125,7 @@
                                     <th class="py-2 px-3">Vendor / Supplier</th>
                                     <th class="py-2 px-3">Received By</th>
                                     <th class="py-2 px-3">Received Date</th>
+                                    <th class="py-2 px-3 text-center">Doc</th>
                                     <th class="py-2 px-3 text-center">Action</th>
                                 </tr>
                             </thead>
@@ -189,6 +190,12 @@
                                         <td class="py-2 px-3 small fw-medium">{{ $item->received_by }}</td>
                                         <td class="py-2 px-3 small">{{ $item->received_date }}</td>
                                         <td class="py-2 px-3 text-center">
+                                            <a href="{{ route('receiving.print', $item->id) }}" target="_blank"
+                                                class="btn btn-icon btn-xs p-1" title="Download PDF" style="color: #ea5455;">
+                                                <i class="ti tabler-file-text fs-6"></i>
+                                            </a>
+                                        </td>
+                                        <td class="py-2 px-3 text-center">
                                             <div class="d-flex gap-1 justify-content-center">
                                                 <a href="{{ route('receiving.show', $item->id) }}"
                                                     class="btn btn-xs btn-primary p-1" title="Detail">
@@ -209,7 +216,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center py-4">
+                                        <td colspan="12" class="text-center py-4">
                                             <i class="ti tabler-box-off text-muted mb-2" style="font-size: 2rem;"></i>
                                             <p class="text-muted small mb-0">No records found.</p>
                                         </td>

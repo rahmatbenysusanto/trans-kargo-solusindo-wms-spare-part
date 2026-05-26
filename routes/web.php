@@ -58,6 +58,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
             Route::post('/bulk-import/store', 'bulkImportStore')->name('receiving.bulk-import.store');
             Route::get('/check-outbounded', 'checkOutbounded')->name('receiving.check-outbounded');
             Route::get('/search-outbounded', 'searchOutbounded')->name('receiving.search-outbounded');
+            Route::get('/print/{id}', 'printPdf')->name('receiving.print');
             Route::get('/{id}', 'show')->name('receiving.show');
             Route::post('/approve', 'approve')->name('receiving.approve');
             Route::post('/cancel', 'cancel')->name('receiving.cancel');

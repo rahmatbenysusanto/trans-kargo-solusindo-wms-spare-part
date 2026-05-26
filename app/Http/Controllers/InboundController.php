@@ -105,6 +105,13 @@ class InboundController extends Controller
         return view('inbound.put-away.show', compact('title', 'inbound'));
     }
 
+    public function printPdf($id): View
+    {
+        $inbound = Inbound::with(['client', 'details'])->findOrFail($id);
+        $title = 'Receiving Report';
+        return view('inbound.receiving.pdf', compact('title', 'inbound'));
+    }
+
     public function approve(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
