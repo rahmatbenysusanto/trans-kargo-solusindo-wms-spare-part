@@ -309,6 +309,7 @@ class InboundController extends Controller
      */
     public function updatePutAway(Request $request): \Illuminate\Http\JsonResponse
     {
+        DB::statement("SELECT GET_LOCK('put_away_unique_id', 15)");
         try {
             DB::beginTransaction();
             $products = $request->post('products');
@@ -440,6 +441,8 @@ class InboundController extends Controller
             Log::info($err->getMessage());
             Log::info($err->getLine());
             return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        } finally {
+            DB::statement("SELECT RELEASE_LOCK('put_away_unique_id')");
         }
     }
 
