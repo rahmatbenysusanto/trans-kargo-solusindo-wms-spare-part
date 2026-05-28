@@ -233,6 +233,7 @@
                                     <th class="py-2 px-3">Old WH Asset</th>
                                     <th class="py-2 px-3">Stock Status</th>
                                     <th class="py-2 px-3 text-center">Condition</th>
+                                    <th class="py-2 px-3">Remarks</th>
                                     <th class="py-2 px-3">Location</th>
                                 </tr>
                             </thead>
@@ -287,6 +288,7 @@
                                             <span class="badge {{ $condClass }}"
                                                 style="font-size: 0.7rem;">{{ strtoupper($detail->condition) }}</span>
                                         </td>
+                                        <td class="py-2 px-3 small">{{ $detail->receiving_remarks ?? '-' }}</td>
                                         <td class="py-2 px-3">
                                             @if ($detail->storageLevel)
                                                 @php

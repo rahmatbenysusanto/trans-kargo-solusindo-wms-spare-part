@@ -279,6 +279,7 @@
                 condition: document.getElementById('condition').value,
                 stockStatus: document.getElementById('stockStatus').value,
                 stagingDate: document.getElementById('stagingDate').value,
+                remarks: document.getElementById('remarksInput').value,
                 qty: 1,
             };
 
@@ -462,6 +463,7 @@
                             <option value="Spare Migration" ${product.condition === 'Spare Migration' ? 'selected' : ''}>Spare Migration</option>
                         </select>
                     </td>
+                    <td class="py-1">${product.remarks || '-'}</td>
                     <td class="py-1">
                         <div class="d-flex gap-1">
                             <button class="btn btn-xs btn-label-warning p-1" onclick="editProduct(${index})" title="Edit">
@@ -544,6 +546,7 @@
             
             document.getElementById('stockStatus').value = product.stockStatus ?? 'Available';
             document.getElementById('stagingDate').value = product.stagingDate ?? '';
+            document.getElementById('remarksInput').value = product.remarks ?? '';
 
             editingIndex = index;
             document.getElementById('addProductModalLabel').innerText = 'Edit Product';
@@ -595,6 +598,7 @@
             document.getElementById('oldSerialNumber').value = '';
             document.getElementById('oldWhAssetDisplay').value = '';
             document.getElementById('stagingDate').value = '';
+            document.getElementById('remarksInput').value = '';
 
             document.getElementById('addProductModalLabel').innerText = 'Add Product';
             document.getElementById('saveProductBtn').innerText = 'Add Product';
@@ -860,6 +864,7 @@
                                     <th class="text-white col-old-asset" style="display:none;">Old WH Asset</th>
                                     <th class="text-white text-center">Qty</th>
                                     <th class="text-white" width="130">Condition</th>
+                                    <th class="text-white">Remarks</th>
                                     <th class="text-white text-center" width="80">Action</th>
                                 </tr>
                             </thead>
@@ -1005,6 +1010,10 @@
                             <div class="mb-3">
                                 <label class="form-label">Staging Date (Optional)</label>
                                 <input type="date" class="form-control" id="stagingDate">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Remarks (Optional)</label>
+                                <textarea class="form-control" id="remarksInput" rows="2" placeholder="Receiving remarks ..."></textarea>
                             </div>
                         </div>
                     </div>

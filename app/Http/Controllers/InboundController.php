@@ -762,6 +762,7 @@ class InboundController extends Controller
                 'condition'         => $product['condition'],
                 'stock_status'      => $product['stockStatus'] ?? 'Available',
                 'staging_date'      => $product['stagingDate'] ?? null,
+                'receiving_remarks' => $product['remarks'] ?? null,
                 'storage_level_id'  => null,
                 'brand_id'          => $brand->id,
                 'product_group_id' => $productGroup->id,

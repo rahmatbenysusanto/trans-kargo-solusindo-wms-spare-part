@@ -30,7 +30,8 @@ class InboundDetail extends Model
         'storage_level_id',
         'staging_date',
         'brand_id',
-        'product_group_id'
+        'product_group_id',
+        'receiving_remarks'
     ];
 
     public function inbound(): BelongsTo
