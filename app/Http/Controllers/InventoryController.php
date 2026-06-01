@@ -186,7 +186,13 @@ class InventoryController extends Controller
         $clientId = $request->get('client_id');
         $filter = $request->get('filter', []);
 
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
+        $inventory = \App\Models\Inventory::with([
+            'storageLevel.bin.rak.zone',
+            'client',
+            'product.brand',
+            'product.productGroup',
+            'details.inboundDetail.inbound',
+        ]);
 
         $this->applyClientFilter($inventory, $clientId);
 
@@ -240,48 +246,110 @@ class InventoryController extends Controller
             ->latest()
             ->get();
 
+        // Collect SNs to batch-fetch outbound data
+        $sns = $inventory->pluck('serial_number')->toArray();
+        $outboundDetails = \App\Models\OutboundDetail::with('outbound')
+            ->whereIn('serial_number', $sns)
+            ->get()
+            ->keyBy('serial_number');
+
         $filename = "inventory-list-" . date('Y-m-d') . ".xls";
 
         header("Content-Type: application/vnd.ms-excel");
         header("Content-Disposition: attachment; filename=\"$filename\"");
 
+        $yellow = 'background-color: #FFFF00;';
+        $bold = 'font-weight: bold;';
+
         echo "<table border='1'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>No</th>";
-        echo "<th>Warehouse Asset ID</th>";
-        echo "<th>Part Name</th>";
-        echo "<th>Part Description</th>";
-        echo "<th>Serial Number</th>";
-        echo "<th>Brand</th>";
-        echo "<th>Product Group</th>";
-        echo "<th>Storage</th>";
-        echo "<th>Status</th>";
-        echo "<th>Stock Condition</th>";
-        echo "<th>Staging Condition</th>";
-        echo "<th>Last Movement</th>";
+        echo "<th style='{$yellow}{$bold}'>Movement Category</th>";
+        echo "<th style='{$yellow}{$bold}'>Stock Category</th>";
+        echo "<th style='{$yellow}{$bold}'>Request Type</th>";
+        echo "<th style='{$bold}'>NTT Requestor</th>";
+        echo "<th style='{$bold}'>Request Date</th>";
+        echo "<th style='{$bold}'>Product Group</th>";
+        echo "<th style='{$bold}'>Brand</th>";
+        echo "<th style='{$bold}'>Product Number (SKU)</th>";
+        echo "<th style='{$bold}'>Product Description</th>";
+        echo "<th style='{$bold}'>Serial Number (SN)</th>";
+        echo "<th style='{$bold}'>Parent SN</th>";
+        echo "<th style='{$bold}'>Qty</th>";
+        echo "<th style='{$yellow}{$bold}'>WH Asset Number</th>";
+        echo "<th style='{$bold}'>Stock Status</th>";
+        echo "<th style='{$yellow}{$bold}'>Stock Condition</th>";
+        echo "<th style='{$yellow}{$bold}'>Stock Location (Rack ID)</th>";
+        echo "<th style='{$bold}'>eCapex#</th>";
+        echo "<th style='{$bold}'>SAP PO#</th>";
+        echo "<th style='{$bold}'>Vendor/Supplier DN#</th>";
+        echo "<th style='{$bold}'>NTT RN#</th>";
+        echo "<th style='{$bold}'>Received Date</th>";
+        echo "<th style='{$bold}'>NTT DN#</th>";
+        echo "<th style='{$bold}'>Delivery Date</th>";
+        echo "<th style='{$bold}'>Transkargo DN#</th>";
+        echo "<th style='{$bold}'>Transkargo Invoice#</th>";
+        echo "<th style='{$bold}'>Staging Date</th>";
+        echo "<th style='{$bold}'>ITSM#</th>";
+        echo "<th style='{$bold}'>RMA#</th>";
+        echo "<th style='{$bold}'>Processed by</th>";
+        echo "<th style='{$bold}'>Client Name</th>";
+        echo "<th style='{$bold}'>Client Contact</th>";
+        echo "<th style='{$bold}'>Pickup/Shipment Address</th>";
+        echo "<th style='{$bold}'>Shipment Status</th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
 
         foreach ($inventory as $index => $item) {
-            $brand = $item->product && $item->product->brand ? $item->product->brand->name : '-';
-            $group = $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-';
+            $inboundDetail = $item->details->first()?->inboundDetail;
+            $inbound = $inboundDetail?->inbound;
+
+            $outboundDetail = $outboundDetails->get($item->serial_number);
+            $outbound = $outboundDetail?->outbound;
+
+            $brand = $item->product?->brand?->name ?? '-';
+            $group = $item->product?->productGroup?->name ?? '-';
+            $storage = $item->storageLevel
+                ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}"
+                : '-';
+
+            $movementCategory = $inbound?->category ?? ($outbound?->category ?? '-');
 
             echo "<tr>";
-            echo "<td>" . ($index + 1) . "</td>";
-            echo "<td>{$item->unique_id}</td>";
-            echo "<td>{$item->part_name}</td>";
-            echo "<td>{$item->part_description}</td>";
-            echo "<td>'{$item->serial_number}</td>";
-            echo "<td>{$brand}</td>";
+            echo "<td>{$movementCategory}</td>";
+            echo "<td>" . ($inbound?->category ?? $outbound?->category ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->request_type ?? $outbound?->request_type ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->ntt_requestor ?? $outbound?->ntt_requestor ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->request_date ?? $outbound?->request_date ?? '-') . "</td>";
             echo "<td>{$group}</td>";
-            $storage = $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : "-";
-            echo "<td>{$storage}</td>";
+            echo "<td>{$brand}</td>";
+            echo "<td>{$item->part_number}</td>";
+            echo "<td>" . ($item->part_description ?? '-') . "</td>";
+            echo "<td>'{$item->serial_number}</td>";
+            echo "<td>" . ($item->parent_serial_number ?? '-') . "</td>";
+            echo "<td>{$item->qty}</td>";
+            echo "<td>{$item->unique_id}</td>";
             echo "<td>{$item->status}</td>";
             echo "<td>{$item->condition}</td>";
-            echo "<td>" . ($item->staging_condition ?? '-') . "</td>";
-            echo "<td>" . ($item->last_movement_date ?? '-') . "</td>";
+            echo "<td>{$storage}</td>";
+            echo "<td>" . ($inbound?->ecapex_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->sap_po_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->vendor_dn_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->receiving_note ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->received_date ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->ntt_dn_number ?? $outbound?->ntt_dn_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->delivery_date ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->tks_dn_number ?? $outbound?->tks_dn_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->tks_invoice_number ?? $outbound?->tks_invoice_number ?? '-') . "</td>";
+            echo "<td>" . ($inboundDetail?->staging_date ?? $item->last_staging_date ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->itsm_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->rma_number ?? $outbound?->rma_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->received_by ?? $outbound?->outbound_by ?? '-') . "</td>";
+            echo "<td>" . ($item->client?->name ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->client_contact ?? $outbound?->client_contact ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->pickup_address ?? $outbound?->pickup_address ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->shipment_status ?? $outbound?->shipment_status ?? '-') . "</td>";
             echo "</tr>";
         }
 
@@ -684,8 +752,8 @@ class InventoryController extends Controller
         $title = 'Inventory Stock Statement';
         $user = Auth::user();
         $clients = $user->getAvailableClients();
-        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
-        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
+        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration', 'Spare Return'];
+        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration', 'Return'];
 
         $clientId = $request->get('client_id');
 

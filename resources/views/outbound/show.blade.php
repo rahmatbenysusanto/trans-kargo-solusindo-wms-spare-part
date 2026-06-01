@@ -16,6 +16,9 @@
                         <i class="ti tabler-arrow-left me-1"></i> Back to List
                     </a>
                     @if ($outbound->status !== 'cancel')
+                        <a href="{{ route('outbound.edit', $outbound->id) }}" class="btn btn-warning">
+                            <i class="ti tabler-edit me-1"></i> Edit Items
+                        </a>
                         <button type="button" class="btn btn-danger"
                             onclick="cancelOutbound({{ $outbound->id }}, '{{ $outbound->number ?? $outbound->tks_dn_number }}')">
                             <i class="ti tabler-x me-1"></i> Cancel Outbound

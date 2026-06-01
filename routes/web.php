@@ -30,6 +30,7 @@ Route::get('/scan/{unique_id}', [InventoryController::class, 'scan'])->name('inv
 Route::middleware([AuthMiddleware::class])->group(function () {
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'index')->name('dashboard');
+        Route::get('/dashboard/data', 'dashboardData')->name('dashboard.data');
         Route::get('/summary-stock', 'summaryStock')->name('dashboard.summary.stock');
         Route::get('/summary-stock/inventory-list', 'inventoryList')->name('dashboard.inventory.list');
         Route::get('/summary-stock/inventory-list/pdf', 'inventoryExportPdf')->name('dashboard.inventory.export.pdf');
@@ -84,6 +85,11 @@ Route::middleware([AuthMiddleware::class])->group(function () {
             Route::get('/process/{id}', 'processPutAway')->name('receiving.put.away.process');
             Route::post('/update', 'updatePutAway')->name('receiving.put.away.update');
             Route::post('/cancel', 'cancelPutAway')->name('receiving.put.away.cancel');
+        });
+
+        Route::prefix('/quick-return')->group(function () {
+            Route::get('/', 'quickReturn')->name('receiving.quick-return');
+            Route::post('/store', 'quickReturnStore')->name('receiving.quick-return.store');
         });
     });
 
@@ -146,6 +152,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/{id}', 'show')->name('outbound.show');
         Route::get('/print/{id}', 'printPdf')->name('outbound.print');
         Route::post('/cancel', 'cancel')->name('outbound.cancel');
+        Route::get('/{id}/edit', 'edit')->name('outbound.edit');
+        Route::post('/{id}/update-items', 'updateItems')->name('outbound.update-items');
     });
 
     Route::prefix('/rma')->controller(RmaController::class)->group(function () {
@@ -166,6 +174,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
     Route::prefix('/reporting')->controller(ReportingController::class)->group(function () {
         Route::get('/stock-on-hand', 'stockOnHand')->name('reporting.stock-on-hand');
         Route::get('/movement-history', 'movementHistory')->name('reporting.movement-history');
+        Route::get('/movement-history/csv', 'movementHistoryCsv')->name('reporting.movement-history.csv');
         Route::get('/utilization', 'utilizationReport')->name('reporting.utilization');
     });
 

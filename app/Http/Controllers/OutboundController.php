@@ -306,6 +306,156 @@ class OutboundController extends Controller
             return response()->json(['status' => false, 'message' => $err->getMessage()]);
         }
     }
+    /**
+     * Map outbound category to inventory status
+     */
+    private function getOutboundStatus(string $category): string
+    {
+        return match ($category) {
+            'RMA', 'Spare from/to Replacement', 'Spare from Replacement', 'Spare to Replacement'
+                => 'Out for Replacement/ Support',
+            'Spare from/to Loan', 'Spare from Loan', 'Spare to Loan', 'Loan'
+                => 'Out for Loan',
+            'Faulty', 'Out for Return'
+                => 'Out for Return',
+            'Spare Write Off', 'Spare Write-off', 'Write-off'
+                => 'Write-off',
+            default => 'Shipped / Outbound',
+        };
+    }
+
+    /**
+     * Show Edit Outbound page
+     */
+    public function edit($id): View
+    {
+        $outbound = Outbound::with(['details.inventory', 'client'])->findOrFail($id);
+
+        if ($outbound->status === 'cancel') {
+            return redirect()->route('outbound.show', $id)
+                ->with('error', 'Tidak bisa mengedit outbound yang sudah di-cancel.');
+        }
+
+        $title = 'Edit Outbound';
+        $client = \App\Models\Client::all();
+        return view('outbound.edit', compact('title', 'outbound', 'client'));
+    }
+
+    /**
+     * Update Outbound items (add/remove SNs)
+     */
+    public function updateItems(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'removed_sns' => 'nullable|array',
+            'added_sns'   => 'nullable|array',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $outbound = Outbound::with('details')->findOrFail($id);
+
+            if ($outbound->status === 'cancel') {
+                throw new \RuntimeException('Outbound sudah di-cancel, tidak bisa diedit.');
+            }
+
+            $removedSns = $request->post('removed_sns', []);
+            $addedSns   = $request->post('added_sns', []);
+            $userName   = Auth::user()->name;
+            $status     = $this->getOutboundStatus($outbound->category);
+
+            // --- Process removed items (return to inventory) ---
+            foreach ($removedSns as $sn) {
+                $detail = OutboundDetail::where('outbound_id', $id)
+                    ->where('serial_number', $sn)
+                    ->first();
+
+                if (!$detail) continue;
+
+                $inventory = \App\Models\Inventory::where('serial_number', $sn)->first();
+
+                if ($inventory) {
+                    $inventory->update([
+                        'qty'                => 1,
+                        'status'             => 'available',
+                        'last_movement_date' => now()
+                    ]);
+                }
+
+                \App\Models\InventoryHistory::create([
+                    'inventory_id'     => $inventory?->id,
+                    'serial_number'    => $sn,
+                    'type'             => 'Movement',
+                    'category'         => 'Edit Outbound',
+                    'reference_number' => $outbound->number ?? $outbound->tks_dn_number,
+                    'description'      => "Item dikembalikan ke inventory (dihapus dari Outbound {$outbound->number})",
+                    'user'             => $userName,
+                ]);
+
+                $detail->delete();
+            }
+
+            // --- Process added items (check out from inventory) ---
+            foreach ($addedSns as $snData) {
+                $sn = is_string($snData) ? $snData : ($snData['serial_number'] ?? '');
+
+                if (empty($sn)) continue;
+
+                // Prevent adding SN that's already in this outbound
+                $alreadyExists = OutboundDetail::where('outbound_id', $id)
+                    ->where('serial_number', $sn)
+                    ->exists();
+                if ($alreadyExists) continue;
+
+                $inventory = \App\Models\Inventory::where('serial_number', $sn)
+                    ->where('qty', '>', 0)
+                    ->first();
+
+                if (!$inventory) {
+                    throw new \RuntimeException("Item SN {$sn} tidak tersedia atau stok habis.");
+                }
+
+                OutboundDetail::create([
+                    'outbound_id'  => $outbound->id,
+                    'product_id'   => $inventory->product_id,
+                    'part_name'    => $inventory->part_name,
+                    'part_number'  => $inventory->part_number,
+                    'description'  => $inventory->part_description,
+                    'qty'          => 1,
+                    'serial_number' => $sn,
+                    'condition'    => $inventory->condition,
+                ]);
+
+                $inventory->update([
+                    'qty'                => 0,
+                    'status'             => $status,
+                    'last_movement_date' => now()
+                ]);
+
+                \App\Models\InventoryHistory::create([
+                    'inventory_id'     => $inventory->id,
+                    'serial_number'    => $sn,
+                    'type'             => 'Outbound',
+                    'category'         => $outbound->category,
+                    'reference_number' => $outbound->number ?? $outbound->tks_dn_number,
+                    'description'      => "Item ditambahkan ke Outbound {$outbound->number} (edit)",
+                    'user'             => $userName,
+                ]);
+            }
+
+            // Update qty
+            $newQty = $outbound->details()->count();
+            $outbound->update(['qty' => max(0, $newQty)]);
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
     public function cancel(Request $request): \Illuminate\Http\JsonResponse
     {
         try {

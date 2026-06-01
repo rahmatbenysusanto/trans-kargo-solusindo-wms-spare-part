@@ -25,6 +25,7 @@ class MenuSeeder extends Seeder
             'Inbound: Receiving',
             'Inbound: Staging (Testing)',
             'Inbound: Put Away',
+            'Inbound: Back to WH',
 
             // Inventory
             'Inventory: List',

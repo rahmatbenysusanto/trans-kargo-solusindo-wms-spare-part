@@ -239,7 +239,8 @@
                         $hasInbound =
                             Auth::user()->hasMenu('Inbound: Receiving') ||
                             Auth::user()->hasMenu('Inbound: Staging (Testing)') ||
-                            Auth::user()->hasMenu('Inbound: Put Away');
+                            Auth::user()->hasMenu('Inbound: Put Away') ||
+                            Auth::user()->hasMenu('Inbound: Back to WH');
 
                         $hasInventory =
                             Auth::user()->hasMenu('Inventory: List') ||
@@ -269,7 +270,7 @@
 
                     @if ($hasInbound)
                         <li
-                            class="menu-item {{ in_array($title, ['Receiving', 'Staging Management', 'Put Away']) ? 'show open' : '' }}">
+                            class="menu-item {{ in_array($title, ['Receiving', 'Staging Management', 'Put Away', 'Back to WH']) ? 'show open' : '' }}">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-archive"></i>
                                 <div data-i18n="Inbound">Inbound</div>
@@ -293,6 +294,13 @@
                                     <li class="menu-item {{ $title == 'Staging Management' ? 'active' : '' }}">
                                         <a href="{{ route('staging.index') }}" class="menu-link">
                                             <div data-i18n="Staging">Staging (Testing)</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inbound: Back to WH'))
+                                    <li class="menu-item {{ $title == 'Back to WH' ? 'active' : '' }}">
+                                        <a href="{{ route('receiving.quick-return') }}" class="menu-link">
+                                            <div data-i18n="Back to WH">Back to WH</div>
                                         </a>
                                     </li>
                                 @endif

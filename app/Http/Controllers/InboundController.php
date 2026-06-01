@@ -63,8 +63,8 @@ class InboundController extends Controller
             })
             ->paginate(10);
 
-        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
-        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
+        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration', 'Spare Return'];
+        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration', 'Return'];
         $clients = $user->getAvailableClients();
         $title = 'Receiving';
 
@@ -182,8 +182,8 @@ class InboundController extends Controller
             })
             ->latest()->paginate(10);
 
-        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
-        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
+        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration', 'Spare Return'];
+        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration', 'Return'];
         $clients = $user->getAvailableClients();
         $title = 'Put Away';
         return view('inbound.put-away.index', compact('title', 'inbound', 'categories', 'requestTypes', 'clients'));
@@ -780,6 +780,246 @@ class InboundController extends Controller
         }
     }
 
+    /**
+     * Show Quick Return (Back to WH) page
+     */
+    public function quickReturn(): View
+    {
+        $title = 'Back to WH';
+        return view('inbound.receiving.back-to-wh.index', compact('title'));
+    }
+
+    /**
+     * Process Quick Return (Back to WH) - Single & Batch
+     */
+    public function quickReturnStore(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $isBatch = $request->post('batch') === true || $request->post('batch') === 'true';
+
+        if ($isBatch) {
+            $request->validate([
+                'serial_numbers' => 'required|array|min:1|max:100',
+                'serial_numbers.*' => 'required|string',
+                'return_type' => 'required|in:in,available',
+                'condition' => 'nullable|string',
+            ]);
+            return $this->processBatchReturn($request);
+        }
+
+        $request->validate([
+            'serial_number' => 'required|string',
+            'return_type' => 'required|in:in,available',
+            'condition' => 'nullable|string',
+        ]);
+
+        try {
+            $result = $this->processSingleReturn(
+                $request->post('serial_number'),
+                $request->post('return_type'),
+                $request->post('condition')
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'data'   => $result,
+            ]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            Log::error("Quick Return Error: " . $err->getMessage());
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    /**
+     * Process batch return
+     */
+    private function processBatchReturn(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $serialNumbers = $request->post('serial_numbers', []);
+        $returnType = $request->post('return_type');
+        $newCondition = $request->post('condition');
+
+        $results = [];
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($serialNumbers as $sn) {
+                try {
+                    $result = $this->processSingleReturn($sn, $returnType, $newCondition);
+                    $results[] = [
+                        'success'         => true,
+                        'serial_number'   => $sn,
+                        'inbound_number'  => $result['inbound_number'],
+                        'part_name'       => $result['part_name'],
+                        'condition'       => $result['condition'],
+                        'old_location'    => $result['old_location'],
+                        'error'           => null,
+                    ];
+                } catch (\Throwable $itemErr) {
+                    $results[] = [
+                        'success'        => false,
+                        'serial_number'  => $sn,
+                        'inbound_number' => null,
+                        'part_name'      => null,
+                        'condition'      => null,
+                        'old_location'   => null,
+                        'error'          => $itemErr->getMessage(),
+                    ];
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => true,
+                'results' => $results,
+            ]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            Log::error("Batch Return Error: " . $err->getMessage());
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    /**
+     * Process a single item return
+     *
+     * @throws \Throwable
+     */
+    private function processSingleReturn(string $serialNumber, string $returnType, ?string $newCondition = null): array
+    {
+        $user = Auth::user();
+
+        // Find the inventory record
+        $inventory = Inventory::where('serial_number', $serialNumber)->first();
+
+        if (!$inventory) {
+            throw new \RuntimeException('SN ' . $serialNumber . ' tidak ditemukan di database.');
+        }
+
+        // Check if it's already in-stock (qty > 0)
+        if ($inventory->qty > 0) {
+            throw new \RuntimeException('SN ' . $serialNumber . ' masih IN STOCK (qty=' . $inventory->qty . '). Tidak perlu di-return.');
+        }
+
+        // Auto-create Inbound record (one per item for individual tracking)
+        $inbound = Inbound::create([
+            'category'      => 'Spare Return',
+            'request_type'  => 'Return',
+            'client_id'     => $inventory->client_id,
+            'number'        => self::generateInboundNumber(),
+            'tks_dn_number' => self::generateTksDnNumber(),
+            'vendor'        => 'Internal',
+            'qty'           => 1,
+            'received_date' => now()->toDateString(),
+            'received_by'   => $user->name,
+            'remarks'       => 'Quick Return - Back to WH (SN: ' . $serialNumber . ')',
+            'status'        => ($returnType === 'available') ? 'close' : 'process qc',
+        ]);
+
+        // Determine storage and condition
+        $existingStorageId = $inventory->storage_level_id;
+        $condition = $newCondition ?: ($inventory->condition ?? 'Good');
+
+        $existingLocation = 'N/A';
+        if ($inventory->storageLevel && $inventory->storageLevel->bin && $inventory->storageLevel->bin->rak && $inventory->storageLevel->bin->rak->zone) {
+            $existingLocation = $inventory->storageLevel->bin->rak->zone->name . '-' .
+                $inventory->storageLevel->bin->rak->name . '-' .
+                $inventory->storageLevel->bin->name . '-' .
+                $inventory->storageLevel->name;
+        }
+
+        // Auto-create InboundDetail
+        $inboundDetail = InboundDetail::create([
+            'inbound_id'        => $inbound->id,
+            'product_id'        => $inventory->product_id,
+            'part_name'         => $inventory->part_name,
+            'part_number'       => $inventory->part_number,
+            'description'       => $inventory->part_description,
+            'qty'               => 1,
+            'wh_asset_number'   => $inventory->unique_id,
+            'serial_number'     => $serialNumber,
+            'parent_sn'         => $inventory->parent_serial_number,
+            'condition'         => $condition,
+            'stock_status'      => 'Available',
+            'storage_level_id'  => ($returnType === 'available') ? $existingStorageId : null,
+            'brand_id'          => $inventory->brand_id,
+            'product_group_id'  => $inventory->product_group_id,
+            'staging_date'      => now()->toDateString(),
+            'receiving_remarks' => 'Quick Return - ' . ($returnType === 'available' ? 'Bypass PA' : 'Need Put Away'),
+        ]);
+
+        // Record receiving history
+        \App\Models\InventoryHistory::create([
+            'inventory_id'     => $inventory->id,
+            'serial_number'    => $serialNumber,
+            'type'             => 'Receiving',
+            'category'         => 'Spare Return',
+            'reference_number' => $inbound->number,
+            'description'      => 'Quick Return (Back to WH) - SN: ' . $serialNumber . ' (' . ($returnType === 'available' ? 'Bypass PA' : 'Need Put Away') . ')',
+            'user'             => $user->name,
+            'to_location'      => $returnType === 'available' ? ($existingStorageId ? $existingLocation : 'N/A') : 'Staging (Pending PA)',
+        ]);
+
+        // Update Inventory
+        $inventoryUpdate = [
+            'qty'                => 1,
+            'status'             => 'available',
+            'last_movement_date' => now(),
+        ];
+
+        if ($newCondition) {
+            $inventoryUpdate['condition'] = $newCondition;
+        }
+
+        $inventory->update($inventoryUpdate);
+
+        // If bypass PA, create full links and history
+        if ($returnType === 'available') {
+            InventoryDetail::create([
+                'inventory_id'      => $inventory->id,
+                'inbound_detail_id' => $inboundDetail->id,
+            ]);
+
+            \App\Models\InventoryMovement::create([
+                'inventory_id'          => $inventory->id,
+                'from_storage_level_id' => null,
+                'to_storage_level_id'   => $existingStorageId,
+                'user_id'               => Auth::id(),
+                'type'                  => 'Put Away',
+                'description'           => 'Auto Put Away (Return Bypass) by ' . $user->name
+            ]);
+
+            \App\Models\InventoryHistory::create([
+                'inventory_id'     => $inventory->id,
+                'serial_number'    => $serialNumber,
+                'type'             => 'Inbound',
+                'category'         => 'Put Away',
+                'reference_number' => $inbound->number,
+                'description'      => 'Item returned to ' . $existingLocation . ' (Bypass Put Away)',
+                'user'             => $user->name,
+                'to_location'      => $existingLocation,
+            ]);
+
+            // Auto-clear old SN from Outbound
+            \App\Models\OutboundDetail::where('old_serial_number', $serialNumber)
+                ->update(['old_serial_number' => null]);
+        }
+
+        return [
+            'inbound_id'       => $inbound->id,
+            'inbound_number'   => $inbound->number,
+            'serial_number'    => $serialNumber,
+            'part_name'        => $inventory->part_name,
+            'return_type'      => $returnType,
+            'condition'        => $condition,
+            'old_location'     => $returnType === 'available' ? ($existingStorageId ? $existingLocation : 'N/A') : 'Pending Put Away',
+        ];
+    }
+
     public function checkOutbounded(Request $request)
     {
         $search = $request->get('search');
@@ -787,12 +1027,12 @@ class InboundController extends Controller
             return response()->json(['status' => false, 'message' => 'Search term is required']);
         }
 
-        $inventory = \App\Models\Inventory::where('serial_number', $search)
+        $inventory = \App\Models\Inventory::with(['brand', 'productGroup', 'client', 'storageLevel.bin.rak.zone'])->where('serial_number', $search)
             ->orWhere('unique_id', $search)
             ->first();
 
         if (!$inventory) {
-            return response()->json(['status' => false, 'message' => 'Item not found in master data.']);
+            return response()->json(['status' => false, 'message' => 'Item tidak ditemukan di database.']);
         }
 
         $isOutbounded = ($inventory->qty == 0) || \App\Models\OutboundDetail::where('serial_number', $inventory->serial_number)->exists();
@@ -800,19 +1040,31 @@ class InboundController extends Controller
         if (!$isOutbounded) {
             return response()->json([
                 'status' => false,
-                'message' => 'Item found but is still IN STOCK. Replacement is only allowed for outbounded items.',
+                'message' => 'Item dengan SN ' . $inventory->serial_number . ' masih IN STOCK (qty=' . $inventory->qty . '). Tidak perlu di-return.',
             ]);
+        }
+
+        $location = 'N/A';
+        if ($inventory->storageLevel && $inventory->storageLevel->bin && $inventory->storageLevel->bin->rak && $inventory->storageLevel->bin->rak->zone) {
+            $location = $inventory->storageLevel->bin->rak->zone->name . '-' .
+                $inventory->storageLevel->bin->rak->name . '-' .
+                $inventory->storageLevel->bin->name . '-' .
+                $inventory->storageLevel->name;
         }
 
         return response()->json([
             'status' => true,
             'data'   => [
-                'serial_number' => $inventory->serial_number,
-                'unique_id'     => $inventory->unique_id,
-                'part_name'     => $inventory->part_name,
-                'part_number'   => $inventory->part_number,
-                'brand'         => $inventory->brand->name ?? '-',
-                'product_group' => $inventory->productGroup->name ?? '-',
+                'serial_number'     => $inventory->serial_number,
+                'unique_id'         => $inventory->unique_id,
+                'part_name'         => $inventory->part_name,
+                'part_number'       => $inventory->part_number,
+                'part_description'  => $inventory->part_description,
+                'brand'             => $inventory->brand->name ?? '-',
+                'product_group'     => $inventory->productGroup->name ?? '-',
+                'client'            => $inventory->client->name ?? '-',
+                'condition'         => $inventory->condition,
+                'old_location'      => $location,
             ]
         ]);
     }

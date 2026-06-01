@@ -51,6 +51,89 @@ class DashboardController extends Controller
         return $query;
     }
 
+    /**
+     * AJAX endpoint for dashboard card modals
+     * type: in-stock | outbounded | rma
+     */
+    public function dashboardData(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $type = $request->get('type', 'in-stock');
+        $page = (int) $request->get('page', 1);
+        $perPage = 10;
+        $user = Auth::user();
+
+        $data = match ($type) {
+            'in-stock' => $this->getDashboardInventoryData($request, $user, fn($q) => $q->where('qty', '>', 0)),
+            'outbounded' => $this->getDashboardInventoryData($request, $user, fn($q) => $q->where('qty', 0)->whereNotIn('status', ['Write-off', 'write-off'])),
+            'write-off' => $this->getDashboardInventoryData($request, $user, fn($q) => $q->whereIn('status', ['Write-off', 'write-off'])),
+            'rma' => $this->getDashboardRmaData($request, $user),
+            default => collect(),
+        };
+
+        $total = $data->count();
+        $items = $data->forPage($page, $perPage)->values();
+
+        return response()->json([
+            'items'      => $items,
+            'total'      => $total,
+            'page'       => $page,
+            'perPage'    => $perPage,
+            'lastPage'   => max(1, (int) ceil($total / $perPage)),
+        ]);
+    }
+
+    private function getDashboardInventoryData(Request $request, $user, callable $filter)
+    {
+        $clientId = $request->get('client_id');
+        $query = Inventory::with(['storageLevel.bin.rak.zone', 'client', 'brand', 'productGroup']);
+
+        if ($user->isAdminWMS()) {
+            if ($clientId) $query->where('client_id', $clientId);
+        } else {
+            $ids = $user->getAccessibleClientIds();
+            $query->where(fn($q) => $q->whereIn('client_id', $ids)->orWhereNull('client_id'));
+        }
+
+        $filter($query);
+        return $query->latest()->get()->map(fn($i) => [
+            'id'             => $i->id,
+            'unique_id'      => $i->unique_id,
+            'serial_number'  => $i->serial_number,
+            'part_name'      => $i->part_name,
+            'part_number'    => $i->part_number,
+            'condition'      => $i->condition,
+            'status'         => $i->status,
+            'client_name'    => $i->client?->name ?? '-',
+            'brand'          => $i->brand?->name ?? '-',
+            'group'          => $i->productGroup?->name ?? '-',
+            'location'       => $i->storageLevel ? "{$i->storageLevel->bin->rak->zone->name}-{$i->storageLevel->bin->rak->name}-{$i->storageLevel->bin->name}-{$i->storageLevel->name}" : '-',
+            'qty'            => $i->qty,
+        ]);
+    }
+
+    private function getDashboardRmaData(Request $request, $user)
+    {
+        $clientId = $request->get('client_id');
+        $query = InboundDetail::with(['inbound.client'])->whereNotNull('old_serial_number');
+
+        if (!$user->isAdminWMS()) {
+            $ids = $user->getAccessibleClientIds();
+            $query->whereHas('inbound', fn($q) => $q->whereIn('client_id', $ids));
+        } elseif ($clientId) {
+            $query->whereHas('inbound', fn($q) => $q->where('client_id', $clientId));
+        }
+
+        return $query->latest()->get()->map(fn($i) => [
+            'part_name'          => $i->part_name,
+            'part_number'        => $i->part_number,
+            'old_serial_number'  => $i->old_serial_number,
+            'serial_number'      => $i->serial_number,
+            'condition'          => $i->condition,
+            'date'               => $i->created_at?->format('d/m/Y H:i'),
+            'client_name'        => $i->inbound?->client?->name ?? '-',
+        ]);
+    }
+
     public function index(Request $request): View
     {
         $title = 'Stock Overview';
@@ -64,6 +147,13 @@ class DashboardController extends Controller
         $this->applyClientFilter($stockQuery, $clientId);
         $stockByStatus = $stockQuery->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
+            ->get();
+
+        // 1b. Stock by Condition
+        $conditionQuery = Inventory::query();
+        $this->applyClientFilter($conditionQuery, $clientId);
+        $stockByCondition = $conditionQuery->select('condition', DB::raw('count(*) as count'))
+            ->groupBy('condition')
             ->get();
 
         // 2. Utilization by Client
@@ -103,24 +193,51 @@ class DashboardController extends Controller
         $trendData = $months->map(function ($month) use ($inboundTrend, $outboundTrend) {
             return [
                 'month' => $month,
-                'inbound' => $inboundTrend->get($month) ?? 0,
-                'outbound' => $outboundTrend->get($month) ?? 0
+                'inbound' => (int)($inboundTrend->get($month) ?? 0),
+                'outbound' => (int)($outboundTrend->get($month) ?? 0)
             ];
         });
 
+        // 3b. Month-over-month percent change
+        $trendArr = $trendData->values();
+        $prevInbound = $trendArr->count() > 1 ? $trendArr[$trendArr->count() - 2]['inbound'] ?? 0 : 0;
+        $prevOutbound = $trendArr->count() > 1 ? $trendArr[$trendArr->count() - 2]['outbound'] ?? 0 : 0;
+        $currentInbound = $trendArr->count() > 0 ? $trendArr[$trendArr->count() - 1]['inbound'] ?? 0 : 0;
+        $currentOutbound = $trendArr->count() > 0 ? $trendArr[$trendArr->count() - 1]['outbound'] ?? 0 : 0;
+
+        $inboundChange = $prevInbound > 0 ? round((($currentInbound - $prevInbound) / $prevInbound) * 100, 1) : 0;
+        $outboundChange = $prevOutbound > 0 ? round((($currentOutbound - $prevOutbound) / $prevOutbound) * 100, 1) : 0;
+
         // 4. RMA Monitoring (Recent Swap)
-        $rmaQuery = InboundDetail::whereNotNull('old_serial_number');
+        $rmaQuery = InboundDetail::with(['inbound'])->whereNotNull('old_serial_number');
         $this->applyClientFilter($rmaQuery, $clientId);
         $rmaHistory = $rmaQuery->latest()->limit(5)->get();
 
-        $rmaStatsQuery = InboundDetail::whereNotNull('old_serial_number');
-        $this->applyClientFilter($rmaStatsQuery, $clientId);
-        $rmaStats = $rmaStatsQuery->select(DB::raw('count(*) as count'))->first();
+        // RMA stats - total + this month
+        $rmaStatsAllQuery = InboundDetail::whereNotNull('old_serial_number');
+        $this->applyClientFilter($rmaStatsAllQuery, $clientId);
+        $rmaStats = $rmaStatsAllQuery->select(DB::raw('count(*) as count'))->first();
 
-        // 5. Stock Monitoring (Top 10 Products by Qty)
+        $rmaMonthQuery = InboundDetail::whereNotNull('old_serial_number')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year);
+        $this->applyClientFilter($rmaMonthQuery, $clientId);
+        $rmaThisMonth = $rmaMonthQuery->count();
+
+        // 5. Stock Monitoring
         $totalStockQuery = Inventory::query();
         $this->applyClientFilter($totalStockQuery, $clientId);
         $totalStockCount = $totalStockQuery->sum('qty');
+
+        // Count items actually in stock (qty > 0)
+        $inStockQuery = Inventory::where('qty', '>', 0);
+        $this->applyClientFilter($inStockQuery, $clientId);
+        $inStockCount = $inStockQuery->count();
+
+        // Count outbounded items
+        $outboundedQuery = Inventory::where('qty', 0)->whereNotIn('status', ['Write-off', 'write-off']);
+        $this->applyClientFilter($outboundedQuery, $clientId);
+        $outboundedCount = $outboundedQuery->count();
 
         $topStockQuery = Inventory::query();
         $this->applyClientFilter($topStockQuery, $clientId);
@@ -130,15 +247,42 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // 6. Recent Activity (last 7 movements)
+        $recentActivity = \App\Models\InventoryHistory::with(['inventory'])
+            ->latest()
+            ->limit(7)
+            ->get();
+
+        // 7. Inbound this month count
+        $inboundMonthQuery = Inbound::whereMonth('received_date', now()->month)
+            ->whereYear('received_date', now()->year);
+        $this->applyClientFilter($inboundMonthQuery, $clientId);
+        $inboundMonthCount = $inboundMonthQuery->count();
+
+        // 8. Outbound this month count
+        $outboundMonthQuery = Outbound::whereMonth('outbound_date', now()->month)
+            ->whereYear('outbound_date', now()->year);
+        $this->applyClientFilter($outboundMonthQuery, $clientId);
+        $outboundMonthCount = $outboundMonthQuery->count();
+
         return view('dashboard.index', compact(
             'title',
             'stockByStatus',
+            'stockByCondition',
             'utilizationByClient',
             'trendData',
+            'inboundChange',
+            'outboundChange',
             'rmaStats',
+            'rmaThisMonth',
             'rmaHistory',
             'topStock',
             'totalStockCount',
+            'inStockCount',
+            'outboundedCount',
+            'inboundMonthCount',
+            'outboundMonthCount',
+            'recentActivity',
             'clients'
         ));
     }
@@ -334,10 +478,13 @@ class DashboardController extends Controller
     {
         $clientId = $request->get('client_id');
 
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
-            ->when($request->status, function ($query) use ($request) {
-                return $query->where('status', $request->status);
-            });
+        $inventory = \App\Models\Inventory::with([
+            'storageLevel.bin.rak.zone',
+            'client',
+            'product.brand',
+            'product.productGroup',
+            'details.inboundDetail.inbound',
+        ]);
 
         $this->applyClientFilter($inventory, $clientId);
 
@@ -355,48 +502,113 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
+        // Collect SNs to batch-fetch outbound data
+        $sns = $inventory->pluck('serial_number')->toArray();
+        $outboundDetails = \App\Models\OutboundDetail::with('outbound')
+            ->whereIn('serial_number', $sns)
+            ->get()
+            ->keyBy('serial_number');
+
         $filename = "inventory-list-" . date('Y-m-d') . ".xls";
 
         header("Content-Type: application/vnd.ms-excel");
         header("Content-Disposition: attachment; filename=\"$filename\"");
 
+        $yellow = 'background-color: #FFFF00;';
+        $bold = 'font-weight: bold;';
+
         echo "<table border='1'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>No</th>";
-        echo "<th>Asset ID</th>";
-        echo "<th>Part Name</th>";
-        echo "<th>Part Number</th>";
-        echo "<th>Serial Number</th>";
-        echo "<th>Brand</th>";
-        echo "<th>Product Group</th>";
-        echo "<th>Storage</th>";
-        echo "<th>Status</th>";
-        echo "<th>Stock Condition</th>";
-        echo "<th>Staging Condition</th>";
-        echo "<th>Last Movement</th>";
+        echo "<th style='{$yellow}{$bold}'>Movement Category</th>";
+        echo "<th style='{$yellow}{$bold}'>Stock Category</th>";
+        echo "<th style='{$yellow}{$bold}'>Request Type</th>";
+        echo "<th style='{$bold}'>NTT Requestor</th>";
+        echo "<th style='{$bold}'>Request Date</th>";
+        echo "<th style='{$bold}'>Product Group</th>";
+        echo "<th style='{$bold}'>Brand</th>";
+        echo "<th style='{$bold}'>Product Number (SKU)</th>";
+        echo "<th style='{$bold}'>Product Description</th>";
+        echo "<th style='{$bold}'>Serial Number (SN)</th>";
+        echo "<th style='{$bold}'>Parent SN</th>";
+        echo "<th style='{$bold}'>Qty</th>";
+        echo "<th style='{$yellow}{$bold}'>WH Asset Number</th>";
+        echo "<th style='{$bold}'>Stock Status</th>";
+        echo "<th style='{$yellow}{$bold}'>Stock Condition</th>";
+        echo "<th style='{$yellow}{$bold}'>Stock Location (Rack ID)</th>";
+        echo "<th style='{$bold}'>eCapex#</th>";
+        echo "<th style='{$bold}'>SAP PO#</th>";
+        echo "<th style='{$bold}'>Vendor/Supplier DN#</th>";
+        echo "<th style='{$bold}'>NTT RN#</th>";
+        echo "<th style='{$bold}'>Received Date</th>";
+        echo "<th style='{$bold}'>NTT DN#</th>";
+        echo "<th style='{$bold}'>Delivery Date</th>";
+        echo "<th style='{$bold}'>Transkargo DN#</th>";
+        echo "<th style='{$bold}'>Transkargo Invoice#</th>";
+        echo "<th style='{$bold}'>Staging Date</th>";
+        echo "<th style='{$bold}'>ITSM#</th>";
+        echo "<th style='{$bold}'>RMA#</th>";
+        echo "<th style='{$bold}'>Processed by</th>";
+        echo "<th style='{$bold}'>Client Name</th>";
+        echo "<th style='{$bold}'>Client Contact</th>";
+        echo "<th style='{$bold}'>Pickup/Shipment Address</th>";
+        echo "<th style='{$bold}'>Shipment Status</th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
 
         foreach ($inventory as $index => $item) {
-            $brand = $item->product && $item->product->brand ? $item->product->brand->name : '-';
-            $group = $item->product && $item->product->productGroup ? $item->product->productGroup->name : '-';
+            // Find inbound data via InventoryDetail -> InboundDetail -> Inbound
+            $inboundDetail = $item->details->first()?->inboundDetail;
+            $inbound = $inboundDetail?->inbound;
+
+            // Find outbound data
+            $outboundDetail = $outboundDetails->get($item->serial_number);
+            $outbound = $outboundDetail?->outbound;
+
+            $brand = $item->product?->brand?->name ?? '-';
+            $group = $item->product?->productGroup?->name ?? '-';
+            $storage = $item->storageLevel
+                ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}"
+                : '-';
+
+            // Determine movement category
+            $movementCategory = $inbound?->category ?? ($outbound?->category ?? '-');
 
             echo "<tr>";
-            echo "<td>" . ($index + 1) . "</td>";
-            echo "<td>{$item->unique_id}</td>";
-            echo "<td>{$item->part_name}</td>";
-            echo "<td>{$item->part_number}</td>";
-            echo "<td>'{$item->serial_number}</td>";
-            echo "<td>{$brand}</td>";
+            echo "<td>{$movementCategory}</td>";
+            echo "<td>" . ($inbound?->category ?? $outbound?->category ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->request_type ?? $outbound?->request_type ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->ntt_requestor ?? $outbound?->ntt_requestor ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->request_date ?? $outbound?->request_date ?? '-') . "</td>";
             echo "<td>{$group}</td>";
-            $storage = $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : "-";
-            echo "<td>{$storage}</td>";
+            echo "<td>{$brand}</td>";
+            echo "<td>{$item->part_number}</td>";
+            echo "<td>" . ($item->part_description ?? '-') . "</td>";
+            echo "<td>'{$item->serial_number}</td>";
+            echo "<td>" . ($item->parent_serial_number ?? '-') . "</td>";
+            echo "<td>{$item->qty}</td>";
+            echo "<td>{$item->unique_id}</td>";
             echo "<td>{$item->status}</td>";
             echo "<td>{$item->condition}</td>";
-            echo "<td>" . ($item->staging_condition ?? '-') . "</td>";
-            echo "<td>" . ($item->last_movement_date ?? '-') . "</td>";
+            echo "<td>{$storage}</td>";
+            echo "<td>" . ($inbound?->ecapex_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->sap_po_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->vendor_dn_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->receiving_note ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->received_date ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->ntt_dn_number ?? $outbound?->ntt_dn_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->delivery_date ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->tks_dn_number ?? $outbound?->tks_dn_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->tks_invoice_number ?? $outbound?->tks_invoice_number ?? '-') . "</td>";
+            echo "<td>" . ($inboundDetail?->staging_date ?? $item->last_staging_date ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->itsm_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->rma_number ?? $outbound?->rma_number ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->received_by ?? $outbound?->outbound_by ?? '-') . "</td>";
+            echo "<td>" . ($item->client?->name ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->client_contact ?? $outbound?->client_contact ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->pickup_address ?? $outbound?->pickup_address ?? '-') . "</td>";
+            echo "<td>" . ($inbound?->shipment_status ?? $outbound?->shipment_status ?? '-') . "</td>";
             echo "</tr>";
         }
 
@@ -504,8 +716,8 @@ class DashboardController extends Controller
         $title = 'Summary Stock: Stock Statement';
         $user = Auth::user();
         $clients = $user->getAvailableClients();
-        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
-        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
+        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration', 'Spare Return'];
+        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration', 'Return'];
 
         $clientId = $request->get('client_id');
 
@@ -686,8 +898,8 @@ class DashboardController extends Controller
             })
             ->paginate(15);
 
-        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration'];
-        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration'];
+        $categories = ['New PO', 'Spare from/to Replacement', 'Spare from/to Loan', 'Faulty', 'RMA', 'Spare Write-off', 'Spare Migration', 'Spare Return'];
+        $requestTypes = ['New PO', 'RMA', 'Loan', 'Spare Write Off', 'Spare Migration', 'Return'];
 
         return view('dashboard.monitoring.receiving', compact('title', 'inbound', 'categories', 'requestTypes', 'clients'));
     }

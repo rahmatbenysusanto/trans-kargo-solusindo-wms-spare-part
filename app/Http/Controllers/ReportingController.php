@@ -91,6 +91,92 @@ class ReportingController extends Controller
         return view('reporting.movement_history', compact('data', 'title'));
     }
 
+    public function movementHistoryCsv(Request $request)
+    {
+        $query = InventoryHistory::with(['inventory.client']);
+        $user = Auth::user();
+
+        if (!$user->isAdminWMS()) {
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->whereHas('inventory', function ($q) use ($accessibleIds) {
+                $q->where(function ($sub) use ($accessibleIds) {
+                    $sub->whereIn('client_id', $accessibleIds)
+                        ->orWhereNull('client_id');
+                });
+            });
+        }
+
+        if ($request->sn) {
+            $sn = $request->sn;
+            $query->where(function ($q) use ($sn) {
+                $q->where('serial_number', 'like', "%$sn%")
+                  ->orWhereHas('inventory', function ($invQuery) use ($sn) {
+                      $invQuery->where('part_number', 'like', "%$sn%")
+                               ->orWhere('unique_id', 'like', "%$sn%");
+                  });
+            });
+        }
+
+        if ($request->start_date && $request->end_date) {
+            $query->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+        }
+
+        if ($request->type) {
+            $query->where('type', $request->type);
+        }
+
+        $data = $query->latest()->limit(10000)->get();
+
+        $filename = "movement-history-" . date('Y-m-d') . ".csv";
+
+        header("Content-Type: text/csv; charset=UTF-8");
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        $output = fopen('php://output', 'w');
+
+        // Header row
+        fputcsv($output, [
+            'Timestamp',
+            'Client',
+            'Activity Type',
+            'Category',
+            'Reference Number',
+            'Serial Number',
+            'WH Asset Number',
+            'Part Name',
+            'Part Number',
+            'Part Description',
+            'From Location',
+            'To Location',
+            'User',
+            'Description',
+        ]);
+
+        foreach ($data as $h) {
+            fputcsv($output, [
+                $h->created_at?->format('Y-m-d H:i:s') ?? '-',
+                $h->inventory?->client?->name ?? '-',
+                $h->type ?? '-',
+                $h->category ?? '-',
+                $h->reference_number ?? '-',
+                $h->serial_number ?? '-',
+                $h->inventory?->unique_id ?? '-',
+                $h->inventory?->part_name ?? '-',
+                $h->inventory?->part_number ?? '-',
+                $h->inventory?->part_description ?? '-',
+                $h->from_location ?? '-',
+                $h->to_location ?? '-',
+                $h->user ?? '-',
+                $h->description ?? '-',
+            ]);
+        }
+
+        fclose($output);
+        exit;
+    }
+
     public function utilizationReport(Request $request)
     {
         // Utilization is typically focused on outbound for support/incidents

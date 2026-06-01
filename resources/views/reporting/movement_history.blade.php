@@ -13,9 +13,10 @@
                     <p class="text-muted mb-0">Tracks every single Inbound, Outbound, & Internal Movement transaction</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-label-success fw-bold px-3">
+                    <a href="{{ route('reporting.movement-history.csv', request()->all()) }}"
+                       class="btn btn-label-success fw-bold px-3">
                         <i class="ti tabler-file-spreadsheet me-2"></i> Export CSV
-                    </button>
+                    </a>
                     <button class="btn btn-label-primary fw-bold px-3" onclick="window.print()">
                         <i class="ti tabler-printer me-2"></i> Print history
                     </button>
