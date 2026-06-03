@@ -812,6 +812,8 @@ class InboundController extends Controller
             'condition' => 'nullable|string',
         ]);
 
+        DB::beginTransaction();
+
         try {
             $result = $this->processSingleReturn(
                 $request->post('serial_number'),

@@ -98,6 +98,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/list/pdf', 'exportPdf')->name('inventory.export.pdf');
         Route::get('/list/excel', 'exportExcel')->name('inventory.export.excel');
         Route::get('/list/{id}', 'show')->name('inventory.show');
+        Route::get('/filter-values', 'filterValues')->name('inventory.filter-values');
 
         Route::get('/stock-movement', 'stockMovement')->name('inventory.stock.movement');
         Route::get('/stock-movement/pdf', 'stockMovementPdf')->name('inventory.stock.movement.pdf');

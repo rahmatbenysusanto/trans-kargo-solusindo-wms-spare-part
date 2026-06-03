@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use App\Models\Client;
+use App\Models\Inventory;
+use App\Models\Brand;
+use App\Models\ProductGroup;
+use App\Models\StorageLevel;
 
 class InventoryController extends Controller
 {
@@ -30,9 +34,162 @@ class InventoryController extends Controller
         return $query;
     }
 
+    /**
+     * Build the common filter chain used by index, exportPdf, exportExcel.
+     */
+    private function applyFilters($query, array $filter, ?string $quickSearch = null)
+    {
+        // Helper to extract single or multi filter value
+        $fv = function ($key) use ($filter) {
+            return $filter[$key] ?? [];
+        };
+
+        // Text columns — support both string and array
+        foreach (['unique_id', 'serial_number', 'part_name', 'part_description', 'location', 'check_date', 'activity'] as $col) {
+            $val = $fv($col);
+            if (empty($val)) continue;
+            $values = is_array($val) ? $val : [$val];
+            $values = array_filter($values, fn($v) => $v !== '' && $v !== null);
+
+            if (empty($values)) continue;
+
+            if ($col === 'location') {
+                $query->where(function ($q) use ($values) {
+                    foreach ($values as $s) {
+                        $q->orWhereHas('storageLevel.bin.rak.zone', function ($sq) use ($s) {
+                            $sq->where('storage_zone.name', 'like', "%$s%")
+                                ->orWhere('storage_rak.name', 'like', "%$s%")
+                                ->orWhere('storage_bin.name', 'like', "%$s%")
+                                ->orWhere('storage_level.name', 'like', "%$s%");
+                        });
+                    }
+                });
+            } elseif ($col === 'check_date') {
+                $query->where(function ($q) use ($values) {
+                    foreach ($values as $v) {
+                        $q->orWhere('last_staging_date', 'like', "%$v%");
+                    }
+                });
+            } elseif ($col === 'activity') {
+                $query->where(function ($q) use ($values) {
+                    foreach ($values as $v) {
+                        $q->orWhere('last_movement_date', 'like', "%$v%");
+                    }
+                });
+            } else {
+                // Direct DB column — use WHERE IN for exact match (checkbox values)
+                $query->whereIn($col, $values);
+            }
+        }
+
+        // Brand (relationship)
+        $brandVal = $fv('brand');
+        if (!empty($brandVal)) {
+            $brandIds = is_array($brandVal) ? $brandVal : [$brandVal];
+            $brandIds = array_filter($brandIds, fn($v) => $v !== '' && $v !== null);
+            if (!empty($brandIds)) {
+                $query->whereHas('product.brand', function ($q) use ($brandIds) {
+                    $q->whereIn('brands.id', $brandIds);
+                });
+            }
+        }
+
+        // Group (relationship)
+        $groupVal = $fv('group');
+        if (!empty($groupVal)) {
+            $groupIds = is_array($groupVal) ? $groupVal : [$groupVal];
+            $groupIds = array_filter($groupIds, fn($v) => $v !== '' && $v !== null);
+            if (!empty($groupIds)) {
+                $query->whereHas('product.productGroup', function ($q) use ($groupIds) {
+                    $q->whereIn('product_groups.id', $groupIds);
+                });
+            }
+        }
+
+        // Exact-match columns (condition, staging_condition, status)
+        foreach (['condition', 'staging_condition', 'status'] as $col) {
+            $val = $fv($col);
+            if (empty($val)) continue;
+            $values = is_array($val) ? $val : [$val];
+            $values = array_filter($values, fn($v) => $v !== '' && $v !== null);
+            if (!empty($values)) {
+                $query->whereIn($col, $values);
+            }
+        }
+
+        // Quick Search: multi SN / Asset ID (paste multiple values)
+        if ($quickSearch && trim($quickSearch) !== '') {
+            $terms = preg_split('/[\r\n,;]+/', $quickSearch);
+            $terms = array_map('trim', $terms);
+            $terms = array_filter($terms, fn($v) => $v !== '');
+
+            if (!empty($terms)) {
+                $query->where(function ($q) use ($terms) {
+                    $q->whereIn('serial_number', $terms)
+                      ->orWhereIn('unique_id', $terms);
+                });
+            }
+        }
+
+        return $query;
+    }
+
+    /** Allowed sort columns mapped to DB columns or subqueries */
+    private function applySorting($query, ?string $sortField, string $sortDirection = 'asc')
+    {
+        $dir = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
+
+        $directMap = [
+            'unique_id'          => 'unique_id',
+            'serial_number'      => 'serial_number',
+            'part_name'          => 'part_name',
+            'part_description'   => 'part_description',
+            'condition'          => 'condition',
+            'staging_condition'  => 'staging_condition',
+            'status'             => 'status',
+            'last_staging_date'  => 'last_staging_date',
+            'last_movement_date' => 'last_movement_date',
+        ];
+
+        if ($sortField && isset($directMap[$sortField])) {
+            $query->orderBy($directMap[$sortField], $dir);
+        } elseif ($sortField === 'brand') {
+            $query->orderBy(
+                Brand::select('name')
+                    ->whereColumn('brands.id', 'products.brand_id')
+                    ->whereColumn('products.id', 'inventory.product_id')
+                    ->limit(1),
+                $dir
+            );
+        } elseif ($sortField === 'group') {
+            $query->orderBy(
+                ProductGroup::select('name')
+                    ->whereColumn('product_groups.id', 'products.product_group_id')
+                    ->whereColumn('products.id', 'inventory.product_id')
+                    ->limit(1),
+                $dir
+            );
+        } elseif ($sortField === 'location') {
+            $query->orderBy(
+                StorageLevel::selectRaw("CONCAT_WS('-', sz.name, sr.name, sb.name, storage_level.name)")
+                    ->leftJoin('storage_bin as sb', 'sb.id', 'storage_level.storage_bin_id')
+                    ->leftJoin('storage_rak as sr', 'sr.id', 'sb.storage_rak_id')
+                    ->leftJoin('storage_zone as sz', 'sz.id', 'sr.storage_zone_id')
+                    ->whereColumn('storage_level.id', 'inventory.storage_level_id')
+                    ->limit(1),
+                $dir
+            );
+        } else {
+            // Default sort
+            $query->latest();
+        }
+
+        return $query;
+    }
+
     public function scan($unique_id)
     {
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
+        $inventory = Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
             ->where('unique_id', $unique_id)
             ->firstOrFail();
 
@@ -51,131 +208,128 @@ class InventoryController extends Controller
         $clientId = $request->get('client_id');
         $user = Auth::user();
         $filter = $request->get('filter', []);
+        $sortField = $request->get('sort_field');
+        $sortDirection = $request->get('sort_direction', 'asc');
+        $quickSearch = $request->get('quick_search');
 
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
+        $query = Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
 
-        $this->applyClientFilter($inventory, $clientId);
+        $this->applyClientFilter($query, $clientId);
+        $this->applyFilters($query, $filter, $quickSearch);
+        $this->applySorting($query, $sortField, $sortDirection);
 
-        $inventory = $inventory
-            // Per-column filters
-            ->when(!empty($filter['unique_id']), function ($q) use ($filter) {
-                return $q->where('unique_id', 'like', '%' . $filter['unique_id'] . '%');
-            })
-            ->when(!empty($filter['serial_number']), function ($q) use ($filter) {
-                return $q->where('serial_number', 'like', '%' . $filter['serial_number'] . '%');
-            })
-            ->when(!empty($filter['part_name']), function ($q) use ($filter) {
-                return $q->where('part_name', 'like', '%' . $filter['part_name'] . '%');
-            })
-            ->when(!empty($filter['part_description']), function ($q) use ($filter) {
-                return $q->where('part_description', 'like', '%' . $filter['part_description'] . '%');
-            })
-            ->when(!empty($filter['brand']), function ($q) use ($filter) {
-                return $q->whereHas('product.brand', function ($sq) use ($filter) {
-                    $sq->where('brands.id', $filter['brand']);
-                });
-            })
-            ->when(!empty($filter['group']), function ($q) use ($filter) {
-                return $q->whereHas('product.productGroup', function ($sq) use ($filter) {
-                    $sq->where('product_groups.id', $filter['group']);
-                });
-            })
-            ->when(!empty($filter['condition']), function ($q) use ($filter) {
-                return $q->where('condition', $filter['condition']);
-            })
-            ->when(!empty($filter['staging_condition']), function ($q) use ($filter) {
-                return $q->where('staging_condition', $filter['staging_condition']);
-            })
-            ->when(!empty($filter['status']), function ($q) use ($filter) {
-                return $q->where('status', $filter['status']);
-            })
-            ->when(!empty($filter['location']), function ($q) use ($filter) {
-                $s = $filter['location'];
-                return $q->whereHas('storageLevel.bin.rak.zone', function ($sq) use ($s) {
-                    $sq->where('storage_zone.name', 'like', "%$s%")
-                        ->orWhere('storage_rak.name', 'like', "%$s%")
-                        ->orWhere('storage_bin.name', 'like', "%$s%")
-                        ->orWhere('storage_level.name', 'like', "%$s%");
-                });
-            })
-            ->when(!empty($filter['check_date']), function ($q) use ($filter) {
-                return $q->where('last_staging_date', 'like', '%' . $filter['check_date'] . '%');
-            })
-            ->when(!empty($filter['activity']), function ($q) use ($filter) {
-                return $q->where('last_movement_date', 'like', '%' . $filter['activity'] . '%');
-            })
-            ->latest()
-            ->paginate(15)
-            ->appends(request()->query());
+        $inventory = $query->paginate(15)->appends(request()->query());
 
-        $statuses = \App\Models\Inventory::select('status')->distinct()->pluck('status');
-        $conditions = \App\Models\Inventory::select('condition')->distinct()->pluck('condition');
-        $stagingConditions = \App\Models\Inventory::select('staging_condition')->whereNotNull('staging_condition')->distinct()->orderBy('staging_condition')->pluck('staging_condition');
-        $brands = \App\Models\Brand::orderBy('name')->pluck('name', 'id');
-        $groups = \App\Models\ProductGroup::orderBy('name')->pluck('name', 'id');
         $clients = $user->getAvailableClients();
 
-        return view('inventory.inventory-list.index', compact('title', 'inventory', 'statuses', 'conditions', 'stagingConditions', 'brands', 'groups', 'clients'));
+        return view('inventory.inventory-list.index', compact(
+            'title', 'inventory', 'clients', 'sortField', 'sortDirection'
+        ));
+    }
+
+    /**
+     * API: Return distinct values for a column (used by Excel-style filter dropdown)
+     */
+    public function filterValues(Request $request)
+    {
+        $column = $request->get('column');
+        $search = $request->get('search', '');
+        $clientId = $request->get('client_id');
+
+        $allowed = ['unique_id', 'serial_number', 'part_name', 'part_description',
+                     'brand', 'group', 'location',
+                     'condition', 'staging_condition', 'status',
+                     'last_staging_date', 'last_movement_date'];
+
+        if (!in_array($column, $allowed)) {
+            return response()->json(['column' => $column, 'values' => []]);
+        }
+
+        $query = Inventory::query();
+        $this->applyClientFilter($query, $clientId);
+
+        if ($column === 'brand') {
+            $items = $query->clone()
+                ->whereHas('product.brand', fn($q) => $q->when($search, fn($sq) => $sq->where('name', 'like', "%$search%")))
+                ->with('product.brand')
+                ->get()
+                ->pluck('product.brand')
+                ->filter()
+                ->unique('id')
+            ->values()
+            ->map(fn($b) => ['value' => (string)$b->id, 'label' => $b->name, 'count' => 0]);
+
+            return response()->json(['column' => $column, 'values' => $items]);
+        }
+
+        if ($column === 'group') {
+            $items = $query->clone()
+                ->whereHas('product.productGroup', fn($q) => $q->when($search, fn($sq) => $sq->where('name', 'like', "%$search%")))
+                ->with('product.productGroup')
+                ->get()
+                ->pluck('product.productGroup')
+                ->filter()
+                ->unique('id')
+            ->values()
+            ->map(fn($g) => ['value' => (string)$g->id, 'label' => $g->name, 'count' => 0]);
+
+            return response()->json(['column' => $column, 'values' => $items]);
+        }
+
+        if ($column === 'location') {
+            $items = $query->clone()
+                ->whereHas('storageLevel.bin.rak.zone')
+                ->with('storageLevel.bin.rak.zone')
+                ->get()
+                ->map(function ($item) {
+                    if ($item->storageLevel) {
+                        return [
+                            'value' => "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}",
+                            'label' => "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}",
+                        ];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique('value')
+                ->values();
+
+            if ($search) {
+                $items = $items->filter(fn($v) => stripos($v['value'], $search) !== false)->values();
+            }
+
+            return response()->json(['column' => $column, 'values' => $items]);
+        }
+
+        // Direct DB column
+        $rawQuery = $query->clone()->select($column)->distinct();
+
+        if ($search) {
+            $rawQuery->where($column, 'like', "%$search%");
+        }
+
+        $values = $rawQuery->limit(200)->pluck($column)->filter()->sort()->values()->map(function ($v) {
+            return ['value' => $v, 'label' => $v];
+        });
+
+        return response()->json(['column' => $column, 'values' => $values]);
     }
 
     public function exportPdf(Request $request): View
     {
         $clientId = $request->get('client_id');
         $filter = $request->get('filter', []);
+        $sortField = $request->get('sort_field');
+        $sortDirection = $request->get('sort_direction', 'asc');
+        $quickSearch = $request->get('quick_search');
 
-        $inventory = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
+        $query = Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
 
-        $this->applyClientFilter($inventory, $clientId);
+        $this->applyClientFilter($query, $clientId);
+        $this->applyFilters($query, $filter, $quickSearch);
+        $this->applySorting($query, $sortField, $sortDirection);
 
-        $inventory = $inventory
-            ->when(!empty($filter['unique_id']), function ($q) use ($filter) {
-                return $q->where('unique_id', 'like', '%' . $filter['unique_id'] . '%');
-            })
-            ->when(!empty($filter['serial_number']), function ($q) use ($filter) {
-                return $q->where('serial_number', 'like', '%' . $filter['serial_number'] . '%');
-            })
-            ->when(!empty($filter['part_name']), function ($q) use ($filter) {
-                return $q->where('part_name', 'like', '%' . $filter['part_name'] . '%');
-            })
-            ->when(!empty($filter['part_description']), function ($q) use ($filter) {
-                return $q->where('part_description', 'like', '%' . $filter['part_description'] . '%');
-            })
-            ->when(!empty($filter['brand']), function ($q) use ($filter) {
-                return $q->whereHas('product.brand', function ($sq) use ($filter) {
-                    $sq->where('brands.id', $filter['brand']);
-                });
-            })
-            ->when(!empty($filter['group']), function ($q) use ($filter) {
-                return $q->whereHas('product.productGroup', function ($sq) use ($filter) {
-                    $sq->where('product_groups.id', $filter['group']);
-                });
-            })
-            ->when(!empty($filter['condition']), function ($q) use ($filter) {
-                return $q->where('condition', $filter['condition']);
-            })
-            ->when(!empty($filter['staging_condition']), function ($q) use ($filter) {
-                return $q->where('staging_condition', $filter['staging_condition']);
-            })
-            ->when(!empty($filter['status']), function ($q) use ($filter) {
-                return $q->where('status', $filter['status']);
-            })
-            ->when(!empty($filter['location']), function ($q) use ($filter) {
-                $s = $filter['location'];
-                return $q->whereHas('storageLevel.bin.rak.zone', function ($sq) use ($s) {
-                    $sq->where('storage_zone.name', 'like', "%$s%")
-                        ->orWhere('storage_rak.name', 'like', "%$s%")
-                        ->orWhere('storage_bin.name', 'like', "%$s%")
-                        ->orWhere('storage_level.name', 'like', "%$s%");
-                });
-            })
-            ->when(!empty($filter['check_date']), function ($q) use ($filter) {
-                return $q->where('last_staging_date', 'like', '%' . $filter['check_date'] . '%');
-            })
-            ->when(!empty($filter['activity']), function ($q) use ($filter) {
-                return $q->where('last_movement_date', 'like', '%' . $filter['activity'] . '%');
-            })
-            ->latest()
-            ->get();
+        $inventory = $query->get();
 
         $title = 'Inventory List Report';
         return view('inventory.inventory-list.pdf', compact('title', 'inventory'));
@@ -185,8 +339,11 @@ class InventoryController extends Controller
     {
         $clientId = $request->get('client_id');
         $filter = $request->get('filter', []);
+        $sortField = $request->get('sort_field');
+        $sortDirection = $request->get('sort_direction', 'asc');
+        $quickSearch = $request->get('quick_search');
 
-        $inventory = \App\Models\Inventory::with([
+        $query = Inventory::with([
             'storageLevel.bin.rak.zone',
             'client',
             'product.brand',
@@ -194,57 +351,11 @@ class InventoryController extends Controller
             'details.inboundDetail.inbound',
         ]);
 
-        $this->applyClientFilter($inventory, $clientId);
+        $this->applyClientFilter($query, $clientId);
+        $this->applyFilters($query, $filter, $quickSearch);
+        $this->applySorting($query, $sortField, $sortDirection);
 
-        $inventory = $inventory
-            ->when(!empty($filter['unique_id']), function ($q) use ($filter) {
-                return $q->where('unique_id', 'like', '%' . $filter['unique_id'] . '%');
-            })
-            ->when(!empty($filter['serial_number']), function ($q) use ($filter) {
-                return $q->where('serial_number', 'like', '%' . $filter['serial_number'] . '%');
-            })
-            ->when(!empty($filter['part_name']), function ($q) use ($filter) {
-                return $q->where('part_name', 'like', '%' . $filter['part_name'] . '%');
-            })
-            ->when(!empty($filter['part_description']), function ($q) use ($filter) {
-                return $q->where('part_description', 'like', '%' . $filter['part_description'] . '%');
-            })
-            ->when(!empty($filter['brand']), function ($q) use ($filter) {
-                return $q->whereHas('product.brand', function ($sq) use ($filter) {
-                    $sq->where('brands.id', $filter['brand']);
-                });
-            })
-            ->when(!empty($filter['group']), function ($q) use ($filter) {
-                return $q->whereHas('product.productGroup', function ($sq) use ($filter) {
-                    $sq->where('product_groups.id', $filter['group']);
-                });
-            })
-            ->when(!empty($filter['condition']), function ($q) use ($filter) {
-                return $q->where('condition', $filter['condition']);
-            })
-            ->when(!empty($filter['staging_condition']), function ($q) use ($filter) {
-                return $q->where('staging_condition', $filter['staging_condition']);
-            })
-            ->when(!empty($filter['status']), function ($q) use ($filter) {
-                return $q->where('status', $filter['status']);
-            })
-            ->when(!empty($filter['location']), function ($q) use ($filter) {
-                $s = $filter['location'];
-                return $q->whereHas('storageLevel.bin.rak.zone', function ($sq) use ($s) {
-                    $sq->where('storage_zone.name', 'like', "%$s%")
-                        ->orWhere('storage_rak.name', 'like', "%$s%")
-                        ->orWhere('storage_bin.name', 'like', "%$s%")
-                        ->orWhere('storage_level.name', 'like', "%$s%");
-                });
-            })
-            ->when(!empty($filter['check_date']), function ($q) use ($filter) {
-                return $q->where('last_staging_date', 'like', '%' . $filter['check_date'] . '%');
-            })
-            ->when(!empty($filter['activity']), function ($q) use ($filter) {
-                return $q->where('last_movement_date', 'like', '%' . $filter['activity'] . '%');
-            })
-            ->latest()
-            ->get();
+        $inventory = $query->get();
 
         // Collect SNs to batch-fetch outbound data
         $sns = $inventory->pluck('serial_number')->toArray();
