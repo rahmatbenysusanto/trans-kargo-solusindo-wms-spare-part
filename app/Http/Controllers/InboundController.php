@@ -940,7 +940,7 @@ class InboundController extends Controller
             'product_id'        => $inventory->product_id,
             'part_name'         => $inventory->part_name,
             'part_number'       => $inventory->part_number,
-            'description'       => $inventory->part_description,
+            'description'       => $inventory->part_description ?: $inventory->part_number,
             'qty'               => 1,
             'wh_asset_number'   => $inventory->unique_id,
             'serial_number'     => $serialNumber,

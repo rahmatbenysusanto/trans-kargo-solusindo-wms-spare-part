@@ -37,7 +37,9 @@
                                 <tr>
                                     <th class="text-center">#</th>
                                     <th>Warehouse Asset ID</th>
-                                    <th>Product Details</th>
+                                    <th>Part Name</th>
+                                    <th>Part Number</th>
+                                    <th>Part Description</th>
                                     <th>Serial Number</th>
                                     <th>Storage</th>
                                     <th>Status</th>
@@ -50,10 +52,9 @@
                                     <tr>
                                         <td class="text-center">{{ $loop->iteration }}</td>
                                         <td><strong>{{ $item->unique_id }}</strong></td>
-                                        <td>
-                                            <div class="fw-bold">{{ $item->part_name }}</div>
-                                            <small class="text-muted">P/N: {{ $item->part_number }}</small>
-                                        </td>
+                                        <td>{{ $item->part_name }}</td>
+                                        <td>{{ $item->part_number }}</td>
+                                        <td>{{ $item->part_description ?? '-' }}</td>
                                         <td>{{ $item->serial_number }}</td>
                                         <td>{{ $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : '-' }}
                                         </td>
@@ -63,7 +64,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted">No inventory items found.</td>
+                                        <td colspan="10" class="text-center text-muted">No inventory items found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

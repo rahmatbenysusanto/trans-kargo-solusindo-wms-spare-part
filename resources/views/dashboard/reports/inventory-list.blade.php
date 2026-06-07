@@ -116,6 +116,7 @@
                                     <th>Serial Number</th>
                                     <th>Part Name</th>
                                     <th>Part Number</th>
+                                    <th>Part Description</th>
                                     <th>Brand</th>
                                     <th>Group</th>
                                     <th>Location</th>
@@ -138,6 +139,7 @@
                                         <td style="max-width: 200px; white-space: normal;"><span
                                                 class="fw-medium">{{ $item->part_name }}</span></td>
                                         <td>{{ $item->part_number }}</td>
+                                        <td>{{ $item->part_description ?? '-' }}</td>
                                         <td><span class="badge bg-label-dark"
                                                 style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
                                         <td><span class="badge bg-label-secondary"
@@ -211,7 +213,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="14" class="text-center py-5">No records found.</td>
+                                        <td colspan="15" class="text-center py-5">No records found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

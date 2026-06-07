@@ -351,6 +351,11 @@
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
+                                        <th class="excel-header" data-column="part_number">
+                                            <span class="header-label">Part Number</span>
+                                            <span class="header-arrow">▾</span>
+                                            <div class="excel-dropdown"></div>
+                                        </th>
                                         <th class="excel-header" data-column="part_description">
                                             <span class="header-label">Part Description</span>
                                             <span class="header-arrow">▾</span>
@@ -409,6 +414,7 @@
                                             </td>
                                             <td style="max-width: 200px; white-space: normal;"><span
                                                     class="fw-medium">{{ $item->part_name }}</span></td>
+                                            <td><span class="text-mono">{{ $item->part_number ?? '-' }}</span></td>
                                             <td>{{ $item->part_description }}</td>
                                             <td><span class="badge bg-label-dark"
                                                     style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
@@ -490,7 +496,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="14" class="text-center py-5">No records found.</td>
+                                            <td colspan="15" class="text-center py-5">No records found.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -514,7 +520,7 @@
             'use strict';
 
             const FILTERS_ENDPOINT = '{{ route('inventory.filter-values') }}';
-            const COLUMNS = ['unique_id', 'serial_number', 'part_name', 'part_description',
+            const COLUMNS = ['unique_id', 'serial_number', 'part_name', 'part_number', 'part_description',
                             'brand', 'group', 'location',
                             'condition', 'staging_condition', 'status',
                             'last_staging_date', 'last_movement_date'];

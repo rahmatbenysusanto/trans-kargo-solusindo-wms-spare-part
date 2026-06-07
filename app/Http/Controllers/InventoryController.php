@@ -45,7 +45,7 @@ class InventoryController extends Controller
         };
 
         // Text columns — support both string and array
-        foreach (['unique_id', 'serial_number', 'part_name', 'part_description', 'location', 'check_date', 'activity'] as $col) {
+        foreach (['unique_id', 'serial_number', 'part_name', 'part_number', 'part_description', 'location', 'check_date', 'activity'] as $col) {
             $val = $fv($col);
             if (empty($val)) continue;
             $values = is_array($val) ? $val : [$val];
@@ -143,6 +143,7 @@ class InventoryController extends Controller
             'unique_id'          => 'unique_id',
             'serial_number'      => 'serial_number',
             'part_name'          => 'part_name',
+            'part_number'        => 'part_number',
             'part_description'   => 'part_description',
             'condition'          => 'condition',
             'staging_condition'  => 'staging_condition',
@@ -236,7 +237,7 @@ class InventoryController extends Controller
         $search = $request->get('search', '');
         $clientId = $request->get('client_id');
 
-        $allowed = ['unique_id', 'serial_number', 'part_name', 'part_description',
+        $allowed = ['unique_id', 'serial_number', 'part_name', 'part_number', 'part_description',
                      'brand', 'group', 'location',
                      'condition', 'staging_condition', 'status',
                      'last_staging_date', 'last_movement_date'];
