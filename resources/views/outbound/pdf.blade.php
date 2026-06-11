@@ -61,10 +61,9 @@
                 <table class="table table-bordered border-dark custom-pdf-table">
                     <thead>
                         <tr class="text-center align-middle bg-light text-uppercase" style="font-size: 11px;">
-                            <th style="width: 25%" class="fw-bold py-1">PRODUCT NO.</th>
+                            <th style="width: 30%" class="fw-bold py-1">PRODUCT NO.</th>
                             <th style="width: 20%" class="fw-bold py-1">SERIAL NO.</th>
-                            <th style="width: 35%" class="fw-bold py-1">DESCRIPTION</th>
-                            <th style="width: 10%" class="fw-bold py-1">STATUS</th>
+                            <th style="width: 40%" class="fw-bold py-1">DESCRIPTION</th>
                             <th style="width: 10%" class="fw-bold py-1">QTY</th>
                         </tr>
                     </thead>
@@ -74,7 +73,6 @@
                                 <td class="text-center fw-bold">{{ $detail->part_number }}</td>
                                 <td class="text-center">{{ $detail->serial_number }}</td>
                                 <td class="px-2">{{ $detail->part_name }} - {{ $detail->description ?? '' }}</td>
-                                <td class="text-center">{{ $detail->condition }}</td>
                                 <td class="text-center">1</td>
                             </tr>
                         @endforeach
@@ -82,7 +80,6 @@
                         @for ($i = count($outbound->details); $i < 6; $i++)
                             <tr>
                                 <td class="py-2">&nbsp;</td>
-                                <td>&nbsp;</td>
                                 <td>&nbsp;</td>
                                 <td>&nbsp;</td>
                                 <td>&nbsp;</td>
