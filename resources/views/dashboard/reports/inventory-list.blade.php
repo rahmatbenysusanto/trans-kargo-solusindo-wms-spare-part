@@ -114,7 +114,7 @@
                                     <th width="30">#</th>
                                     <th>Warehouse Asset ID</th>
                                     <th>Serial Number</th>
-                                    <th>Part Name</th>
+                                    <th>Parent Serial Number</th>
                                     <th>Part Number</th>
                                     <th>Part Description</th>
                                     <th>Brand</th>
@@ -136,8 +136,7 @@
                                         <td><span class="text-mono fw-bold text-primary">{{ $item->unique_id }}</span></td>
                                         <td><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span>
                                         </td>
-                                        <td style="max-width: 200px; white-space: normal;"><span
-                                                class="fw-medium">{{ $item->part_name }}</span></td>
+                                        <td><span class="text-mono">{{ $item->parent_serial_number ?? '-' }}</span></td>
                                         <td>{{ $item->part_number }}</td>
                                         <td>{{ $item->part_description ?? '-' }}</td>
                                         <td><span class="badge bg-label-dark"

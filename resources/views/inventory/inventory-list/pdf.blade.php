@@ -37,10 +37,10 @@
                                 <tr>
                                     <th class="text-center">#</th>
                                     <th>Warehouse Asset ID</th>
-                                    <th>Part Name</th>
                                     <th>Part Number</th>
                                     <th>Part Description</th>
                                     <th>Serial Number</th>
+                                    <th>Parent Serial Number</th>
                                     <th>Storage</th>
                                     <th>Status</th>
                                     <th class="text-center">Condition</th>
@@ -52,10 +52,10 @@
                                     <tr>
                                         <td class="text-center">{{ $loop->iteration }}</td>
                                         <td><strong>{{ $item->unique_id }}</strong></td>
-                                        <td>{{ $item->part_name }}</td>
                                         <td>{{ $item->part_number }}</td>
                                         <td>{{ $item->part_description ?? '-' }}</td>
                                         <td>{{ $item->serial_number }}</td>
+                                        <td>{{ $item->parent_serial_number ?? '-' }}</td>
                                         <td>{{ $item->storageLevel ? "{$item->storageLevel->bin->rak->zone->name}-{$item->storageLevel->bin->rak->name}-{$item->storageLevel->bin->name}-{$item->storageLevel->name}" : '-' }}
                                         </td>
                                         <td>{{ $item->status }}</td>

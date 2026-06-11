@@ -346,8 +346,8 @@
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="part_name">
-                                            <span class="header-label">Part Name</span>
+                                        <th class="excel-header" data-column="parent_serial_number">
+                                            <span class="header-label">Parent Serial Number</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
@@ -412,9 +412,9 @@
                                             <td><span class="text-mono fw-bold text-primary">{{ $item->unique_id }}</span></td>
                                             <td><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span>
                                             </td>
+                                            <td><span class="text-mono">{{ $item->parent_serial_number ?? '-' }}</span></td>
                                             <td style="max-width: 200px; white-space: normal;"><span
-                                                    class="fw-medium">{{ $item->part_name }}</span></td>
-                                            <td><span class="text-mono">{{ $item->part_number ?? '-' }}</span></td>
+                                                    class="text-mono">{{ $item->part_number ?? '-' }}</span></td>
                                             <td>{{ $item->part_description }}</td>
                                             <td><span class="badge bg-label-dark"
                                                     style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
@@ -520,7 +520,7 @@
             'use strict';
 
             const FILTERS_ENDPOINT = '{{ route('inventory.filter-values') }}';
-            const COLUMNS = ['unique_id', 'serial_number', 'part_name', 'part_number', 'part_description',
+            const COLUMNS = ['unique_id', 'serial_number', 'parent_serial_number', 'part_number', 'part_description',
                             'brand', 'group', 'location',
                             'condition', 'staging_condition', 'status',
                             'last_staging_date', 'last_movement_date'];
@@ -920,7 +920,7 @@
                 var labels = {
                     'unique_id': 'Warehouse Asset ID',
                     'serial_number': 'Serial Number',
-                    'part_name': 'Part Name',
+                    'parent_serial_number': 'Parent Serial Number',
                     'part_description': 'Part Description',
                     'brand': 'Brand',
                     'group': 'Group',

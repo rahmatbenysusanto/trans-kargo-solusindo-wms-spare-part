@@ -45,7 +45,7 @@ class InventoryController extends Controller
         };
 
         // Text columns — support both string and array
-        foreach (['unique_id', 'serial_number', 'part_name', 'part_number', 'part_description', 'location', 'check_date', 'activity'] as $col) {
+        foreach (['unique_id', 'serial_number', 'parent_serial_number', 'part_number', 'part_description', 'location', 'check_date', 'activity'] as $col) {
             $val = $fv($col);
             if (empty($val)) continue;
             $values = is_array($val) ? $val : [$val];
@@ -237,7 +237,7 @@ class InventoryController extends Controller
         $search = $request->get('search', '');
         $clientId = $request->get('client_id');
 
-        $allowed = ['unique_id', 'serial_number', 'part_name', 'part_number', 'part_description',
+        $allowed = ['unique_id', 'serial_number', 'parent_serial_number', 'part_number', 'part_description',
                      'brand', 'group', 'location',
                      'condition', 'staging_condition', 'status',
                      'last_staging_date', 'last_movement_date'];
@@ -809,12 +809,11 @@ class InventoryController extends Controller
         header("Content-Disposition: attachment; filename=\"$filename\"");
 
         echo "<table border='1'>";
-        echo "<thead><tr><th>No</th><th>Part Name</th><th>Part Number</th><th>Total Received</th><th>In Inventory</th><th>Total Outbound</th></tr></thead>";
+        echo "<thead><tr><th>No</th><th>Part Number</th><th>Total Received</th><th>In Inventory</th><th>Total Outbound</th></tr></thead>";
         echo "<tbody>";
         foreach ($data as $index => $item) {
             echo "<tr>";
             echo "<td>" . ($index + 1) . "</td>";
-            echo "<td>" . $item->part_name . "</td>";
             echo "<td>" . $item->part_number . "</td>";
             echo "<td>" . $item->total_in . "</td>";
             echo "<td>" . $item->in_inventory . "</td>";
@@ -1207,6 +1206,7 @@ class InventoryController extends Controller
                 'part_name' => $item->part_name,
                 'part_number' => $item->part_number,
                 'serial_number' => $item->serial_number,
+                'parent_serial_number' => $item->parent_serial_number ?? '-',
                 'client' => $item->client->name ?? '-',
                 'status' => $item->status,
                 'condition' => $item->condition,
@@ -1287,9 +1287,9 @@ class InventoryController extends Controller
         echo "<tr>";
         echo "<th>No</th>";
         echo "<th>Warehouse Asset ID</th>";
-        echo "<th>Part Name</th>";
         echo "<th>Part Number</th>";
         echo "<th>Serial Number</th>";
+        echo "<th>Parent Serial Number</th>";
         echo "<th>Client</th>";
         echo "<th>Zone</th>";
         echo "<th>Rak</th>";
@@ -1305,9 +1305,9 @@ class InventoryController extends Controller
             echo "<tr>";
             echo "<td>" . ($index + 1) . "</td>";
             echo "<td>{$item->unique_id}</td>";
-            echo "<td>{$item->part_name}</td>";
             echo "<td>{$item->part_number}</td>";
             echo "<td>'{$item->serial_number}</td>";
+            echo "<td>" . ($item->parent_serial_number ?? '-') . "</td>";
             echo "<td>" . ($item->client_name ?? '-') . "</td>";
             echo "<td>" . ($item->zone_name ?? '-') . "</td>";
             echo "<td>" . ($item->rak_name ?? '-') . "</td>";
@@ -1451,7 +1451,7 @@ class InventoryController extends Controller
         header("Content-Disposition: attachment; filename=\"$filename\"");
 
         echo "<table border='1'>";
-        echo "<thead><tr><th>No</th><th>Date</th><th>Outbound No</th><th>Client</th><th>SN</th><th>Part Name</th><th>Condition</th></tr></thead>";
+        echo "<thead><tr><th>No</th><th>Date</th><th>Outbound No</th><th>Client</th><th>SN</th><th>Parent Serial Number</th><th>Condition</th></tr></thead>";
         echo "<tbody>";
         foreach ($data as $index => $item) {
             echo "<tr>";
@@ -1460,7 +1460,7 @@ class InventoryController extends Controller
             echo "<td>" . ($item->outbound->number ?? '-') . "</td>";
             echo "<td>" . ($item->outbound->client->name ?? '-') . "</td>";
             echo "<td>'" . $item->serial_number . "</td>";
-            echo "<td>" . ($item->inventory->part_name ?? '-') . "</td>";
+            echo "<td>" . ($item->inventory->parent_serial_number ?? '-') . "</td>";
             echo "<td>" . $item->condition . "</td>";
             echo "</tr>";
         }

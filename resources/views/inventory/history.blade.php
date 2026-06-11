@@ -85,9 +85,9 @@
                                     <th>Outbound No</th>
                                     <th>Outbound Date</th>
                                     <th>Client</th>
-                                    <th>Part Name</th>
                                     <th>Part Number</th>
                                     <th class="highlight-column">Serial Number</th>
+                                    <th>Parent Serial Number</th>
                                     <th>Storage Location</th>
                                 </tr>
                             </thead>
@@ -102,9 +102,9 @@
                                         </td>
                                         <td>{{ \Carbon\Carbon::parse($item->outbound->outbound_date)->format('d/m/Y') }}</td>
                                         <td><span class="small fw-medium text-dark">{{ $item->outbound->client->name ?? '-' }}</span></td>
-                                        <td style="max-width: 250px; white-space: normal;">{{ $item->part_name }}</td>
                                         <td>{{ $item->part_number }}</td>
                                         <td class="highlight-column"><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span></td>
+                                        <td><span class="text-mono">{{ $item->inventory->parent_serial_number ?? '-' }}</span></td>
                                         <td>
                                             @if ($item->inventory && $item->inventory->storageLevel)
                                                 <span class="text-muted" style="font-size: 0.72rem;">

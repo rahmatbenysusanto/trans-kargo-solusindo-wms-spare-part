@@ -181,7 +181,7 @@ class CycleCountController extends Controller
         header("Content-Disposition: attachment; filename=\"$filename\"");
 
         echo "<table border='1'>";
-        echo "<thead><tr><th>No</th><th>Date</th><th>Type</th><th>SN</th><th>Asset ID</th><th>Part Name</th><th>Description</th><th>User</th></tr></thead>";
+        echo "<thead><tr><th>No</th><th>Date</th><th>Type</th><th>SN</th><th>Asset ID</th><th>Part Number</th><th>Parent Serial Number</th><th>Description</th><th>User</th></tr></thead>";
         echo "<tbody>";
         foreach ($data as $index => $item) {
             echo "<tr>";
@@ -190,7 +190,8 @@ class CycleCountController extends Controller
             echo "<td>" . $item->type . "</td>";
             echo "<td>'" . $item->serial_number . "</td>";
             echo "<td>" . ($item->inventory->unique_id ?? '-') . "</td>";
-            echo "<td>" . ($item->inventory->part_name ?? '-') . "</td>";
+            echo "<td>" . ($item->inventory->part_number ?? '-') . "</td>";
+            echo "<td>" . ($item->inventory->parent_serial_number ?? '-') . "</td>";
             echo "<td>" . $item->description . "</td>";
             echo "<td>" . $item->user . "</td>";
             echo "</tr>";

@@ -186,7 +186,6 @@
                         <thead class="table-light sticky-top">
                             <tr>
                                 <th>#</th>
-                                <th>Part Name</th>
                                 <th>Part Number</th>
                                 <th>Description</th>
                                 <th class="text-center">Total Qty</th>
@@ -197,7 +196,6 @@
                             @foreach ($data as $i => $item)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td class="fw-semibold">{{ $item->part_name }}</td>
                                     <td><span class="text-muted">{{ $item->part_number ?: '-' }}</span></td>
                                     <td class="text-muted text-truncate" style="max-width:200px;">{{ $item->part_description ?: '-' }}</td>
                                     <td class="text-center">

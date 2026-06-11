@@ -36,7 +36,8 @@
                                     <th>Type</th>
                                     <th>Serial Number</th>
                                     <th>Asset ID</th>
-                                    <th>Part Name / Number</th>
+                                    <th>Part Number</th>
+                                    <th>Parent Serial Number</th>
                                     <th>Description</th>
                                     <th>Action By</th>
                                 </tr>
@@ -49,10 +50,8 @@
                                         <td><strong>{{ $item->type }}</strong></td>
                                         <td>{{ $item->serial_number }}</td>
                                         <td>{{ $item->inventory->unique_id ?? '-' }}</td>
-                                        <td>
-                                            <div>{{ $item->inventory->part_name ?? '-' }}</div>
-                                            <small class="text-muted">{{ $item->inventory->part_number ?? '-' }}</small>
-                                        </td>
+                                        <td>{{ $item->inventory->part_number ?? '-' }}</td>
+                                        <td>{{ $item->inventory->parent_serial_number ?? '-' }}</td>
                                         <td>{{ $item->description }}</td>
                                         <td>{{ $item->user }}</td>
                                     </tr>

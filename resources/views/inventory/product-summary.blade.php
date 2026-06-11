@@ -59,7 +59,6 @@
                             <thead class="table-light border-top">
                                 <tr>
                                     <th width="30">#</th>
-                                    <th>Part Name</th>
                                     <th>Part Number</th>
                                     <th class="text-center">Arrival (In)</th>
                                     <th class="text-center">Stock (Current)</th>
@@ -71,7 +70,6 @@
                                 @forelse ($data as $item)
                                     <tr>
                                         <td>{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
-                                        <td><span class="fw-bold text-dark">{{ $item->part_name }}</span></td>
                                         <td><span class="text-muted">{{ $item->part_number }}</span></td>
                                         <td class="text-center">
                                             <span class="badge bg-label-secondary fw-bold"
@@ -95,7 +93,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-5">No records found.</td>
+                                        <td colspan="6" class="text-center py-5">No records found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

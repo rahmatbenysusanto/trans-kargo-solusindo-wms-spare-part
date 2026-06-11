@@ -31,7 +31,6 @@
                             <thead class="table-light border-dark">
                                 <tr>
                                     <th>#</th>
-                                    <th>Part Name</th>
                                     <th>Part Number</th>
                                     <th class="text-center">Total Received</th>
                                     <th class="text-center">In Inventory</th>
@@ -42,7 +41,6 @@
                                 @foreach ($data as $item)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td><strong>{{ $item->part_name }}</strong></td>
                                         <td>{{ $item->part_number }}</td>
                                         <td class="text-center">{{ $item->total_in }}</td>
                                         <td class="text-center">{{ $item->in_inventory }}</td>

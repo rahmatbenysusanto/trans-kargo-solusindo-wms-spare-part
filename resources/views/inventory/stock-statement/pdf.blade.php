@@ -32,7 +32,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Serial Number</th>
-                                    <th>Part Name</th>
+                                    <th>Parent Serial Number</th>
                                     <th>Inbound Ref</th>
                                     <th>Receive Date</th>
                                     <th>Status</th>
@@ -45,7 +45,7 @@
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $item->serial_number }}</td>
-                                        <td>{{ $item->part_name }}</td>
+                                        <td>{{ $item->parent_serial_number ?? '-' }}</td>
                                         <td>{{ $item->inbound->number ?? '-' }}</td>
                                         <td>{{ $item->inbound->received_date ?? '-' }}</td>
                                         <td>

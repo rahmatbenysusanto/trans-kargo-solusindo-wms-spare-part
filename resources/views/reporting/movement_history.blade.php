@@ -88,8 +88,8 @@
                                     <th>Activity & Reference</th>
                                     <th>Serial Number</th>
                                     <th>WH Asset Number</th>
-                                    <th>Part Name</th>
                                     <th>Part Number</th>
+                                    <th>Parent Serial Number</th>
                                     <th>Part Description</th>
                                     <th>Movement Path</th>
                                     <th class="pe-4 text-center">User</th>
@@ -137,13 +137,10 @@
                                             <span class="text-muted font-monospace fw-bold" style="font-size: 0.85rem;">{{ $history->inventory?->unique_id ?? '-' }}</span>
                                         </td>
                                         <td>
-                                            <div class="d-flex flex-column">
-                                                <span class="fw-bold text-dark small">{{ $history->inventory?->part_name ?? 'Unknown' }}</span>
-                                                <small class="text-muted" style="font-size: 0.65rem;">CAT: {{ $history->category }}</small>
-                                            </div>
+                                            <span class="text-dark small">{{ $history->inventory?->part_number ?? '-' }}</span>
                                         </td>
                                         <td>
-                                            <span class="text-dark small">{{ $history->inventory?->part_number ?? '-' }}</span>
+                                            <span class="text-muted font-monospace small">{{ $history->inventory?->parent_serial_number ?? '-' }}</span>
                                         </td>
                                         <td>
                                             <small class="text-muted" style="font-size: 0.75rem;">{{ $history->inventory?->part_description ?? '-' }}</small>

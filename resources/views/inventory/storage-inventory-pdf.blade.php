@@ -32,8 +32,9 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Warehouse Asset ID</th>
-                                    <th>Part Name / Number</th>
+                                    <th>Part Number</th>
                                     <th>Serial Number</th>
+                                    <th>Parent Serial Number</th>
                                     <th>Client</th>
                                     <th>Location (Zone-Rak-Bin-Level)</th>
                                     <th class="text-center">Status</th>
@@ -45,11 +46,9 @@
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td><strong>{{ $item->unique_id }}</strong></td>
-                                        <td>
-                                            <div>{{ $item->part_name }}</div>
-                                            <small class="text-muted">{{ $item->part_number }}</small>
-                                        </td>
+                                        <td>{{ $item->part_number }}</td>
                                         <td>{{ $item->serial_number }}</td>
+                                        <td>{{ $item->parent_serial_number ?? '-' }}</td>
                                         <td>{{ $item->client_name ?? '-' }}</td>
                                         <td>{{ "{$item->zone_name}-{$item->rak_name}-{$item->bin_name}-{$item->level_name}" }}</td>
                                         <td class="text-center">{{ $item->status }}</td>

@@ -122,9 +122,9 @@
                             <thead class="bg-primary text-white sticky-top shadow-sm">
                                 <tr>
                                     <th class="text-white">Warehouse Asset ID</th>
-                                    <th class="text-white">Part Name</th>
                                     <th class="text-white">Part Number</th>
                                     <th class="text-white">Serial Number</th>
+                                    <th class="text-white">Parent Serial Number</th>
                                     <th class="text-white">Client / Owner</th>
                                     <th class="text-white">Condition</th>
                                     <th class="text-white">Status</th>
@@ -186,9 +186,9 @@
                         tbody.append(`
                             <tr>
                                 <td><span class="text-mono fw-bold text-primary">${item.unique_id}</span></td>
-                                <td><span class="fw-bold text-dark">${item.part_name}</span></td>
                                 <td><span class="text-muted">${item.part_number}</span></td>
                                 <td><span class="text-mono fw-bold text-dark">${item.serial_number}</span></td>
+                                <td><span class="text-mono">${item.parent_serial_number}</span></td>
                                 <td><span class="small fw-medium">${item.client}</span></td>
                                 <td><span class="badge bg-label-info x-small" style="font-size: 0.65rem;">${item.condition}</span></td>
                                 <td><span class="badge ${statusBadge} x-small" style="font-size: 0.65rem;">${item.status.toUpperCase()}</span></td>

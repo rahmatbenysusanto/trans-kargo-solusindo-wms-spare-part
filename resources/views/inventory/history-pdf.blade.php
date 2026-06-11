@@ -35,7 +35,8 @@
                                     <th>Outbound No</th>
                                     <th>Client</th>
                                     <th>Serial Number</th>
-                                    <th>Part Name / Number</th>
+                                    <th>Parent Serial Number</th>
+                                    <th>Part Number</th>
                                     <th class="text-center">Condition</th>
                                 </tr>
                             </thead>
@@ -47,10 +48,8 @@
                                         <td><strong>{{ $item->outbound->number ?? '-' }}</strong></td>
                                         <td>{{ $item->outbound->client->name ?? '-' }}</td>
                                         <td>{{ $item->serial_number }}</td>
-                                        <td>
-                                            <div>{{ $item->inventory->part_name ?? '-' }}</div>
-                                            <small class="text-muted">{{ $item->inventory->part_number ?? '-' }}</small>
-                                        </td>
+                                        <td>{{ $item->inventory->parent_serial_number ?? '-' }}</td>
+                                        <td>{{ $item->inventory->part_number ?? '-' }}</td>
                                         <td class="text-center">{{ $item->condition }}</td>
                                     </tr>
                                 @endforeach
