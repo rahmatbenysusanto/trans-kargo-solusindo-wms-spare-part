@@ -272,6 +272,43 @@
                 allowClear: true,
                 width: '100%'
             });
+
+            // Lookup product details from master data when part number changes
+            $('#partNumber').on('change', function() {
+                const partNumber = $(this).val().trim();
+                if (!partNumber) return;
+
+                $.ajax({
+                    url: '{{ route("receiving.lookup-part-number") }}',
+                    method: 'GET',
+                    data: { part_number: partNumber },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.found) {
+                            // Always fill description
+                            $('#partDescription').val(response.part_description);
+
+                            // Fill part name if currently empty
+                            if (!$('#partName').val().trim()) {
+                                $('#partName').val(response.part_name);
+                            }
+
+                            // Fill brand if currently empty (Select2)
+                            if (!$('#brand').val() || !$('#brand').val().trim()) {
+                                $('#brand').val(response.brand).trigger('change');
+                            }
+
+                            // Fill product group if currently empty (Select2)
+                            if (!$('#productGroup').val() || !$('#productGroup').val().trim()) {
+                                $('#productGroup').val(response.product_group).trigger('change');
+                            }
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Lookup part number failed:', error);
+                    }
+                });
+            });
         });
 
         localStorage.clear();

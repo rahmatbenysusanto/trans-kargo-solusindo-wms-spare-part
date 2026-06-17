@@ -42,6 +42,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/summary-stock/cycle-count', 'cycleCount')->name('dashboard.cycle-count');
         Route::get('/utilization-by-client', 'utilizationByClient')->name('utilizationByClient');
         Route::get('/rma-monitoring', 'rmaMonitoring')->name('rmaMonitoring');
+        Route::post('/rma-monitoring/delete/{id}', 'rmaMonitoringDelete')->name('rmaMonitoring.delete');
         Route::get('/inbound-return', 'inboundReturn')->name('inboundReturn');
         Route::get('/stock-monitoring', 'stockMonitoring')->name('stockMonitoring');
         Route::get('/receiving-monitoring', 'receivingMonitoring')->name('receivingMonitoring');
@@ -59,6 +60,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
             Route::post('/bulk-import/store', 'bulkImportStore')->name('receiving.bulk-import.store');
             Route::get('/check-outbounded', 'checkOutbounded')->name('receiving.check-outbounded');
             Route::get('/search-outbounded', 'searchOutbounded')->name('receiving.search-outbounded');
+            Route::get('/lookup-part-number', 'lookupPartNumber')->name('receiving.lookup-part-number');
             Route::get('/print/{id}', 'printPdf')->name('receiving.print');
             Route::get('/{id}', 'show')->name('receiving.show');
             Route::post('/approve', 'approve')->name('receiving.approve');

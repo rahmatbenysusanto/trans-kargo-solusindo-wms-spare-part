@@ -321,6 +321,51 @@ class DashboardController extends Controller
         return view('dashboard.rma', compact('title', 'data', 'clients'));
     }
 
+    public function rmaMonitoringDelete(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdminWMS()) {
+            return back()->with('error', 'You do not have permission to revert RMA records.');
+        }
+
+        // Cari InboundDetail RMA
+        $detail = InboundDetail::whereNotNull('old_serial_number')->findOrFail($id);
+
+        // Cek apakah sudah di-put-away (ada InventoryDetail)
+        $inventoryDetail = \App\Models\InventoryDetail::where('inbound_detail_id', $detail->id)->first();
+
+        if ($inventoryDetail) {
+            $inventory = $inventoryDetail->inventory;
+
+            if ($inventory) {
+                // Revert inventory: set qty = 0, status unavailable
+                // Data inventory tetap ada, cuma tidak dihitung sebagai stok
+                $inventory->update([
+                    'qty'    => 0,
+                    'status' => 'unavailable',
+                ]);
+
+                // Catat history reverted
+                \App\Models\InventoryHistory::create([
+                    'inventory_id'     => $inventory->id,
+                    'serial_number'    => $inventory->serial_number,
+                    'type'             => 'Adjustment',
+                    'category'         => 'RMA Revert',
+                    'reference_number' => 'RMA-' . $detail->id,
+                    'description'      => 'RMA reverted by ' . $user->name . ' - SN: ' . $inventory->serial_number . ' (InboundDetail #' . $detail->id . ' soft-deleted)',
+                    'user'             => $user->name,
+                    'to_location'      => 'VOID',
+                ]);
+            }
+        }
+
+        // Soft delete InboundDetail (data tetap ada, cuma di-flag)
+        $detail->delete();
+
+        return back()->with('success', 'RMA record reverted successfully.');
+    }
+
     public function inboundReturn(Request $request): View
     {
         $title = 'inboundReturn';

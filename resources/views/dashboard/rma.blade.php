@@ -136,6 +136,9 @@
                                 <th>New SN (Replacement)</th>
                                 <th>Condition</th>
                                 <th>Date Swapped</th>
+                                @if (Auth::user()->isAdminWMS())
+                                    <th style="width:80px;">Action</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -165,11 +168,24 @@
                                         <span class="badge {{ $condClass }}" style="font-size:0.7rem;">{{ $item->condition }}</span>
                                     </td>
                                     <td><span class="small text-muted">{{ $item->created_at->format('d/m/Y H:i') }}</span></td>
+                                    @if (Auth::user()->isAdminWMS())
+                                        <td>
+                                            <form action="{{ route('rmaMonitoring.delete', $item->id) }}" method="POST" class="delete-rma-form">
+                                                @csrf
+                                                <button type="button" class="btn btn-sm btn-outline-danger border-0 delete-rma-btn"
+                                                        title="Revert RMA record"
+                                                        data-sn="{{ $item->serial_number }}"
+                                                        data-old-sn="{{ $item->old_serial_number }}">
+                                                    <i class="ti tabler-rotate-2"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                             @if ($data->isEmpty())
                                 <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">
+                                    <td colspan="{{ Auth::user()->isAdminWMS() ? 8 : 7 }}" class="text-center py-5 text-muted">
                                         <i class="ti tabler-arrows-exchange fs-1 d-block mb-2"></i>
                                         No RMA swaps recorded yet.
                                     </td>
@@ -187,4 +203,37 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('js')
+@if (Auth::user()->isAdminWMS())
+<script>
+    document.querySelectorAll('.delete-rma-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const form = this.closest('.delete-rma-form');
+            const sn = this.dataset.sn;
+            const oldSn = this.dataset.oldSn;
+
+            Swal.fire({
+                title: 'Revert RMA Record?',
+                html: `This will revert the RMA swap record:<br>
+                       <strong>Old SN:</strong> ${oldSn}<br>
+                       <strong>New SN:</strong> ${sn}<br><br>
+                       <span class="text-muted small">The InboundDetail will be soft-deleted (data kept).<br>
+                       If already in inventory, stock will be set to unavailable (qty=0).</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, revert it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+@endif
 @endsection

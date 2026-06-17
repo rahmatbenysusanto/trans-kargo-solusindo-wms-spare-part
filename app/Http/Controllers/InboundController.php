@@ -1120,4 +1120,56 @@ class InboundController extends Controller
             })
         ]);
     }
+
+    public function lookupPartNumber(Request $request)
+    {
+        $partNumber = $request->get('part_number');
+        if (!$partNumber) {
+            return response()->json([
+                'found' => false,
+                'message' => 'Part Number is required'
+            ]);
+        }
+
+        // Try to find the latest Inventory item with this part number and a valid description
+        $item = \App\Models\Inventory::with(['brand', 'productGroup'])
+            ->where('part_number', $partNumber)
+            ->whereNotNull('part_description')
+            ->where('part_description', '!=', '')
+            ->latest('id')
+            ->first();
+
+        if ($item) {
+            return response()->json([
+                'found'            => true,
+                'part_description' => $item->part_description,
+                'part_name'        => $item->part_name,
+                'brand'            => $item->brand->name ?? '',
+                'product_group'    => $item->productGroup->name ?? '',
+            ]);
+        }
+
+        // Fallback: search in InboundDetail for historical receiving data
+        $inboundDetail = \App\Models\InboundDetail::with(['brand', 'productGroup'])
+            ->where('part_number', $partNumber)
+            ->whereNotNull('description')
+            ->where('description', '!=', '')
+            ->latest('id')
+            ->first();
+
+        if ($inboundDetail) {
+            return response()->json([
+                'found'            => true,
+                'part_description' => $inboundDetail->description,
+                'part_name'        => $inboundDetail->part_name,
+                'brand'            => $inboundDetail->brand->name ?? '',
+                'product_group'    => $inboundDetail->productGroup->name ?? '',
+            ]);
+        }
+
+        return response()->json([
+            'found' => false,
+            'message' => 'Part Number not found in master data'
+        ]);
+    }
 }
