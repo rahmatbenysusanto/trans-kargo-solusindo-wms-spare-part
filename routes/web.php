@@ -108,6 +108,7 @@ Route::middleware([AuthMiddleware::class])->group(function () {
 
         Route::get('/product-movement', 'productMovementIndex')->name('inventory.product.movement');
         Route::get('/product-movement/process', 'productMovementProcess')->name('inventory.product.movement.process');
+        Route::get('/product-movement/search', 'productMovementSearch')->name('inventory.product.movement.search');
         Route::post('/product-movement/update', 'productMovementUpdate')->name('inventory.product.movement.update');
 
         Route::get('/product-summary', 'productSummary')->name('inventory.product.summary');

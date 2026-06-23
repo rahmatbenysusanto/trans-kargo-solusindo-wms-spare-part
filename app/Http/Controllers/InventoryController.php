@@ -653,9 +653,18 @@ class InventoryController extends Controller
     public function productMovementProcess(): View
     {
         $title = 'Product Movement';
-        $user = Auth::user();
+        $storageZone = \App\Models\StorageZone::all();
 
-        $inventory = \App\Models\Inventory::where('qty', '>', 0);
+        return view('inventory.product-movement.process', compact('title', 'storageZone'));
+    }
+
+    public function productMovementSearch(Request $request)
+    {
+        $user = Auth::user();
+        $search = $request->get('search', '');
+
+        $inventory = \App\Models\Inventory::with('client', 'storageLevel.bin.rak.zone')
+            ->where('qty', '>', 0);
 
         if (!$user->isAdminWMS()) {
             $inventory->where(function ($q) use ($user) {
@@ -664,10 +673,35 @@ class InventoryController extends Controller
             });
         }
 
-        $inventory = $inventory->latest()->get();
-        $storageZone = \App\Models\StorageZone::all();
+        if ($search) {
+            $inventory->where(function ($q) use ($search) {
+                $q->where('part_name', 'like', "%{$search}%")
+                  ->orWhere('part_number', 'like', "%{$search}%")
+                  ->orWhere('serial_number', 'like', "%{$search}%")
+                  ->orWhere('unique_id', 'like', "%{$search}%");
+            });
+        }
 
-        return view('inventory.product-movement.process', compact('title', 'inventory', 'storageZone'));
+        $perPage = $request->get('per_page', 50);
+        $inventory = $inventory->latest()->paginate($perPage);
+
+        $inventory->getCollection()->transform(function ($item) {
+            return [
+                'id'            => $item->id,
+                'part_name'     => $item->part_name,
+                'part_number'   => $item->part_number ?? '-',
+                'unique_id'     => $item->unique_id ?? '-',
+                'serial_number' => $item->serial_number,
+                'condition'     => $item->condition,
+                'client_name'   => $item->client->name ?? '-',
+                'location'      => ($item->storageLevel->bin->rak->zone->name ?? '-')
+                    . ' / ' . ($item->storageLevel->bin->rak->name ?? '-')
+                    . ' / ' . ($item->storageLevel->bin->name ?? '-')
+                    . ' / ' . ($item->storageLevel->name ?? '-'),
+            ];
+        });
+
+        return response()->json($inventory);
     }
 
     public function productMovementUpdate(Request $request)

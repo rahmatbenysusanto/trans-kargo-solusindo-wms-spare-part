@@ -35,63 +35,27 @@
                                     <th class="text-end pe-4">Action</th>
                                 </tr>
                             </thead>
-                            <tbody class="table-border-bottom-0">
-                                @forelse ($inventory as $item)
-                                    <tr id="row-{{ $item->id }}" class="product-row">
-                                        <td class="ps-4">
-                                            <div class="d-flex flex-column">
-                                                <span class="fw-semibold text-heading">{{ $item->part_name }}</span>
-                                                <small class="text-muted">{{ $item->part_number ?? '-' }}</small>
-                                                <small class="text-primary mt-1">{{ $item->unique_id ?? '-' }} |
-                                                    {{ $item->client->name ?? '-' }}</small>
-                                                <div class="mt-1">
-                                                    <span class="badge bg-label-secondary border"><i
-                                                            class="ti tabler-scan me-1"></i>
-                                                        {{ $item->serial_number }}</span>
+                            <tbody class="table-border-bottom-0" id="availableTableBody">
+                                <tr id="loading-row">
+                                    <td colspan="3" class="text-center py-5">
+                                        <div class="empty bg-transparent">
+                                            <div class="empty-icon text-muted mb-3">
+                                                <div class="spinner-border text-primary" role="span">
+                                                    <span class="visually-hidden">Loading...</span>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex flex-column gap-1">
-                                                <span
-                                                    class="badge bg-label-info text-start d-inline-flex align-items-center"
-                                                    style="white-space: normal;">
-                                                    <i class="ti tabler-map-pin me-1 opacity-75"></i>
-                                                    {{ $item->storageLevel->bin->rak->zone->name ?? '-' }} /
-                                                    {{ $item->storageLevel->bin->rak->name ?? '-' }} /
-                                                    {{ $item->storageLevel->bin->name ?? '-' }} /
-                                                    {{ $item->storageLevel->name ?? '-' }}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="text-end pe-4">
-                                            <button class="btn btn-sm btn-icon btn-primary rounded-circle shadow-sm"
-                                                onclick="moveRight({{ $item->id }}, '{{ addslashes($item->part_name) }}', '{{ $item->serial_number }}', '{{ addslashes($item->unique_id ?? '-') }}', '{{ addslashes($item->client->name ?? '-') }}', '{{ $item->condition }}')"
-                                                data-id="{{ $item->id }}"
-                                                data-name="{{ addslashes($item->part_name) }}"
-                                                data-sn="{{ $item->serial_number }}"
-                                                data-unique="{{ addslashes($item->unique_id ?? '-') }}"
-                                                data-client="{{ addslashes($item->client->name ?? '-') }}"
-                                                data-condition="{{ $item->condition }}"
-                                                data-bs-toggle="tooltip" title="Move Item">
-                                                <i class="ti tabler-chevron-right"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="3" class="text-center py-5">
-                                            <div class="empty bg-transparent">
-                                                <div class="empty-icon text-muted mb-3">
-                                                    <i class="ti tabler-box fs-1 opacity-50"></i>
-                                                </div>
-                                                <p class="empty-title h5 mb-1">No inventory items available</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
+                                            <p class="empty-title h5 mb-1">Loading inventory...</p>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="p-3 border-top d-flex justify-content-between align-items-center" id="paginationContainer">
+                        <small class="text-muted" id="paginationInfo">Loading...</small>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="paginationLinks"></ul>
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -206,22 +170,161 @@
 @section('js')
     <script>
         let selectedProducts = [];
+        let currentPage = 1;
+        let searchTimeout = null;
+
+        function loadProducts(page = 1) {
+            const search = document.getElementById('searchProduct').value;
+            currentPage = page;
+
+            document.getElementById('availableTableBody').innerHTML = `
+                <tr id="loading-row">
+                    <td colspan="3" class="text-center py-5">
+                        <div class="empty bg-transparent">
+                            <div class="empty-icon text-muted mb-3">
+                                <div class="spinner-border text-primary" role="span">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <p class="empty-title h5 mb-1">Searching inventory...</p>
+                        </div>
+                    </td>
+                </tr>`;
+
+            fetch(`{{ route('inventory.product.movement.search') }}?search=${encodeURIComponent(search)}&page=${page}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Network error');
+                    return res.json();
+                })
+                .then(data => {
+                    renderProducts(data);
+                })
+                .catch(err => {
+                    console.error('Search error:', err);
+                    document.getElementById('availableTableBody').innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center py-5">
+                                <div class="empty bg-transparent">
+                                    <div class="empty-icon text-muted mb-3">
+                                        <i class="ti tabler-alert-circle fs-1 text-danger opacity-50"></i>
+                                    </div>
+                                    <p class="empty-title h5 mb-1">Failed to load data</p>
+                                    <p class="empty-subtitle text-muted small">Check your connection and try again</p>
+                                </div>
+                            </td>
+                        </tr>`;
+                    document.getElementById('paginationInfo').textContent = 'Error loading data';
+                    document.getElementById('paginationLinks').innerHTML = '';
+                });
+        }
+
+        function renderProducts(data) {
+            const tbody = document.getElementById('availableTableBody');
+
+            if (data.data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center py-5">
+                            <div class="empty bg-transparent">
+                                <div class="empty-icon text-muted mb-3">
+                                    <i class="ti tabler-box fs-1 opacity-50"></i>
+                                </div>
+                                <p class="empty-title h5 mb-1">No inventory items found</p>
+                                <p class="empty-subtitle text-muted small">Try adjusting your search criteria</p>
+                            </div>
+                        </td>
+                    </tr>`;
+            } else {
+                let html = '';
+                data.data.forEach(item => {
+                    const isSelected = selectedProducts.includes(item.id);
+                    html += `
+                        <tr id="row-${item.id}" class="product-row${isSelected ? ' d-none' : ''}">
+                            <td class="ps-4">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold text-heading">${escapeHtml(item.part_name)}</span>
+                                    <small class="text-muted">${escapeHtml(item.part_number)}</small>
+                                    <small class="text-primary mt-1">${escapeHtml(item.unique_id)} | ${escapeHtml(item.client_name)}</small>
+                                    <div class="mt-1">
+                                        <span class="badge bg-label-secondary border"><i class="ti tabler-scan me-1"></i> ${escapeHtml(item.serial_number)}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge bg-label-info text-start d-inline-flex align-items-center" style="white-space: normal;">
+                                        <i class="ti tabler-map-pin me-1 opacity-75"></i>
+                                        ${escapeHtml(item.location)}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-icon btn-primary rounded-circle shadow-sm"
+                                    onclick="moveRight(${item.id}, '${escapeHtml(item.part_name)}', '${escapeHtml(item.serial_number)}', '${escapeHtml(item.unique_id)}', '${escapeHtml(item.client_name)}', '${escapeHtml(item.condition)}')"
+                                    data-id="${item.id}"
+                                    data-name="${escapeHtml(item.part_name)}"
+                                    data-sn="${escapeHtml(item.serial_number)}"
+                                    data-unique="${escapeHtml(item.unique_id)}"
+                                    data-client="${escapeHtml(item.client_name)}"
+                                    data-condition="${escapeHtml(item.condition)}"
+                                    data-bs-toggle="tooltip" title="Move Item">
+                                    <i class="ti tabler-chevron-right"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+                tbody.innerHTML = html;
+            }
+
+            renderPagination(data);
+        }
+
+        function renderPagination(data) {
+            const info = document.getElementById('paginationInfo');
+            const links = document.getElementById('paginationLinks');
+
+            info.textContent = `Showing ${data.from || 0} to ${data.to || 0} of ${data.total} items`;
+
+            if (data.last_page <= 1) {
+                links.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            const current = data.current_page;
+            const last = data.last_page;
+
+            html += `<li class="page-item ${current <= 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadProducts(${current - 1}); return false;">&laquo;</a>
+            </li>`;
+
+            const start = Math.max(1, current - 2);
+            const end = Math.min(last, current + 2);
+            for (let i = start; i <= end; i++) {
+                html += `<li class="page-item ${i === current ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadProducts(${i}); return false;">${i}</a>
+                </li>`;
+            }
+
+            html += `<li class="page-item ${current >= last ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadProducts(${current + 1}); return false;">&raquo;</a>
+            </li>`;
+
+            links.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = String(str);
+            return div.innerHTML;
+        }
 
         function filterProducts() {
-            const input = document.getElementById('searchProduct');
-            const filter = input.value.toUpperCase();
-            const rows = document.querySelectorAll('.product-row');
-
-            rows.forEach(row => {
-                const text = row.innerText.toUpperCase();
-                if (text.indexOf(filter) > -1) {
-                    if (!selectedProducts.includes(parseInt(row.id.replace('row-', '')))) {
-                        row.classList.remove('d-none');
-                    }
-                } else {
-                    row.classList.add('d-none');
-                }
-            });
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadProducts(1);
+            }, 300);
         }
 
         function updateSelectedCount() {
@@ -478,5 +581,10 @@
                 }
             });
         }
+
+        // Load initial data on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadProducts(1);
+        });
     </script>
 @endsection
