@@ -245,8 +245,9 @@
                                     <span class="fw-semibold text-heading">${escapeHtml(item.part_name)}</span>
                                     <small class="text-muted">${escapeHtml(item.part_number)}</small>
                                     <small class="text-primary mt-1">${escapeHtml(item.unique_id)} | ${escapeHtml(item.client_name)}</small>
-                                    <div class="mt-1">
+                                    <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
                                         <span class="badge bg-label-secondary border"><i class="ti tabler-scan me-1"></i> ${escapeHtml(item.serial_number)}</span>
+                                        <span class="badge bg-label-warning border"><i class="ti tabler-hash me-1"></i> WH: ${escapeHtml(item.wh_asset_number)}</span>
                                     </div>
                                 </div>
                             </td>
@@ -260,13 +261,14 @@
                             </td>
                             <td class="text-end pe-4">
                                 <button class="btn btn-sm btn-icon btn-primary rounded-circle shadow-sm"
-                                    onclick="moveRight(${item.id}, '${escapeHtml(item.part_name)}', '${escapeHtml(item.serial_number)}', '${escapeHtml(item.unique_id)}', '${escapeHtml(item.client_name)}', '${escapeHtml(item.condition)}')"
+                                    onclick="moveRight(${item.id}, '${escapeHtml(item.part_name)}', '${escapeHtml(item.serial_number)}', '${escapeHtml(item.unique_id)}', '${escapeHtml(item.client_name)}', '${escapeHtml(item.condition)}', '${escapeHtml(item.wh_asset_number)}')"
                                     data-id="${item.id}"
                                     data-name="${escapeHtml(item.part_name)}"
                                     data-sn="${escapeHtml(item.serial_number)}"
                                     data-unique="${escapeHtml(item.unique_id)}"
                                     data-client="${escapeHtml(item.client_name)}"
                                     data-condition="${escapeHtml(item.condition)}"
+                                    data-wh-asset="${escapeHtml(item.wh_asset_number)}"
                                     data-bs-toggle="tooltip" title="Move Item">
                                     <i class="ti tabler-chevron-right"></i>
                                 </button>
@@ -339,7 +341,7 @@
             }
         }
 
-        function moveRight(id, name, sn, unique_id, client, condition) {
+        function moveRight(id, name, sn, unique_id, client, condition, whAsset = '-') {
             if (selectedProducts.includes(id)) return;
 
             selectedProducts.push(id);
@@ -352,6 +354,7 @@
             <td class="ps-4">
                 <div class="d-flex flex-column">
                     <span class="fw-semibold text-heading">${name}</span>
+                    <small class="text-muted">${escapeHtml(whAsset)}</small>
                     <small class="text-primary mt-1">${unique_id} | ${client}</small>
                     <div class="mt-1">
                         <span class="badge bg-label-info border"><i class="ti tabler-scan me-1"></i>${sn}</span>
@@ -407,7 +410,8 @@
                         btn.getAttribute('data-sn'),
                         btn.getAttribute('data-unique'),
                         btn.getAttribute('data-client'),
-                        btn.getAttribute('data-condition')
+                        btn.getAttribute('data-condition'),
+                        btn.getAttribute('data-wh-asset')
                     );
                 }
             });

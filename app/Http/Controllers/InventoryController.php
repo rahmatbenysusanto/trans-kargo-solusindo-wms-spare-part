@@ -678,7 +678,8 @@ class InventoryController extends Controller
                 $q->where('part_name', 'like', "%{$search}%")
                   ->orWhere('part_number', 'like', "%{$search}%")
                   ->orWhere('serial_number', 'like', "%{$search}%")
-                  ->orWhere('unique_id', 'like', "%{$search}%");
+                  ->orWhere('unique_id', 'like', "%{$search}%")
+                  ->orWhere('old_wh_asset_number', 'like', "%{$search}%");
             });
         }
 
@@ -694,6 +695,7 @@ class InventoryController extends Controller
                 'serial_number' => $item->serial_number,
                 'condition'     => $item->condition,
                 'client_name'   => $item->client->name ?? '-',
+                'wh_asset_number' => $item->old_wh_asset_number ?? '-',
                 'location'      => ($item->storageLevel->bin->rak->zone->name ?? '-')
                     . ' / ' . ($item->storageLevel->bin->rak->name ?? '-')
                     . ' / ' . ($item->storageLevel->bin->name ?? '-')
