@@ -54,11 +54,34 @@ class InboundController extends Controller
                         ->orWhere('rma_number', 'like', '%' . $request->search . '%')
                         ->orWhere('itsm_number', 'like', '%' . $request->search . '%')
                         ->orWhere('vendor', 'like', '%' . $request->search . '%')
+                        ->orWhere('sap_po_number', 'like', '%' . $request->search . '%')
                         ->orWhereHas('details', function ($dq) use ($request) {
                             $dq->where('wh_asset_number', 'like', '%' . $request->search . '%')
                                 ->orWhere('serial_number', 'like', '%' . $request->search . '%')
-                                ->orWhere('part_name', 'like', '%' . $request->search . '%');
+                                ->orWhere('part_name', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_number', 'like', '%' . $request->search . '%');
                         });
+                });
+            })
+            ->when($request->part_numbers, function ($query) use ($request) {
+                // Support multiple delimiters: comma, newline, semicolon
+                $normalized = str_replace(["\r\n", "\r", "\n", ';'], ',', $request->part_numbers);
+                $partNumbers = array_filter(array_map('trim', explode(',', $normalized)), function ($v) {
+                    return $v !== '';
+                });
+                if (empty($partNumbers)) {
+                    return $query;
+                }
+                return $query->whereHas('details', function ($dq) use ($partNumbers) {
+                    $dq->where(function ($subQ) use ($partNumbers) {
+                        foreach ($partNumbers as $i => $pn) {
+                            if ($i === 0) {
+                                $subQ->where('part_number', 'like', '%' . $pn . '%');
+                            } else {
+                                $subQ->orWhere('part_number', 'like', '%' . $pn . '%');
+                            }
+                        }
+                    });
                 });
             })
             ->paginate(10);

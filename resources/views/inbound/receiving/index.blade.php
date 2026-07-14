@@ -91,10 +91,35 @@
                                     <span class="input-group-text"><i class="ti tabler-search"></i></span>
                                     <input type="text" class="form-control" name="search"
                                         value="{{ request()->get('search') }}"
-                                        placeholder="Search Number, RN#, SAP PO#, RMA#, Vendor ...">
+                                        placeholder="Search Number, RN#, SAP PO#, RMA#, Vendor, Part # ...">
                                     <button class="btn btn-primary" type="submit">Filter</button>
                                     <a href="{{ url()->current() }}" class="btn btn-label-secondary"><i
                                             class="ti tabler-refresh"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-2 align-items-end">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ti tabler-hash me-1"></i>Search by Part Number (Multiple)
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="ti tabler-list-search"></i></span>
+                                    <input type="text" class="form-control" name="part_numbers"
+                                        value="{{ request()->get('part_numbers') }}"
+                                        placeholder="Part Number — pisahkan dengan koma, enter, atau titik koma. Contoh: ABC-123, XYZ-789">
+                                    <button class="btn btn-primary" type="submit">Filter</button>
+                                    <a href="{{ url()->current() }}" class="btn btn-label-secondary"><i
+                                            class="ti tabler-refresh"></i></a>
+                                </div>
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        <i class="ti tabler-info-circle me-1"></i>
+                                        Bisa input multiple part_number sekaligus — pisahkan dengan
+                                        <span class="badge bg-label-secondary badge-sm px-1">koma (,)</span>,
+                                        <span class="badge bg-label-secondary badge-sm px-1">enter</span>, atau
+                                        <span class="badge bg-label-secondary badge-sm px-1">titik koma (;)</span>
+                                    </small>
                                 </div>
                             </div>
                         </div>
