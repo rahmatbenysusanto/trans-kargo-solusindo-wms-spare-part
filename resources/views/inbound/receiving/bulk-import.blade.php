@@ -67,7 +67,9 @@
         }
 
         function parseExcelDate(dateStr) {
-            if (!dateStr) return '';
+            if (!dateStr || dateStr === '') return '';
+
+            // If it's a string with slashes, parse as date string (DD/MM/YYYY or MM/DD/YYYY)
             if (typeof dateStr === 'string' && dateStr.includes('/')) {
                 const parts = dateStr.split('/');
                 if (parts.length === 3) {
@@ -82,9 +84,25 @@
                     return `${y}-${m}-${d}`;
                 }
             }
+
+            // If it's a Date object, format as YYYY-MM-DD
             if (dateStr instanceof Date) {
                 return dateStr.toISOString().split('T')[0];
             }
+
+            // If it's a number (Excel serial date), convert it
+            // Excel serial dates count days since 1900-01-01 (with the 1900 leap year bug)
+            if (typeof dateStr === 'number' || (typeof dateStr === 'string' && /^\d+$/.test(dateStr))) {
+                const serial = Number(dateStr);
+                if (serial > 0 && serial < 100000) {
+                    // Excel epoch: 1899-12-30.
+                    // For serial >= 60, subtract 1 to account for Excel's fake Feb 29, 1900
+                    const adjusted = serial - (serial >= 60 ? 1 : 0);
+                    const date = new Date(Date.UTC(1899, 11, 30) + adjusted * 86400000);
+                    return date.toISOString().split('T')[0];
+                }
+            }
+
             return dateStr;
         }
 

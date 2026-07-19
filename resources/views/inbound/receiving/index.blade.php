@@ -226,6 +226,10 @@
                                                     class="btn btn-xs btn-primary p-1" title="Detail">
                                                     <i class="ti tabler-eye fs-6"></i>
                                                 </a>
+                                                <a href="{{ route('receiving.edit', $item->id) }}"
+                                                    class="btn btn-xs btn-label-warning p-1" title="Edit">
+                                                    <i class="ti tabler-edit fs-6"></i>
+                                                </a>
                                                 @if ($item->status == 'new')
                                                     <button type="button" class="btn btn-xs btn-success p-1"
                                                         onclick="approveReceiving({{ $item->id }})" title="Approve">

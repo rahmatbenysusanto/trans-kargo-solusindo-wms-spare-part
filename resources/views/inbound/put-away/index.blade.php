@@ -38,7 +38,7 @@
                             <div class="col-md-2">
                                 <label class="form-label small fw-bold">Search</label>
                                 <input type="text" name="search" class="form-control form-control-sm"
-                                    placeholder="Ref, NTT, Vendor..." value="{{ request('search') }}">
+                                    placeholder="Ref, NTT, Vendor, Part #..." value="{{ request('search') }}">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label small fw-bold">Serial Number</label>

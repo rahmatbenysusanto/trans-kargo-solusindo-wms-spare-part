@@ -135,6 +135,56 @@ class InboundController extends Controller
         return view('inbound.receiving.pdf', compact('title', 'inbound'));
     }
 
+    public function edit($id): View
+    {
+        $inbound = Inbound::with(['details.brand', 'details.productGroup', 'client'])->findOrFail($id);
+
+        $brand = Brand::all();
+        $productGroup = ProductGroup::all();
+        $client = Client::all();
+        $title = 'Receiving';
+
+        return view('inbound.receiving.edit', compact('title', 'inbound', 'brand', 'productGroup', 'client'));
+    }
+
+    public function update(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $inbound = Inbound::findOrFail($id);
+
+            $inbound->update([
+                'client_id'             => $request->post('client_id') ?: null,
+                'client_contact'        => $request->post('client_contact'),
+                'pickup_address'        => $request->post('pickup_address'),
+                'vendor'                => $request->post('vendor') ?? 'Internal',
+                'request_type'          => $request->post('request_type'),
+                'ntt_requestor'         => $request->post('ntt_requestor'),
+                'request_date'          => $request->post('request_date'),
+                'number'                => $request->post('po_number'),
+                'receiving_note'        => $request->post('number'),
+                'sttb'                  => $request->post('sttb'),
+                'courier_delivery_note' => $request->post('delivery_note'),
+                'courier_invoice'       => $request->post('courier_invoice'),
+                'rma_number'            => $request->post('rma_number'),
+                'itsm_number'           => $request->post('itsm_number'),
+                'sap_po_number'         => $request->post('sap_po_number') ? preg_replace('/\D/', '', $request->post('sap_po_number')) : null,
+                'ecapex_number'         => $request->post('ecapex_number'),
+                'vendor_dn_number'      => $request->post('vendor_dn_number'),
+                'tks_dn_number'         => $request->post('tks_dn_number'),
+                'tks_invoice_number'    => $request->post('tks_invoice_number'),
+                'ntt_dn_number'         => $request->post('ntt_dn_number'),
+                'delivery_date'         => $request->post('delivery_date'),
+                'received_date'         => $request->post('receivedDate'),
+                'received_by'           => $request->post('receivedBy'),
+                'remarks'               => $request->post('remarks'),
+            ]);
+
+            return response()->json(['status' => true, 'message' => 'Receiving updated successfully.']);
+        } catch (\Throwable $err) {
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
     public function approve(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
@@ -199,7 +249,9 @@ class InboundController extends Controller
                         ->orWhere('vendor', 'like', '%' . $request->search . '%')
                         ->orWhereHas('details', function ($dq) use ($request) {
                             $dq->where('serial_number', 'like', '%' . $request->search . '%')
-                                ->orWhere('wh_asset_number', 'like', '%' . $request->search . '%');
+                                ->orWhere('wh_asset_number', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_number', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_name', 'like', '%' . $request->search . '%');
                         });
                 });
             })

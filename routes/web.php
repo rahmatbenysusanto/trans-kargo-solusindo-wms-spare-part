@@ -65,6 +65,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
             Route::get('/{id}', 'show')->name('receiving.show');
             Route::post('/approve', 'approve')->name('receiving.approve');
             Route::post('/cancel', 'cancel')->name('receiving.cancel');
+            Route::get('/{id}/edit', 'edit')->name('receiving.edit');
+            Route::post('/{id}/update', 'update')->name('receiving.update');
 
             Route::prefix('/create')->group(function () {
                 Route::get('/spare', 'createSpare')->name('receiving.create.spare');
