@@ -662,8 +662,11 @@
             const category = document.getElementById('category').value;
 
             // Hide all dynamic fields first
-            $('.field-ntt-requestor, .field-request-date, .field-sttb, .field-ntt-rn, .field-sap-po, .field-ecapex, .field-rma, .field-itsm, .field-tks-dn, .field-tks-inv, .field-vendor-dn, .field-po-ref, .field-client, .field-client-contact, .field-pickup-address, .field-vendor, .field-courier-dn, .field-courier-inv, .field-received-date, .field-received-by, .field-remarks')
+            $('.field-ntt-requestor, .field-request-date, .field-sttb, .field-ntt-rn, .field-sap-po, .field-ecapex, .field-rma, .field-itsm, .field-tks-dn, .field-tks-inv, .field-vendor-dn, .field-po-ref, .field-client, .field-vendor, .field-courier-dn, .field-courier-inv, .field-received-date, .field-received-by, .field-remarks')
                 .hide();
+
+            // Always show contact & address fields for all categories
+            $('.field-client-contact, .field-pickup-address').show();
 
             if (category === 'New PO') {
                 // Row 3: eCapex (17), SAP PO# (18), Vendor DN (19), Received Date (21), Processed By (29)

@@ -44,7 +44,7 @@
                             <div class="text-dark mb-0 small">Attn: {{ $inbound->client_contact }}</div>
                         @endif
                         <p class="text-muted mb-0" style="white-space: pre-line; font-size: 11px;">
-                            {{ $inbound->pickup_address ?? $inbound->client->address ?? '-' }}
+                            {{ ($inbound->pickup_address && trim($inbound->pickup_address)) ? $inbound->pickup_address : ($inbound->client->address ?? '-') }}
                         </p>
                     </div>
                 </div>
