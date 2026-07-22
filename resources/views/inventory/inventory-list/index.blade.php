@@ -528,7 +528,7 @@
                                         <tr class="pc-group {{ $isChild ? 'is-child' : ($isParent ? 'is-parent' : '') }}">
                                             <td>{{ $loop->iteration + ($inventory->currentPage() - 1) * $inventory->perPage() }}
                                             </td>
-                                            <td><span class="text-mono fw-bold text-primary cell-truncate" style="max-width: 120px;" title="{{ $item->unique_id }}">{{ $item->unique_id }}</span></td>
+                                            <td><span class="text-mono fw-bold text-primary" style="white-space: nowrap;" title="{{ $item->unique_id }}">{{ $item->unique_id }}</span></td>
                                             <td>
                                                 <div class="d-flex align-items-center gap-1" style="{{ $isChild ? 'padding-left: 16px;' : '' }}">
                                                     @if ($isChild)
@@ -536,12 +536,12 @@
                                                     @elseif ($isParent)
                                                         <span class="badge bg-label-primary p-0 px-1" style="font-size: 0.6rem; line-height: 1.2;" title="Has children">⊟</span>
                                                     @endif
-                                                    <span class="text-mono fw-bold text-dark cell-truncate" style="max-width: 110px;" title="{{ $item->serial_number }}">{{ $item->serial_number }}</span>
+                                                    <span class="text-mono fw-bold text-dark" style="white-space: nowrap;" title="{{ $item->serial_number }}">{{ $item->serial_number }}</span>
                                                 </div>
                                             </td>
                                             <td>
                                                 @if ($isChild)
-                                                    <span class="text-mono cell-truncate" style="max-width: 120px;" title="{{ $item->parent_serial_number }}">
+                                                    <span class="text-mono" style="white-space: nowrap;" title="{{ $item->parent_serial_number }}">
                                                         <span class="text-muted" style="font-size: 0.65rem;">parent:</span> {{ $item->parent_serial_number }}
                                                     </span>
                                                 @else
