@@ -181,8 +181,11 @@ class InventoryController extends Controller
                 $dir
             );
         } else {
-            // Default sort
-            $query->latest();
+            // Default sort: group by parent-child relationship
+            // Items without parent (parent_serial_number = NULL) use their own serial_number
+            // Items with parent use the parent's serial_number, so children appear near their parent
+            $query->orderByRaw('COALESCE(parent_serial_number, serial_number) ASC')
+                  ->orderBy('serial_number', 'ASC');
         }
 
         return $query;
@@ -213,7 +216,7 @@ class InventoryController extends Controller
         $sortDirection = $request->get('sort_direction', 'asc');
         $quickSearch = $request->get('quick_search');
 
-        $query = Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup']);
+        $query = Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup', 'details.inboundDetail']);
 
         $this->applyClientFilter($query, $clientId);
         $this->applyFilters($query, $filter, $quickSearch);
@@ -221,10 +224,17 @@ class InventoryController extends Controller
 
         $inventory = $query->paginate(15)->appends(request()->query());
 
+        // Collect all serial numbers that are referenced as parent (for parent badge display)
+        $parentSns = \App\Models\Inventory::whereNotNull('parent_serial_number')
+            ->where('parent_serial_number', '!=', '')
+            ->distinct()
+            ->pluck('parent_serial_number')
+            ->toArray();
+
         $clients = $user->getAvailableClients();
 
         return view('inventory.inventory-list.index', compact(
-            'title', 'inventory', 'clients', 'sortField', 'sortDirection'
+            'title', 'inventory', 'clients', 'sortField', 'sortDirection', 'parentSns'
         ));
     }
 

@@ -261,6 +261,109 @@
         .table-responsive {
             overflow: visible !important;
         }
+
+        /* ---- Notes column ---- */
+        .notes-cell {
+            max-width: 180px;
+            white-space: normal;
+            font-size: 0.72rem;
+            color: #555;
+            line-height: 1.3;
+        }
+        .notes-cell .notes-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: default;
+        }
+        .notes-cell .notes-full {
+            display: none;
+        }
+        .notes-cell.expanded .notes-preview {
+            display: none;
+        }
+        .notes-cell.expanded .notes-full {
+            display: inline;
+        }
+        .notes-cell .notes-toggle {
+            color: #4a90d9;
+            cursor: pointer;
+            font-size: 0.65rem;
+            margin-left: 2px;
+        }
+        .notes-cell .notes-toggle:hover {
+            text-decoration: underline;
+        }
+
+        /* ---- Column toggle ---- */
+        .col-toggle-wrapper {
+            position: relative;
+        }
+        .col-toggle-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 1050;
+            min-width: 220px;
+            background: #fff;
+            border: 1px solid #c6c6c6;
+            border-radius: 4px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            padding: 8px;
+            display: none;
+            font-size: 12px;
+        }
+        .col-toggle-dropdown.show {
+            display: block;
+        }
+        .col-toggle-dropdown label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 6px;
+            font-weight: 400;
+            cursor: pointer;
+            margin: 0;
+            border-radius: 2px;
+        }
+        .col-toggle-dropdown label:hover {
+            background: #f5f5f5;
+        }
+        .col-toggle-dropdown input[type="checkbox"] {
+            accent-color: #4a90d9;
+            margin: 0;
+        }
+
+        /* hidden column utility */
+        .col-hidden {
+            display: none !important;
+        }
+
+        /* truncate long text in cells */
+        .cell-truncate {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+        }
+
+        /* Keep dropdowns from being clipped */
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        /* parent-child grouping visual */
+        .pc-group {
+            border-left: 2px solid transparent;
+        }
+        .pc-group.is-child {
+            border-left-color: #d0d5dd;
+        }
+        .pc-group.is-parent {
+            border-left-color: #4a90d9;
+        }
     </style>
 @endsection
 
@@ -270,7 +373,16 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header d-flex justify-content-between align-items-center border-bottom py-3">
                     <h5 class="card-title mb-0 fw-bold"><i class="ti tabler-box me-2 text-primary"></i>Inventory Data</h5>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 align-items-center">
+                        <div class="col-toggle-wrapper">
+                            <button type="button" id="colToggleBtn" class="btn btn-sm btn-label-secondary">
+                                <i class="ti tabler-columns me-1"></i> Columns
+                            </button>
+                            <div class="col-toggle-dropdown" id="colToggleDropdown">
+                                <div class="fw-semibold small text-muted mb-1 pb-1 border-bottom">Show/Hide Columns</div>
+                                <div id="colToggleList"></div>
+                            </div>
+                        </div>
                         <a href="{{ route('inventory.export.pdf', request()->all()) }}" target="_blank"
                             class="btn btn-sm btn-label-secondary">
                             <i class="ti tabler-file-type-pdf me-1"></i> PDF Export
@@ -336,86 +448,109 @@
                                 <thead class="table-light border-top">
                                     <tr>
                                         <th width="30">#</th>
-                                        <th class="excel-header" data-column="unique_id">
-                                            <span class="header-label">Warehouse Asset ID</span>
+                                        <th class="excel-header" data-column="unique_id" data-col-toggle="wh">
+                                            <span class="header-label">WH Asset ID</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="serial_number">
+                                        <th class="excel-header" data-column="serial_number" data-col-toggle="sn">
                                             <span class="header-label">Serial Number</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="parent_serial_number">
-                                            <span class="header-label">Parent Serial Number</span>
+                                        <th class="excel-header" data-column="parent_serial_number" data-col-toggle="parent_sn">
+                                            <span class="header-label">Parent SN</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="part_number">
+                                        <th class="excel-header" data-column="part_number" data-col-toggle="part_no">
                                             <span class="header-label">Part Number</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="part_description">
-                                            <span class="header-label">Part Description</span>
+                                        <th class="excel-header" data-column="part_description" data-col-toggle="desc">
+                                            <span class="header-label">Description</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="brand">
+                                        <th class="excel-header" data-column="brand" data-col-toggle="brand">
                                             <span class="header-label">Brand</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="group">
+                                        <th class="excel-header" data-column="group" data-col-toggle="group">
                                             <span class="header-label">Group</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="location">
+                                        <th class="excel-header" data-column="location" data-col-toggle="location">
                                             <span class="header-label">Location</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="condition">
-                                            <span class="header-label">Stock Condition</span>
+                                        <th class="excel-header" data-column="condition" data-col-toggle="condition">
+                                            <span class="header-label">Condition</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="staging_condition">
-                                            <span class="header-label">Staging Condition</span>
+                                        <th class="excel-header" data-column="staging_condition" data-col-toggle="stag_cond">
+                                            <span class="header-label">Staging Cond</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="status">
+                                        <th class="excel-header" data-column="status" data-col-toggle="status">
                                             <span class="header-label">Status</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="last_staging_date">
+                                        <th data-col-toggle="notes">
+                                            <span class="header-label">Notes</span>
+                                        </th>
+                                        <th class="excel-header" data-column="last_staging_date" data-col-toggle="check_date">
                                             <span class="header-label">Check Date</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="excel-header" data-column="last_movement_date">
+                                        <th class="excel-header" data-column="last_movement_date" data-col-toggle="activity">
                                             <span class="header-label">Activity</span>
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="text-center" width="70">Action</th>
+                                        <th class="text-center" width="70" data-col-toggle="action">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse ($inventory as $item)
-                                        <tr>
+                                        @php
+                                            $isChild = !empty($item->parent_serial_number);
+                                            $isParent = in_array($item->serial_number, $parentSns ?? []);
+                                        @endphp
+                                        <tr class="pc-group {{ $isChild ? 'is-child' : ($isParent ? 'is-parent' : '') }}">
                                             <td>{{ $loop->iteration + ($inventory->currentPage() - 1) * $inventory->perPage() }}
                                             </td>
-                                            <td><span class="text-mono fw-bold text-primary">{{ $item->unique_id }}</span></td>
-                                            <td><span class="text-mono fw-bold text-dark">{{ $item->serial_number }}</span>
+                                            <td><span class="text-mono fw-bold text-primary cell-truncate" style="max-width: 120px;" title="{{ $item->unique_id }}">{{ $item->unique_id }}</span></td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-1" style="{{ $isChild ? 'padding-left: 16px;' : '' }}">
+                                                    @if ($isChild)
+                                                        <span class="badge bg-label-info p-0 px-1" style="font-size: 0.6rem; line-height: 1.2;" title="Child item">↳</span>
+                                                    @elseif ($isParent)
+                                                        <span class="badge bg-label-primary p-0 px-1" style="font-size: 0.6rem; line-height: 1.2;" title="Has children">⊟</span>
+                                                    @endif
+                                                    <span class="text-mono fw-bold text-dark cell-truncate" style="max-width: 110px;" title="{{ $item->serial_number }}">{{ $item->serial_number }}</span>
+                                                </div>
                                             </td>
-                                            <td><span class="text-mono">{{ $item->parent_serial_number ?? '-' }}</span></td>
-                                            <td style="max-width: 200px; white-space: normal;"><span
-                                                    class="text-mono">{{ $item->part_number ?? '-' }}</span></td>
-                                            <td>{{ $item->part_description }}</td>
+                                            <td>
+                                                @if ($isChild)
+                                                    <span class="text-mono cell-truncate" style="max-width: 120px;" title="{{ $item->parent_serial_number }}">
+                                                        <span class="text-muted" style="font-size: 0.65rem;">parent:</span> {{ $item->parent_serial_number }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted small">-</span>
+                                                @endif
+                                            </td>
+                                            <td style="max-width: 200px;"><span
+                                                    class="text-mono cell-truncate" title="{{ $item->part_number ?? '' }}">{{ $item->part_number ?? '-' }}</span></td>
+                                            <td><span class="cell-truncate" title="{{ $item->part_description ?? '' }}">{{ $item->part_description ?? '-' }}</span></td>
                                             <td><span class="badge bg-label-dark"
                                                     style="font-size: 0.65rem;">{{ $item->brand->name ?? '-' }}</span></td>
                                             <td><span class="badge bg-label-secondary"
@@ -427,7 +562,7 @@
                                                         <span class="badge bg-label-success p-1" title="Put Away Complete">
                                                             <i class="ti tabler-check fs-7"></i> PA
                                                         </span>
-                                                        <span class="text-muted" style="font-size: 0.72rem;">
+                                                        <span class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">
                                                             {{ $item->storageLevel->bin->rak->zone->name }}-{{ $item->storageLevel->bin->rak->name }}-{{ $item->storageLevel->bin->name }}-{{ $item->storageLevel->name }}
                                                         </span>
                                                     </div>
@@ -474,6 +609,20 @@
                                                 <span
                                                     class="badge {{ $bgClass }} badge-status">{{ strtoupper($item->status) }}</span>
                                             </td>
+                                            <td class="notes-cell" data-col-toggle="notes">
+                                                @php
+                                                    $notes = $item->details->first()?->inboundDetail?->notes;
+                                                @endphp
+                                                @if ($notes)
+                                                    <span class="notes-preview" id="notes-preview-{{ $item->id }}">{{ \Illuminate\Support\Str::limit($notes, 60) }}</span>
+                                                    <span class="notes-full" id="notes-full-{{ $item->id }}">{{ $notes }}</span>
+                                                    @if (strlen($notes) > 60)
+                                                        <span class="notes-toggle" data-id="{{ $item->id }}" onclick="toggleNotes({{ $item->id }})">more</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted small">-</span>
+                                                @endif
+                                            </td>
                                             <td><small
                                                     class="text-muted">{{ $item->last_staging_date ? \Carbon\Carbon::parse($item->last_staging_date)->format('d/m/Y') : '-' }}</small>
                                             </td>
@@ -496,7 +645,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="15" class="text-center py-5">No records found.</td>
+                                            <td colspan="16" class="text-center py-5">No records found.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -921,6 +1070,7 @@
                     'unique_id': 'Warehouse Asset ID',
                     'serial_number': 'Serial Number',
                     'parent_serial_number': 'Parent Serial Number',
+                    'part_number': 'Part Number',
                     'part_description': 'Part Description',
                     'brand': 'Brand',
                     'group': 'Group',
@@ -928,6 +1078,7 @@
                     'condition': 'Stock Condition',
                     'staging_condition': 'Staging Condition',
                     'status': 'Status',
+                    'notes': 'Notes',
                     'last_staging_date': 'Check Date',
                     'last_movement_date': 'Activity'
                 };
@@ -956,7 +1107,147 @@
             }
         })();
 
-        // ===== Print Barcode (unchanged) =====
+        // ===== Column Visibility Toggle =====
+        (function() {
+            'use strict';
+
+            const STORAGE_KEY = 'inventory_col_visibility';
+
+            // Define columns with their toggle key and label
+            const TOGGLE_COLUMNS = [
+                { key: 'wh',         label: 'WH Asset ID',   alwaysOn: true },
+                { key: 'sn',         label: 'Serial Number', alwaysOn: true },
+                { key: 'parent_sn',  label: 'Parent SN' },
+                { key: 'part_no',    label: 'Part Number' },
+                { key: 'desc',       label: 'Description' },
+                { key: 'brand',      label: 'Brand' },
+                { key: 'group',      label: 'Group' },
+                { key: 'location',   label: 'Location' },
+                { key: 'condition',  label: 'Condition' },
+                { key: 'stag_cond',  label: 'Staging Cond' },
+                { key: 'status',     label: 'Status' },
+                { key: 'notes',      label: 'Notes' },
+                { key: 'check_date', label: 'Check Date' },
+                { key: 'activity',   label: 'Activity' },
+                { key: 'action',     label: 'Action', alwaysOn: true },
+            ];
+
+            function loadSettings() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    return saved ? JSON.parse(saved) : null;
+                } catch(e) { return null; }
+            }
+
+            function saveSettings(settings) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+                } catch(e) {}
+            }
+
+            function applyVisibility() {
+                let settings = loadSettings();
+                if (!settings) {
+                    settings = {};
+                    TOGGLE_COLUMNS.forEach(function(c) { settings[c.key] = true; });
+                    saveSettings(settings);
+                }
+
+                // Map toggle key to column index (1-based)
+                const colIndex = {
+                    'wh': 2, 'sn': 3, 'parent_sn': 4, 'part_no': 5, 'desc': 6,
+                    'brand': 7, 'group': 8, 'location': 9, 'condition': 10,
+                    'stag_cond': 11, 'status': 12, 'notes': 13,
+                    'check_date': 14, 'activity': 15, 'action': 16,
+                };
+
+                // Toggle header cells
+                TOGGLE_COLUMNS.forEach(function(col) {
+                    const visible = settings[col.key] !== false;
+                    const th = document.querySelector('th[data-col-toggle="' + col.key + '"]');
+                    if (th) th.classList.toggle('col-hidden', !visible);
+                });
+
+                // Toggle data cells by column index
+                document.querySelectorAll('.table-responsive .table tbody tr').forEach(function(row) {
+                    const cells = row.querySelectorAll('td');
+                    Object.keys(colIndex).forEach(function(key) {
+                        const visible = settings[key] !== false;
+                        const idx = colIndex[key];
+                        const td = cells[idx - 1];
+                        if (td) td.classList.toggle('col-hidden', !visible);
+                    });
+                });
+
+                // Update checkboxes
+                document.querySelectorAll('#colToggleList input[type="checkbox"]').forEach(function(cb) {
+                    const key = cb.value;
+                    cb.checked = settings[key] !== false;
+                });
+            }
+
+            function initToggle() {
+                // Build the toggle list
+                const list = document.getElementById('colToggleList');
+                if (!list) return;
+
+                let html = '';
+                TOGGLE_COLUMNS.forEach(function(col) {
+                    html += '<label class="' + (col.alwaysOn ? 'text-muted" style="cursor:default;opacity:0.7"' : '"') + '>';
+                    html += '<input type="checkbox" value="' + col.key + '" ' +
+                            (col.alwaysOn ? 'disabled checked' : '') + '> ';
+                    html += col.label;
+                    html += '</label>';
+                });
+                list.innerHTML = html;
+
+                // Handle checkbox changes
+                list.addEventListener('change', function(e) {
+                    if (e.target.tagName === 'INPUT' && !e.target.disabled) {
+                        const key = e.target.value;
+                        let settings = loadSettings() || {};
+                        settings[key] = e.target.checked;
+                        saveSettings(settings);
+                        applyVisibility();
+                    }
+                });
+
+                // Toggle dropdown visibility
+                const btn = document.getElementById('colToggleBtn');
+                const dropdown = document.getElementById('colToggleDropdown');
+                if (btn && dropdown) {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        dropdown.classList.toggle('show');
+                    });
+                    document.addEventListener('click', function(e) {
+                        if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+                            dropdown.classList.remove('show');
+                        }
+                    });
+                }
+
+                applyVisibility();
+            }
+
+            document.addEventListener('DOMContentLoaded', initToggle);
+        })();
+
+        // ===== Notes Toggle =====
+        function toggleNotes(id) {
+            const cell = document.getElementById('notes-full-' + id).closest('.notes-cell');
+            if (cell) {
+                cell.classList.toggle('expanded');
+                const toggle = cell.querySelector('.notes-toggle');
+                if (cell.classList.contains('expanded')) {
+                    toggle.textContent = 'less';
+                } else {
+                    toggle.textContent = 'more';
+                }
+            }
+        }
+
+        // ===== Print Barcode =====
         function printBarcode(uniqueId, partNumber, serialNumber) {
             const printWindow = window.open('', '_blank', 'width=600,height=400');
             printWindow.document.write(`
