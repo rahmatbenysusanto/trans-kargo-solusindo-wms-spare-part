@@ -12,9 +12,10 @@
             color: #5d596c;
             white-space: nowrap;
         }
-        .table-compact td {
-            font-size: 0.8rem;
-            padding: 0.5rem 0.6rem !important;
+        .table tbody td {
+            font-size: 0.78rem;
+            padding: 0.45rem 0.6rem !important;
+            vertical-align: middle;
         }
         .badge-status {
             font-size: 0.65rem;
@@ -25,6 +26,24 @@
             font-family: 'Monaco', 'Consolas', monospace;
             font-size: 0.75rem;
         }
+
+        /* ---- Column widths ---- */
+        .table-wrap th:nth-child(1) { min-width: 30px; width: 30px; }
+        .table-wrap th:nth-child(2) { min-width: 140px; }
+        .table-wrap th:nth-child(3) { min-width: 170px; }
+        .table-wrap th:nth-child(4) { min-width: 130px; }
+        .table-wrap th:nth-child(5) { min-width: 130px; }
+        .table-wrap th:nth-child(6) { min-width: 180px; }
+        .table-wrap th:nth-child(7) { min-width: 90px; }
+        .table-wrap th:nth-child(8) { min-width: 90px; }
+        .table-wrap th:nth-child(9) { min-width: 200px; }
+        .table-wrap th:nth-child(10) { min-width: 100px; }
+        .table-wrap th:nth-child(11) { min-width: 105px; }
+        .table-wrap th:nth-child(12) { min-width: 90px; }
+        .table-wrap th:nth-child(13) { min-width: 160px; }
+        .table-wrap th:nth-child(14) { min-width: 100px; }
+        .table-wrap th:nth-child(15) { min-width: 100px; }
+        .table-wrap th:nth-child(16) { min-width: 75px; width: 75px; }
 
         /* ---- Excel-style filter header ---- */
         .excel-header {
@@ -257,10 +276,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* allow dropdown to overflow the responsive wrapper */
-        .table-responsive {
-            overflow: visible !important;
-        }
 
         /* ---- Notes column ---- */
         .notes-cell {
@@ -349,9 +364,23 @@
             display: block;
         }
 
-        /* Keep dropdowns from being clipped */
-        .table-responsive {
-            overflow: visible !important;
+        /* ---- Scrollable table wrapper ---- */
+        .table-wrap {
+            overflow-x: auto;
+            overflow-y: visible;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .table-wrap .table {
+            margin-bottom: 0;
+        }
+        .table-wrap .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            z-index: 3;
         }
 
         /* parent-child grouping visual */
@@ -443,8 +472,8 @@
                         <input type="hidden" name="sort_direction" id="sortDirectionInput" value="{{ $sortDirection ?? 'asc' }}">
                         <div id="filterInputsContainer"></div>
 
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped table-compact table-sm text-nowrap align-middle">
+                        <div class="table-wrap">
+                            <table class="table table-hover table-striped table-sm text-nowrap align-middle">
                                 <thead class="table-light border-top">
                                     <tr>
                                         <th width="30">#</th>
@@ -684,6 +713,7 @@
                 restoreSortState();
                 attachHeaderClickHandlers();
                 attachGlobalClickHandler();
+                attachScrollResizeHandler();
             });
 
             // ---- restore filter state from URL on page load ----
@@ -760,15 +790,17 @@
                 closeAllDropdowns();
                 activeColumn = column;
 
-                // Position the dropdown
+                // Position the dropdown using fixed positioning
+                // so it's not clipped by overflow-x:auto on .table-wrap
                 const th = getHeaderEl(column);
                 const rect = th.getBoundingClientRect();
-                const tableWrap = th.closest('.table-responsive');
-                if (tableWrap) {
-                    // Ensure dropdown stays within the table wrapper horizontally
-                    dropdown.style.left = '0';
-                    dropdown.style.right = 'auto';
-                }
+
+                dropdown.style.position = 'fixed';
+                dropdown.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 260)) + 'px';
+                dropdown.style.top = (rect.bottom + 4) + 'px';
+                dropdown.style.minWidth = Math.max(rect.width, 200) + 'px';
+                dropdown.style.maxHeight = '60vh';
+                dropdown.style.overflowY = 'auto';
 
                 dropdown.classList.add('show');
 
@@ -1042,12 +1074,39 @@
             function closeAllDropdowns() {
                 document.querySelectorAll('.excel-dropdown.show').forEach(function(el) {
                     el.classList.remove('show');
+                    el.style.position = '';
+                    el.style.left = '';
+                    el.style.top = '';
+                    el.style.minWidth = '';
+                    el.style.maxHeight = '';
+                    el.style.overflowY = '';
                     const th = el.closest('.excel-header');
                     if (th && th.dataset.column) {
                         delete valueCache[th.dataset.column];
                     }
                 });
                 activeColumn = null;
+            }
+
+            // ---- close dropdown on scroll/resize ----
+            function attachScrollResizeHandler() {
+                var handler = function() {
+                    if (activeColumn) {
+                        closeAllDropdowns();
+                    }
+                };
+                // Debounce scroll handler for performance
+                var ticking = false;
+                document.addEventListener('scroll', function() {
+                    if (!ticking) {
+                        requestAnimationFrame(function() {
+                            if (activeColumn) closeAllDropdowns();
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                }, true); // useCapture to catch all scroll events
+                window.addEventListener('resize', handler);
             }
 
             // ---- clear filter for a specific column ----
@@ -1169,7 +1228,7 @@
                 });
 
                 // Toggle data cells by column index
-                document.querySelectorAll('.table-responsive .table tbody tr').forEach(function(row) {
+                document.querySelectorAll('.table-wrap .table tbody tr').forEach(function(row) {
                     const cells = row.querySelectorAll('td');
                     Object.keys(colIndex).forEach(function(key) {
                         const visible = settings[key] !== false;
