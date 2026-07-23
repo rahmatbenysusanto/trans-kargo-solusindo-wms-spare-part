@@ -459,6 +459,41 @@
                                         <i class="ti tabler-x"></i>
                                     </a>
                                 @endif
+
+                                {{-- Sort by Created At dropdown --}}
+                                @php
+                                    $sortDateLabel = 'Default';
+                                    if ($sortField === 'created_at') {
+                                        $sortDateLabel = $sortDirection === 'desc' ? 'Terbaru' : 'Terlama';
+                                    }
+                                @endphp
+                                <div class="btn-group btn-group-sm sort-date-dropdown">
+                                    <button type="button" class="btn btn-label-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ti tabler-sort-ascending me-1"></i>
+                                        <span id="sortDateLabel">{{ $sortDateLabel }}</span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item {{ $sortField !== 'created_at' ? 'active' : '' }}"
+                                               href="#" data-sort="" data-dir="">
+                                                <i class="ti tabler-minus me-1 text-muted"></i> Default
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item {{ $sortField === 'created_at' && $sortDirection === 'desc' ? 'active' : '' }}"
+                                               href="#" data-sort="created_at" data-dir="desc">
+                                                <i class="ti tabler-arrow-down me-1 text-success"></i> Terbaru
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item {{ $sortField === 'created_at' && $sortDirection === 'asc' ? 'active' : '' }}"
+                                               href="#" data-sort="created_at" data-dir="asc">
+                                                <i class="ti tabler-arrow-up me-1 text-warning"></i> Terlama
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
                                 <div class="ms-auto">
                                     <a href="{{ url()->current() }}" class="btn btn-sm btn-label-secondary">
                                         <i class="ti tabler-refresh me-1"></i> Reset Filters
@@ -1164,6 +1199,32 @@
                 if (str === null || str === undefined) return '';
                 return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             }
+        })();
+
+        // ===== Sort by Date Dropdown =====
+        (function() {
+            'use strict';
+
+            const dropdown = document.querySelector('.sort-date-dropdown');
+            if (!dropdown) return;
+
+            dropdown.querySelectorAll('.dropdown-item').forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    const sortField = this.dataset.sort || '';
+                    const sortDir = this.dataset.dir || 'asc';
+
+                    document.getElementById('sortFieldInput').value = sortField;
+                    document.getElementById('sortDirectionInput').value = sortDir;
+
+                    // Remove any existing page input to reset pagination
+                    const pageInput = document.querySelector('input[name="page"]');
+                    if (pageInput) pageInput.remove();
+
+                    document.getElementById('inventoryForm').submit();
+                });
+            });
         })();
 
         // ===== Column Visibility Toggle =====

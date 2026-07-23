@@ -68,6 +68,42 @@
                             </span>
                         </div>
                     </div>
+
+                    {{-- Paste Serial Numbers Section --}}
+                    <div class="mt-3 pt-3 border-top" id="pasteBySnSection">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <a href="javascript:void(0)" onclick="togglePasteSection()"
+                               class="text-primary fw-medium text-decoration-none small d-flex align-items-center gap-1"
+                               id="pasteToggle">
+                                <i class="ti tabler-chevron-down fs-6" id="pasteChevron"
+                                   style="transition: transform 0.2s;"></i>
+                                Paste Serial Numbers
+                            </a>
+                            <span class="text-muted small">
+                                <i class="ti tabler-bulb me-1"></i>Select multiple items at once
+                            </span>
+                        </div>
+                        <div id="pasteSection" class="mt-2" style="display: none;">
+                            <div class="d-flex gap-2 align-items-start">
+                                <textarea class="form-control form-control-sm" id="serialNumbersPaste" rows="3"
+                                    placeholder="Paste serial numbers here...&#10;One per line, or separated by comma / semicolon"
+                                    style="resize: vertical; font-size: 0.85rem;"></textarea>
+                                <button class="btn btn-primary btn-sm px-3 flex-shrink-0 shadow-sm"
+                                    onclick="selectBySerialNumbers()" id="selectBySnBtn"
+                                    style="border-radius: 8px; min-width: 110px;">
+                                    <i class="ti tabler-check me-1"></i> Select All
+                                </button>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 mt-1">
+                                <small class="text-muted">
+                                    <i class="ti tabler-info-circle me-1"></i>
+                                    One serial number per line, or separated by comma / semicolon
+                                </small>
+                                <small id="pasteSerialCount" class="fw-medium text-muted" style="display: none;"></small>
+                            </div>
+                            <div id="pasteResult" class="mt-1 small fw-medium" style="display: none;"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -195,6 +231,145 @@
                 console.error('Fetch error:', error);
                 tbody.innerHTML =
                     `<tr><td colspan="6" class="text-center py-5"><div class="badge bg-label-danger fs-6 rounded-pill px-4 py-2 mb-2"><i class="ti tabler-alert-circle me-1"></i> Error</div><p class="text-muted mb-0">Failed to load inventory: ${error.message}</p></td></tr>`;
+            });
+    }
+
+    function togglePasteSection() {
+        const section = document.getElementById('pasteSection');
+        const chevron = document.getElementById('pasteChevron');
+        const isHidden = section.style.display === 'none' || !section.style.display;
+        section.style.display = isHidden ? 'block' : 'none';
+        chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+
+        if (isHidden) {
+            document.getElementById('serialNumbersPaste').focus();
+        }
+    }
+
+    function updateSerialCount() {
+        const textarea = document.getElementById('serialNumbersPaste');
+        const raw = textarea.value.trim();
+        const countEl = document.getElementById('pasteSerialCount');
+        if (!raw) {
+            countEl.style.display = 'none';
+            return;
+        }
+        const sns = raw.split(/[\r\n,;]+/).map(s => s.trim()).filter(s => s.length > 0);
+        if (sns.length > 0) {
+            countEl.style.display = 'inline';
+            countEl.textContent = sns.length + ' serial number(s) detected';
+        } else {
+            countEl.style.display = 'none';
+        }
+    }
+
+    // Auto-count serial numbers as user types
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.getElementById('serialNumbersPaste');
+        if (textarea) {
+            textarea.addEventListener('input', updateSerialCount);
+        }
+    });
+
+    function selectBySerialNumbers() {
+        const textarea = document.getElementById('serialNumbersPaste');
+        const raw = textarea.value.trim();
+        if (!raw) {
+            const resultDiv = document.getElementById('pasteResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="text-warning"><i class="ti tabler-alert-triangle me-1"></i> Please paste at least one serial number</span>';
+            setTimeout(() => { resultDiv.style.display = 'none'; }, 3000);
+            return;
+        }
+
+        // Split by newline, comma, or semicolon
+        const sns = raw.split(/[\r\n,;]+/)
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+
+        if (sns.length === 0) return;
+
+        const btn = document.getElementById('selectBySnBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Selecting...';
+
+        const clientId = document.getElementById('client_id').value;
+        const category = document.getElementById('category').value;
+        const url = `{{ route('outbound.get.inventory') }}?client_id=${clientId}&category=${category}&serial_numbers=${encodeURIComponent(sns.join(','))}`;
+
+        fetch(url)
+            .then(r => {
+                if (!r.ok) throw new Error('Server responded with ' + r.status);
+                return r.json();
+            })
+            .then(data => {
+                let selectedCount = 0;
+                let skippedCount = 0;
+
+                data.forEach(item => {
+                    // Skip if already in localStorage (check all outbound storage keys)
+                    const keys = ['outbound_temp_products', 'outbound_products',
+                                  'outbound_f_products', 'outbound_rma_products',
+                                  'outbound_products_wo'];
+                    let alreadySelected = false;
+                    for (const k of keys) {
+                        try {
+                            const items = JSON.parse(localStorage.getItem(k)) ?? [];
+                            if (items.some(i => i.product_id === item.id)) {
+                                alreadySelected = true;
+                                break;
+                            }
+                        } catch (e) {}
+                    }
+
+                    if (!alreadySelected && typeof window.onReceivePickedItem === 'function') {
+                        window.onReceivePickedItem(item);
+                        selectedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                });
+
+                const notFound = sns.length - data.length - (sns.length > data.length ? 0 : 0);
+                const resultDiv = document.getElementById('pasteResult');
+                resultDiv.style.display = 'block';
+
+                let msg = '';
+                let cls = '';
+
+                if (selectedCount > 0) {
+                    msg += `<span class="text-success"><i class="ti tabler-check-circle me-1"></i> ${selectedCount} item(s) selected successfully</span>`;
+                    cls = 'text-success';
+                }
+                if (skippedCount > 0) {
+                    msg += `<span class="text-muted ms-2">(${skippedCount} already selected)</span>`;
+                }
+                const notFoundCount = sns.length - data.length;
+                if (notFoundCount > 0) {
+                    msg += `<div class="text-warning mt-1"><i class="ti tabler-alert-triangle me-1"></i> ${notFoundCount} serial number(s) not found in available inventory</div>`;
+                }
+
+                if (!msg) {
+                    msg = '<span class="text-muted">No new items were selected</span>';
+                }
+
+                resultDiv.innerHTML = msg;
+
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+
+                // Refresh the inventory list
+                fetchInventory();
+            })
+            .catch(err => {
+                const resultDiv = document.getElementById('pasteResult');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<span class="text-danger"><i class="ti tabler-alert-circle me-1"></i> Error: ${err.message}</span>`;
+
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             });
     }
 

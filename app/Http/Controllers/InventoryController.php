@@ -150,6 +150,7 @@ class InventoryController extends Controller
             'status'             => 'status',
             'last_staging_date'  => 'last_staging_date',
             'last_movement_date' => 'last_movement_date',
+            'created_at'         => 'created_at',
         ];
 
         if ($sortField && isset($directMap[$sortField])) {

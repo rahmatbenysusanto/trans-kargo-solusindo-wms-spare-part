@@ -545,12 +545,28 @@ class OutboundController extends Controller
                 });
             }
 
+            // Bulk lookup by exact serial numbers (from paste feature)
+            $serialNumbersInput = $request->get('serial_numbers');
+            $isSerialNumberLookup = false;
+            if ($serialNumbersInput) {
+                $sns = preg_split('/[\r\n,;]+/', $serialNumbersInput);
+                $sns = array_map('trim', $sns);
+                $sns = array_filter($sns, fn($v) => $v !== '');
+                if (!empty($sns)) {
+                    $query->whereIn('serial_number', $sns);
+                    $isSerialNumberLookup = true;
+                }
+            }
+
             if ($request->exclude_ids && $request->exclude_ids !== '') {
                 $excludeIds = explode(',', $request->exclude_ids);
                 $query->whereNotIn('id', $excludeIds);
             }
 
-            $data = $query->latest()->limit(50)->get()->map(function ($item) {
+            $data = $query->latest()
+                ->when(!$isSerialNumberLookup, fn($q) => $q->limit(50))
+                ->get()
+                ->map(function ($item) {
                 $location = 'N/A';
                 if ($item->storageLevel && $item->storageLevel->bin && $item->storageLevel->bin->rak && $item->storageLevel->bin->rak->zone) {
                     $location = $item->storageLevel->bin->rak->zone->name . '-' .
