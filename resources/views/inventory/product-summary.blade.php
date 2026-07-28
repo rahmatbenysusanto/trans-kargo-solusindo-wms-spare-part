@@ -33,27 +33,54 @@
                             <i class="ti tabler-file-description me-1"></i> PDF
                         </a>
                     </div>
-                    <form action="{{ url()->current() }}" method="GET" class="d-flex gap-2">
-                        @if (Auth::user()->isAdminWMS() || Auth::user()->clients->count() > 1)
-                            <select name="client_id" class="form-select form-select-sm" onchange="this.form.submit()"
-                                style="width: 200px;">
-                                <option value="">All Clients</option>
-                                @foreach ($clients as $client)
-                                    <option value="{{ $client->id }}"
-                                        {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                        {{ $client->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        @endif
-                        <div class="input-group input-group-sm" style="width: 300px;">
-                            <input type="text" class="form-control" name="search" value="{{ request()->get('search') }}"
-                                placeholder="Search Name or Number ...">
-                            <button class="btn btn-primary" type="submit">Filter</button>
-                        </div>
-                    </form>
                 </div>
                 <div class="card-body pt-3">
+                    <form action="{{ url()->current() }}" method="GET">
+                        <div class="row g-2 mb-3 align-items-end">
+                            @if (Auth::user()->isAdminWMS() || Auth::user()->clients->count() > 1)
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-bold">Client</label>
+                                    <select name="client_id" class="form-select form-select-sm"
+                                        onchange="this.form.submit()">
+                                        <option value="">All Clients</option>
+                                        @foreach ($clients as $client)
+                                            <option value="{{ $client->id }}"
+                                                {{ request('client_id') == $client->id ? 'selected' : '' }}>
+                                                {{ $client->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">
+                                    <i class="ti tabler-search me-1"></i> Quick Search SN / Asset ID
+                                </label>
+                                <input type="text" name="quick_search" class="form-control form-control-sm"
+                                    placeholder="Paste SN atau Asset ID, pisahkan dengan koma atau enter"
+                                    value="{{ request('quick_search') }}"
+                                    title="Paste multiple serial numbers or asset IDs&#10;Separate by comma, semicolon, or newline">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">
+                                    <i class="ti tabler-filter me-1"></i> Search Name / Number
+                                </label>
+                                <input type="text" class="form-control form-control-sm" name="search"
+                                    value="{{ request()->get('search') }}"
+                                    placeholder="Search Name or Number ...">
+                            </div>
+                            <div class="col-md d-flex gap-1 align-items-end pb-1">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="ti tabler-search"></i> Filter
+                                </button>
+                                @if (request('quick_search') || request('search'))
+                                    <a href="{{ url()->current() }}" class="btn btn-sm btn-label-secondary">
+                                        <i class="ti tabler-x me-1"></i> Reset
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </form>
                     <div class="table-responsive">
                         <table class="table table-hover table-striped table-compact table-sm text-nowrap align-middle">
                             <thead class="table-light border-top">

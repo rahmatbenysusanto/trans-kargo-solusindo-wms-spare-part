@@ -741,6 +741,21 @@ class DashboardController extends Controller
 
         $this->applyClientFilter($query, $clientId);
 
+        // Quick Search: multi SN / Asset ID (paste multiple values)
+        $quickSearch = $request->get('quick_search');
+        if ($quickSearch && trim($quickSearch) !== '') {
+            $terms = preg_split('/[\r\n,;]+/', $quickSearch);
+            $terms = array_map('trim', $terms);
+            $terms = array_filter($terms, fn($v) => $v !== '');
+
+            if (!empty($terms)) {
+                $query->where(function ($q) use ($terms) {
+                    $q->whereIn('serial_number', $terms)
+                      ->orWhereIn('unique_id', $terms);
+                });
+            }
+        }
+
         $query = $query->when($request->search, function ($query) use ($request) {
             return $query->where(function ($q) use ($request) {
                 $q->where('part_name', 'like', '%' . $request->search . '%')
