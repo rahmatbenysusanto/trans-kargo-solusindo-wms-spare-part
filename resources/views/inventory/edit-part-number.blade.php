@@ -12,6 +12,29 @@
 
                     <form action="{{ route('inventory.update.part-number') }}" method="POST">
                         @csrf
+
+                        {{-- Current / Old Data Reference --}}
+                        @if ($sn)
+                        <div class="alert alert-secondary d-flex align-items-center mb-4" role="alert">
+                            <i class="ti tabler-info-circle fs-3 me-3 text-primary"></i>
+                            <div>
+                                <span class="fw-bold">Produk yang akan diedit:</span>
+                                <div class="mt-2">
+                                    <table class="table table-sm table-borderless mb-0 small">
+                                        <tr>
+                                            <td class="text-muted pe-3" width="120">Serial Number</td>
+                                            <td class="fw-bold text-mono">{{ $sn }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted pe-3">Part Number Lama</td>
+                                            <td class="fw-bold text-mono text-warning">{{ $currentPartNumber ?: '(kosong)' }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="search_sn" value="{{ $sn }}">
+                        @else
                         <div class="mb-3">
                             <label class="form-label fw-bold">Serial Number / Asset ID</label>
                             <input type="text"
@@ -25,6 +48,7 @@
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                         </div>
+                        @endif
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">New Part Number</label>
@@ -32,14 +56,16 @@
                                    class="form-control text-primary fw-bold"
                                    name="new_part_number"
                                    placeholder="Enter new Part Number"
+                                   value="{{ old('new_part_number', $currentPartNumber) }}"
                                    required>
+                            <small class="text-muted">Masukkan Part Number yang baru untuk menggantikan yang lama.</small>
                             @error('new_part_number')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <div class="d-flex justify-content-end">
-                            <button type="reset" class="btn btn-label-secondary me-2">Cancel</button>
+                            <a href="{{ route('inventory.index') }}" class="btn btn-label-secondary me-2">Cancel</a>
                             <button type="submit" class="btn btn-primary d-flex align-items-center">
                                 <i class="ti tabler-device-floppy me-2"></i> Update Part Number
                             </button>

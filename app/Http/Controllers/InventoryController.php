@@ -1621,10 +1621,13 @@ class InventoryController extends Controller
         }
     }
 
-    public function editPartNumber()
+    public function editPartNumber(Request $request)
     {
         $title = 'Edit Part Number';
-        return view('inventory.edit-part-number', compact('title'));
+        $sn = $request->get('sn', '');
+        $currentPartNumber = $request->get('part_number', '');
+
+        return view('inventory.edit-part-number', compact('title', 'sn', 'currentPartNumber'));
     }
 
     public function updatePartNumber(Request $request)

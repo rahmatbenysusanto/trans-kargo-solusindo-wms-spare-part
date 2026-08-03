@@ -699,7 +699,7 @@
                                                         class="btn btn-icon btn-sm btn-label-primary">
                                                         <i class="ti tabler-info-circle fs-6"></i>
                                                     </a>
-                                                    <a href="{{ route('inventory.edit.part-number') }}"
+                                                    <a href="{{ route('inventory.edit.part-number', ['sn' => $item->serial_number, 'part_number' => $item->part_number]) }}"
                                                         class="btn btn-icon btn-sm btn-label-warning"
                                                         title="Edit Part Number">
                                                         <i class="ti tabler-edit fs-6"></i>
