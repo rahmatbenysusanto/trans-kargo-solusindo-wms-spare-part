@@ -131,6 +131,8 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/history/excel', 'historyExcel')->name('inventory.history.excel');
         Route::get('/edit-sn', 'editSn')->name('inventory.edit.sn');
         Route::post('/edit-sn', 'updateSn')->name('inventory.update.sn');
+        Route::get('/edit-part-number', 'editPartNumber')->name('inventory.edit.part-number');
+        Route::post('/edit-part-number', 'updatePartNumber')->name('inventory.update.part-number');
     });
 
     Route::prefix('/inventory/cycle-count')->controller(\App\Http\Controllers\CycleCountController::class)->group(function () {

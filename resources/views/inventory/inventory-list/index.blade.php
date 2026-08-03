@@ -580,7 +580,7 @@
                                             <span class="header-arrow">▾</span>
                                             <div class="excel-dropdown"></div>
                                         </th>
-                                        <th class="text-center" width="70" data-col-toggle="action">Action</th>
+                                        <th class="text-center" width="110" data-col-toggle="action">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -698,6 +698,11 @@
                                                     <a href="{{ route('inventory.show', $item->id) }}"
                                                         class="btn btn-icon btn-sm btn-label-primary">
                                                         <i class="ti tabler-info-circle fs-6"></i>
+                                                    </a>
+                                                    <a href="{{ route('inventory.edit.part-number') }}"
+                                                        class="btn btn-icon btn-sm btn-label-warning"
+                                                        title="Edit Part Number">
+                                                        <i class="ti tabler-edit fs-6"></i>
                                                     </a>
                                                     <button
                                                         onclick="printBarcode('{{ $item->unique_id }}', '{{ $item->part_number }}', '{{ $item->serial_number }}')"

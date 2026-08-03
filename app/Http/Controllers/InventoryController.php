@@ -1620,4 +1620,67 @@ class InventoryController extends Controller
             return back()->with('error', 'Failed to update Serial Number: ' . $e->getMessage());
         }
     }
+
+    public function editPartNumber()
+    {
+        $title = 'Edit Part Number';
+        return view('inventory.edit-part-number', compact('title'));
+    }
+
+    public function updatePartNumber(Request $request)
+    {
+        $request->validate([
+            'search_sn'       => 'required|string',
+            'new_part_number' => 'required|string',
+        ]);
+
+        $search = $request->search_sn;
+        $newPartNumber = $request->new_part_number;
+
+        $inventory = \App\Models\Inventory::where('serial_number', $search)
+            ->orWhere('unique_id', $search)
+            ->first();
+
+        $inboundDetail = \App\Models\InboundDetail::where('serial_number', $search)
+            ->orWhere('wh_asset_number', $search)
+            ->first();
+
+        if (!$inventory && !$inboundDetail) {
+            return back()->with('error', 'Item not found with given SN or Asset ID');
+        }
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            if ($inventory) {
+                $oldPartNumber = $inventory->part_number ?: '[EMPTY]';
+
+                \App\Models\InventoryHistory::create([
+                    'inventory_id'    => $inventory->id,
+                    'serial_number'   => $inventory->serial_number,
+                    'type'            => 'edit_part_number',
+                    'category'        => 'movement',
+                    'description'     => "Part Number Changed from {$oldPartNumber} to {$newPartNumber}. Asset ID: {$inventory->unique_id}",
+                    'user'            => Auth::user()->name,
+                    'from_location'   => '-',
+                    'to_location'     => '-'
+                ]);
+
+                $inventory->update([
+                    'part_number' => $newPartNumber
+                ]);
+            }
+
+            if ($inboundDetail) {
+                $inboundDetail->update([
+                    'part_number' => $newPartNumber
+                ]);
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+            return back()->with('success', 'Part Number updated successfully.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', 'Failed to update Part Number: ' . $e->getMessage());
+        }
+    }
 }

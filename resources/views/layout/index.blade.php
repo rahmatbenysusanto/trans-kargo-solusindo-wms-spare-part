@@ -251,6 +251,7 @@
                             Auth::user()->hasMenu('Inventory: Storage Inventory') ||
                             Auth::user()->hasMenu('Inventory: Write-off') ||
                             Auth::user()->hasMenu('Inventory: Edit Serial Number') ||
+                            Auth::user()->hasMenu('Inventory: Edit Part Number') ||
                             Auth::user()->hasMenu('Inventory: Cycle Count');
 
                         $hasOutbound = Auth::user()->hasMenu('Outbound');
@@ -310,7 +311,7 @@
 
                     @if ($hasInventory)
                         <li
-                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory History', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Storage Inventory', 'Write Off', 'Edit Serial Number', 'Cycle Count']) ? 'show open' : '' }}">
+                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory History', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Storage Inventory', 'Write Off', 'Edit Serial Number', 'Edit Part Number', 'Cycle Count']) ? 'show open' : '' }}">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-truck-loading"></i>
                                 <div data-i18n="Inventory">Inventory</div>
@@ -378,6 +379,13 @@
                                     <li class="menu-item {{ $title == 'Edit Serial Number' ? 'active' : '' }}">
                                         <a href="{{ route('inventory.edit.sn') }}" class="menu-link">
                                             <div data-i18n="Edit Serial Number">Edit Serial Number</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Edit Part Number'))
+                                    <li class="menu-item {{ $title == 'Edit Part Number' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.edit.part-number') }}" class="menu-link">
+                                            <div data-i18n="Edit Part Number">Edit Part Number</div>
                                         </a>
                                     </li>
                                 @endif
