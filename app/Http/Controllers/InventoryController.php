@@ -192,6 +192,22 @@ class InventoryController extends Controller
         return $query;
     }
 
+    /** Apply date range filter (created_at) */
+    private function applyDateFilter($query, Request $request)
+    {
+        $dateFrom = $request->get('date_from');
+        $dateTo   = $request->get('date_to');
+
+        if ($dateFrom && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom)) {
+            $query->whereDate('inventory.created_at', '>=', $dateFrom);
+        }
+        if ($dateTo && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) {
+            $query->whereDate('inventory.created_at', '<=', $dateTo);
+        }
+
+        return $query;
+    }
+
     public function scan($unique_id)
     {
         $inventory = Inventory::with(['storageLevel.bin.rak.zone', 'client', 'product.brand', 'product.productGroup'])
@@ -221,6 +237,7 @@ class InventoryController extends Controller
 
         $this->applyClientFilter($query, $clientId);
         $this->applyFilters($query, $filter, $quickSearch);
+        $this->applyDateFilter($query, $request);
         $this->applySorting($query, $sortField, $sortDirection);
 
         $inventory = $query->paginate(15)->appends(request()->query());
@@ -339,6 +356,7 @@ class InventoryController extends Controller
 
         $this->applyClientFilter($query, $clientId);
         $this->applyFilters($query, $filter, $quickSearch);
+        $this->applyDateFilter($query, $request);
         $this->applySorting($query, $sortField, $sortDirection);
 
         $inventory = $query->get();
@@ -365,6 +383,7 @@ class InventoryController extends Controller
 
         $this->applyClientFilter($query, $clientId);
         $this->applyFilters($query, $filter, $quickSearch);
+        $this->applyDateFilter($query, $request);
         $this->applySorting($query, $sortField, $sortDirection);
 
         $inventory = $query->get();
@@ -449,7 +468,7 @@ class InventoryController extends Controller
             echo "<td>{$brand}</td>";
             echo "<td>{$item->part_number}</td>";
             echo "<td>" . ($item->part_description ?? '-') . "</td>";
-            echo "<td>'{$item->serial_number}</td>";
+            echo "<td style=\"mso-number-format:\\@;\">{$item->serial_number}</td>";
             echo "<td>" . ($item->parent_serial_number ?? '-') . "</td>";
             echo "<td>{$item->qty}</td>";
             echo "<td>{$item->unique_id}</td>";
@@ -561,7 +580,7 @@ class InventoryController extends Controller
             echo "<td>" . ($index + 1) . "</td>";
             echo "<td>" . $item->created_at . "</td>";
             echo "<td>" . ($item->inventory->part_name ?? '-') . "</td>";
-            echo "<td>'" . ($item->inventory->serial_number ?? '-') . "</td>";
+            echo "<td style=\"mso-number-format:\\@;\">" . ($item->inventory->serial_number ?? '-') . "</td>";
             echo "<td>" . $from . "</td>";
             echo "<td>" . $to . "</td>";
             echo "<td>" . ($item->user->name ?? '-') . "</td>";
@@ -1181,7 +1200,7 @@ class InventoryController extends Controller
             echo '<td>' . ($item->brand->name ?? '-') . '</td>';
             echo '<td>' . $item->part_number . '</td>';
             echo '<td>' . $item->part_name . '</td>';
-            echo '<td> ' . $item->serial_number . '</td>';
+            echo '<td style="mso-number-format:\@;">' . $item->serial_number . '</td>';
             echo '<td>' . ($item->parent_sn ?? ($item->old_serial_number ?? '-')) . '</td>';
             echo '<td style="text-align:center">' . $item->qty . '</td>';
             echo '<td>' . ($inventory->unique_id ?? ($item->wh_asset_number ?? '-')) . '</td>';
@@ -1398,7 +1417,7 @@ class InventoryController extends Controller
             echo "<td>" . ($index + 1) . "</td>";
             echo "<td>{$item->unique_id}</td>";
             echo "<td>{$item->part_number}</td>";
-            echo "<td>'{$item->serial_number}</td>";
+            echo "<td style=\"mso-number-format:\\@;\">{$item->serial_number}</td>";
             echo "<td>" . ($item->parent_serial_number ?? '-') . "</td>";
             echo "<td>" . ($item->client_name ?? '-') . "</td>";
             echo "<td>" . ($item->zone_name ?? '-') . "</td>";
@@ -1551,7 +1570,7 @@ class InventoryController extends Controller
             echo "<td>" . ($item->outbound->outbound_date ?? '-') . "</td>";
             echo "<td>" . ($item->outbound->number ?? '-') . "</td>";
             echo "<td>" . ($item->outbound->client->name ?? '-') . "</td>";
-            echo "<td>'" . $item->serial_number . "</td>";
+            echo "<td style=\"mso-number-format:\\@;\">" . $item->serial_number . "</td>";
             echo "<td>" . ($item->inventory->parent_serial_number ?? '-') . "</td>";
             echo "<td>" . $item->condition . "</td>";
             echo "</tr>";

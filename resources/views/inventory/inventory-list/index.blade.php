@@ -413,11 +413,11 @@
                             </div>
                         </div>
                         <a href="{{ route('inventory.export.pdf', request()->all()) }}" target="_blank"
-                            class="btn btn-sm btn-label-secondary">
+                            class="btn btn-sm btn-label-secondary" id="pdfExportBtn">
                             <i class="ti tabler-file-type-pdf me-1"></i> PDF Export
                         </a>
                         <a href="{{ route('inventory.export.excel', request()->all()) }}"
-                            class="btn btn-sm btn-label-success">
+                            class="btn btn-sm btn-label-success" id="excelExportBtn">
                             <i class="ti tabler-file-spreadsheet me-1"></i> Excel Export
                         </a>
                     </div>
@@ -499,6 +499,35 @@
                                         <i class="ti tabler-refresh me-1"></i> Reset Filters
                                     </a>
                                 </div>
+                            </div>
+                        </div>
+
+                        {{-- Date Period Filter --}}
+                        <div class="row g-2 mb-3 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">
+                                    <i class="ti tabler-calendar me-1"></i> Date From
+                                </label>
+                                <input type="date" name="date_from" class="form-control form-control-sm"
+                                    value="{{ request('date_from') }}" id="dateFromInput">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">
+                                    <i class="ti tabler-calendar me-1"></i> Date To
+                                </label>
+                                <input type="date" name="date_to" class="form-control form-control-sm"
+                                    value="{{ request('date_to') }}" id="dateToInput">
+                            </div>
+                            <div class="col-md d-flex gap-1 align-items-end pb-1">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="ti tabler-filter me-1"></i> Apply Date
+                                </button>
+                                @if (request('date_from') || request('date_to'))
+                                    <a href="{{ url()->current() }}?{{ http_build_query(array_merge(request()->except(['date_from', 'date_to', 'page']))) }}"
+                                        class="btn btn-sm btn-label-secondary">
+                                        <i class="ti tabler-x me-1"></i> Clear Date
+                                    </a>
+                                @endif
                             </div>
                         </div>
 
@@ -1436,5 +1465,47 @@
             `);
             printWindow.document.close();
         }
+
+        // ===== Dynamic Export URLs with Date Period =====
+        (function() {
+            'use strict';
+
+            const pdfBtn  = document.getElementById('pdfExportBtn');
+            const excelBtn = document.getElementById('excelExportBtn');
+            const dateFrom = document.getElementById('dateFromInput');
+            const dateTo   = document.getElementById('dateToInput');
+
+            if (!pdfBtn || !excelBtn) return;
+
+            function updateExportUrls() {
+                const basePdf  = '{{ route('inventory.export.pdf') }}';
+                const baseExcel = '{{ route('inventory.export.excel') }}';
+
+                // Collect all current URL params (which get updated on form submit)
+                const params = new URLSearchParams(window.location.search);
+
+                // Override date params with current input values
+                if (dateFrom && dateFrom.value) {
+                    params.set('date_from', dateFrom.value);
+                } else {
+                    params.delete('date_from');
+                }
+                if (dateTo && dateTo.value) {
+                    params.set('date_to', dateTo.value);
+                } else {
+                    params.delete('date_to');
+                }
+
+                const qs = params.toString();
+                pdfBtn.href  = basePdf  + (qs ? '?' + qs : '');
+                excelBtn.href = baseExcel + (qs ? '?' + qs : '');
+            }
+
+            if (dateFrom) dateFrom.addEventListener('change', updateExportUrls);
+            if (dateTo)   dateTo.addEventListener('change', updateExportUrls);
+
+            // Also update on page load to sync with any existing URL params
+            updateExportUrls();
+        })();
     </script>
 @endsection
