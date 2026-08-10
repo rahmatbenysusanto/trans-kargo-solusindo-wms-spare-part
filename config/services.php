@@ -28,6 +28,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'deepseek' => [
+        'api_key'  => env('DEEPSEEK_API_KEY'),
+        'base_url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
+        'model'    => env('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

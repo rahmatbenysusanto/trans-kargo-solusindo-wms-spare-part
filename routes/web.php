@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ClientController;
@@ -263,5 +264,12 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::get('/', 'index')->name('client.index');
         Route::post('/store', 'store')->name('client.store');
         Route::post('/update', 'update')->name('client.update');
+    });
+
+    Route::prefix('/ai-chat')->controller(AiChatController::class)->group(function () {
+        Route::post('/send', 'sendMessage')->name('ai-chat.send');
+        Route::get('/conversations', 'conversations')->name('ai-chat.conversations');
+        Route::get('/messages/{conversationId}', 'messages')->name('ai-chat.messages');
+        Route::delete('/conversation/{conversationId}', 'deleteConversation')->name('ai-chat.delete');
     });
 });
