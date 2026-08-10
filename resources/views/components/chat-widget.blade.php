@@ -19,12 +19,12 @@
             <div class="ai-history-header">
                 <h6 class="mb-0">Riwayat Chat</h6>
                 <button @click="showSidebar = false" class="btn btn-sm btn-icon btn-ghost-secondary rounded-circle">
-                    <i class="mdi mdi-close"></i>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
             </div>
             <div class="ai-history-body">
                 <button @click="startNewChat(); showSidebar = false" class="ai-new-chat-btn">
-                    <i class="mdi mdi-plus-circle-outline"></i> Chat Baru
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg> Chat Baru
                 </button>
                 <template x-for="conv in conversations" :key="conv.id">
                     <div class="ai-history-item" :class="{ 'active': conv.id === currentConversationId }"
@@ -33,13 +33,13 @@
                         <div class="ai-history-item-meta">
                             <small x-text="conv.updated_at"></small>
                             <button @click.stop="deleteConversation(conv.id)" class="ai-history-delete" title="Hapus">
-                                <i class="mdi mdi-delete-outline"></i>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             </button>
                         </div>
                     </div>
                 </template>
                 <div x-show="conversations.length === 0" class="text-center text-muted py-5">
-                    <i class="mdi mdi-forum-outline fs-24 d-block mb-2"></i>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:0 auto 8px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h6"/></svg>
                     <small>Belum ada percakapan</small>
                 </div>
             </div>
@@ -49,7 +49,7 @@
         <div class="ai-header">
             <div class="ai-header-left">
                 <button @click="showSidebar = !showSidebar" class="ai-header-btn" title="Riwayat">
-                    <i class="mdi mdi-history"></i>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
                 </button>
                 <div class="ai-header-info">
                     <h6 class="ai-header-name">TKS AI Assistant</h6>
@@ -58,10 +58,10 @@
             </div>
             <div class="ai-header-right">
                 <button @click="startNewChat" class="ai-header-btn" title="Chat Baru">
-                    <i class="mdi mdi-square-edit-outline"></i>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                 </button>
                 <button @click="isOpen = false" class="ai-header-btn" title="Tutup">
-                    <i class="mdi mdi-close"></i>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
             </div>
         </div>
