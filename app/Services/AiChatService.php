@@ -107,6 +107,8 @@ class AiChatService
             [['role' => 'user', 'content' => $userMessage]]
         );
 
+        $result = null;
+
         try {
             $response = Http::timeout(15)
                 ->withHeaders([
@@ -122,18 +124,139 @@ class AiChatService
 
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
-                return $this->parseJsonResponse($content);
+                $result = $this->parseJsonResponse($content);
+            } else {
+                Log::error('DeepSeek intent classification failed', [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
             }
-
-            Log::error('DeepSeek intent classification failed', [
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
         } catch (\Exception $e) {
             Log::error('DeepSeek API error: ' . $e->getMessage());
         }
 
-        return ['intent' => 'general_chat', 'params' => []];
+        // Fallback: if classification returned general_chat, check if this is a follow-up
+        // to a previous data query by reusing the last known intent & params
+        if (!$result || $result['intent'] === 'general_chat') {
+            $fallback = $this->detectFollowUpIntent($userMessage, $conversation);
+            if ($fallback) {
+                Log::info('AI Chat: using fallback intent from conversation history', $fallback);
+                return $fallback;
+            }
+        }
+
+        return $result ?: ['intent' => 'general_chat', 'params' => []];
+    }
+
+    /**
+     * Detect if the current message is a follow-up to a previous data query.
+     * If so, reuse the intent and params from the most recent assistant message.
+     */
+    private function detectFollowUpIntent(string $userMessage, ChatConversation $conversation): ?array
+    {
+        // Patterns that indicate a follow-up / continuation request
+        $followUpPatterns = [
+            'outbound',
+            'inbound',
+            'history',
+            'riwayat',
+            'lengkap',
+            'detail',
+            'data',
+            'report',
+            'laporan',
+            'lagi',
+            'cek',
+            'coba',
+            'tolong',
+            'tampilkan',
+            'mana',
+            'kok',
+            'ini',
+            'itu',
+            'nya',
+            'dong',
+            'dulu',
+            'semua',
+            'full',
+        ];
+
+        $msgLower = strtolower($userMessage);
+
+        // Check if message is short (likely follow-up) and contains follow-up patterns
+        $wordCount = str_word_count($msgLower, 0);
+        $hasFollowUpWord = false;
+        foreach ($followUpPatterns as $word) {
+            if (str_contains($msgLower, $word)) {
+                $hasFollowUpWord = true;
+                break;
+            }
+        }
+
+        // Only apply fallback for shorter messages (likely follow-ups, not new topics)
+        if (!$hasFollowUpWord || $wordCount > 25) {
+            return null;
+        }
+
+        // Look for the most recent assistant message that had intent metadata
+        $lastAssistantMsg = $conversation->messages()
+            ->where('role', 'assistant')
+            ->whereNotNull('metadata')
+            ->latest('created_at')
+            ->first();
+
+        if (!$lastAssistantMsg || empty($lastAssistantMsg->metadata)) {
+            return null;
+        }
+
+        $metadata = $lastAssistantMsg->metadata;
+        $lastIntent = $metadata['intent'] ?? null;
+        $lastParams = $metadata['params'] ?? [];
+
+        if (!$lastIntent || $lastIntent === 'general_chat') {
+            return null;
+        }
+
+        // Try to extract new params from current message, merge with previous params
+        $newParams = $this->extractParamsLocally($userMessage, $lastIntent);
+        $mergedParams = array_merge($lastParams, $newParams);
+
+        return [
+            'intent' => $lastIntent,
+            'params' => $mergedParams,
+        ];
+    }
+
+    /**
+     * Simple local param extraction for follow-up messages.
+     * Extracts serial numbers, part numbers, etc. from user text.
+     */
+    private function extractParamsLocally(string $userMessage, string $intent): array
+    {
+        $params = [];
+
+        // Try to extract serial number (alphanumeric, typically 8-15 chars)
+        if (preg_match('/\b([a-zA-Z]{2,4}\d{5,12}[a-zA-Z]?)\b/', $userMessage, $m)) {
+            $params['serial_number'] = $m[1];
+        }
+
+        // Try to extract part number
+        if (preg_match('/\b([A-Z0-9]{4,}[\-\.\/]?[A-Z0-9]{2,})\b/', $userMessage, $m)) {
+            $params['part_number'] = $m[1];
+        }
+
+        // Try to extract inbound/PO number
+        if (preg_match('/\b(\d{4,}\/[A-Z]{1,4}\/[A-Z]{1,3}\/[A-Z]{1,3}\/\d{4})\b/i', $userMessage, $m)) {
+            $params['inbound_number'] = $m[1];
+        }
+
+        // Try to extract month/year for outbound summary
+        if (preg_match('/\b(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b/i', $userMessage, $m)) {
+            $months = ['januari'=>1,'februari'=>2,'maret'=>3,'april'=>4,'mei'=>5,'juni'=>6,'juli'=>7,'agustus'=>8,'september'=>9,'oktober'=>10,'november'=>11,'desember'=>12];
+            $params['month'] = $months[strtolower($m[1])] ?? null;
+        }
+
+        return $params;
     }
 
     /**
@@ -362,7 +485,7 @@ class AiChatService
         $history = DB::table('inventory_history')
             ->where('serial_number', $sn)
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(5)
             ->get()
             ->toArray();
 
@@ -370,6 +493,12 @@ class AiChatService
             'current'  => $results,
             'history'  => $history,
             'searched' => $sn,
+            'summary'  => [
+                'found_inventory' => !is_null($inventory),
+                'found_inbound'   => !is_null($inbound),
+                'found_outbound'  => !is_null($outbound),
+                'history_count'   => count($history),
+            ],
         ];
     }
 
@@ -666,9 +795,18 @@ class AiChatService
         $systemPrompt = $this->getDataFormattingPrompt($intent);
 
         $dataContext = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        // Truncate if too long to stay within token limits
-        if (mb_strlen($dataContext) > 3000) {
-            $dataContext = mb_substr($dataContext, 0, 3000) . "\n... (data terpotong)";
+
+        // Smart truncation: prioritize current data over history
+        if (mb_strlen($dataContext) > 6000) {
+            // Try to truncate only the history part if it exists
+            if (isset($data['history']) && is_array($data['history'])) {
+                $data['history'] = array_slice($data['history'], 0, 5);
+                $dataContext = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            }
+            // If still too long, hard truncate
+            if (mb_strlen($dataContext) > 6000) {
+                $dataContext = mb_substr($dataContext, 0, 6000) . "\n... (data terpotong, tampilkan yang tersedia saja)";
+            }
         }
 
         try {
@@ -681,10 +819,10 @@ class AiChatService
                     'model'       => $this->model,
                     'messages'    => [
                         ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => "Pertanyaan user: \"{$userMessage}\"\n\nData hasil query:\n{$dataContext}\n\nTolong jawab pertanyaan user berdasarkan data di atas dalam Bahasa Indonesia yang natural dan mudah dipahami."],
+                        ['role' => 'user', 'content' => "Pertanyaan user: \"{$userMessage}\"\n\nData hasil query:\n{$dataContext}\n\nTolong jawab pertanyaan user berdasarkan data di atas dalam Bahasa Indonesia yang natural dan mudah dipahami. TAMPILKAN SEMUA data yang tersedia — inbound, outbound, inventory, dan history. Jika ada bagian yang kosong/tidak ditemukan, sebutkan dengan jelas (misal: 'Data outbound tidak ditemukan untuk SN ini')."],
                     ],
                     'temperature' => 0.5,
-                    'max_tokens'  => 600,
+                    'max_tokens'  => 900,
                 ]);
 
             if ($response->successful()) {
@@ -716,8 +854,56 @@ class AiChatService
 
     private function formatDataFallback(string $intent, array $params, array $data): string
     {
-        $count = count($data);
-        $preview = json_encode(array_slice($data, 0, 5), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        // For serial_number_lookup, build a structured fallback response
+        if ($intent === 'serial_number_lookup' && isset($data['current'])) {
+            $sn = $data['searched'] ?? ($params['serial_number'] ?? '');
+            $parts = ["📊 **Hasil pencarian untuk SN: {$sn}**\n"];
+
+            foreach ($data['current'] as $item) {
+                $source = $item->source ?? 'Unknown';
+                $parts[] = "---";
+                $parts[] = "**📍 Sumber: {$source}**";
+                foreach ($item as $key => $value) {
+                    if ($key !== 'source' && !empty($value)) {
+                        $label = ucwords(str_replace('_', ' ', $key));
+                        $parts[] = "- {$label}: {$value}";
+                    }
+                }
+            }
+
+            if (empty($data['current'])) {
+                $parts[] = "❌ Tidak ditemukan di inventory, inbound, maupun outbound.";
+            }
+
+            // Check what's missing
+            $summary = $data['summary'] ?? [];
+            if (!empty($summary)) {
+                $missing = [];
+                if (empty($summary['found_inbound'])) $missing[] = 'Inbound';
+                if (empty($summary['found_outbound'])) $missing[] = 'Outbound';
+                if (empty($summary['found_inventory'])) $missing[] = 'Inventory';
+                if (!empty($missing)) {
+                    $parts[] = "\n⚠️ Data tidak ditemukan di: " . implode(', ', $missing);
+                }
+            }
+
+            if (!empty($data['history'])) {
+                $parts[] = "\n📜 **Riwayat ({$summary['history_count']} record):**";
+                foreach ($data['history'] as $h) {
+                    $h = (array) $h;
+                    $parts[] = "- [{$h['created_at']}] {$h['type']} — {$h['description']}";
+                }
+            }
+
+            return implode("\n", $parts);
+        }
+
+        $count = is_array($data) ? count($data) : 0;
+        // Show more data in fallback (up to 10 items)
+        $preview = json_encode(
+            is_array($data) ? array_slice($data, 0, 10) : $data,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+        );
 
         return "📊 Ditemukan **{$count}** hasil:\n```json\n{$preview}\n```";
     }
@@ -742,6 +928,12 @@ Intent yang tersedia:
 7. inventory_summary - Ringkasan inventori. Params: condition
 8. product_history - Riwayat pergerakan spare part. Params: part_name, serial_number
 9. general_chat - Pertanyaan umum/FAQ/sapaan. Params: []
+
+PENTING — ATURAN FOLLOW-UP / KONTEKS:
+- Kamu akan menerima riwayat percakapan sebelumnya. GUNAKAN riwayat tersebut untuk memahami konteks.
+- Jika pesan user saat ini adalah follow-up dari pertanyaan sebelumnya (contoh: "outboundnya mana?", "data lengkapnya?", "historynya dong?", "coba cek lagi", "tampilkan semua"), TETAP gunakan intent yang SAMA dengan pertanyaan sebelumnya dan EKSTRAK parameter (seperti serial_number, part_name, dll) dari riwayat percakapan.
+- Jika pesan user menyebutkan "SN ini", "serial number ini", "part ini", atau kata ganti penunjuk, ambil nilai serial_number/part_number dari pesan user sebelumnya di riwayat.
+- JANGAN jatuh ke general_chat hanya karena pesan saat ini pendek atau tidak mengandung parameter lengkap — cek dulu riwayat percakapan.
 
 Di akhir response, berikan JSON dengan format:
 {"intent": "nama_intent", "params": {"key": "value"}}
@@ -806,9 +998,14 @@ PROMPT;
 
         $context = [];
         foreach ($messages as $msg) {
+            $content = $msg->content;
+            // Truncate assistant messages to keep context clean and focused
+            if ($msg->role === 'assistant' && mb_strlen($content) > 250) {
+                $content = mb_substr($content, 0, 250) . '...';
+            }
             $context[] = [
                 'role'    => $msg->role,
-                'content' => $msg->content,
+                'content' => $content,
             ];
         }
 
