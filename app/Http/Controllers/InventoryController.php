@@ -119,7 +119,7 @@ class InventoryController extends Controller
 
         // Quick Search: multi SN / Asset ID (paste multiple values)
         if ($quickSearch && trim($quickSearch) !== '') {
-            $terms = preg_split('/[\r\n,;]+/', $quickSearch);
+            $terms = preg_split('/[\r\n,; ]+/', $quickSearch);
             $terms = array_map('trim', $terms);
             $terms = array_filter($terms, fn($v) => $v !== '');
 
@@ -818,7 +818,7 @@ class InventoryController extends Controller
         // Quick Search: multi SN / Asset ID (paste multiple values)
         $quickSearch = $request->get('quick_search');
         if ($quickSearch && trim($quickSearch) !== '') {
-            $terms = preg_split('/[\r\n,;]+/', $quickSearch);
+            $terms = preg_split('/[\r\n,; ]+/', $quickSearch);
             $terms = array_map('trim', $terms);
             $terms = array_filter($terms, fn($v) => $v !== '');
 
@@ -863,7 +863,7 @@ class InventoryController extends Controller
         // Quick Search: multi SN / Asset ID (paste multiple values)
         $quickSearch = $request->get('quick_search');
         if ($quickSearch && trim($quickSearch) !== '') {
-            $terms = preg_split('/[\r\n,;]+/', $quickSearch);
+            $terms = preg_split('/[\r\n,; ]+/', $quickSearch);
             $terms = array_map('trim', $terms);
             $terms = array_filter($terms, fn($v) => $v !== '');
 
@@ -899,7 +899,7 @@ class InventoryController extends Controller
         // Quick Search: multi SN / Asset ID (paste multiple values)
         $quickSearch = $request->get('quick_search');
         if ($quickSearch && trim($quickSearch) !== '') {
-            $terms = preg_split('/[\r\n,;]+/', $quickSearch);
+            $terms = preg_split('/[\r\n,; ]+/', $quickSearch);
             $terms = array_map('trim', $terms);
             $terms = array_filter($terms, fn($v) => $v !== '');
 

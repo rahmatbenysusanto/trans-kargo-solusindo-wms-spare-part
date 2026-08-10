@@ -445,9 +445,9 @@
                                     <i class="ti tabler-search me-1"></i> Quick Search SN / Asset ID
                                 </label>
                                 <input type="text" name="quick_search" class="form-control form-control-sm"
-                                    placeholder="Paste SN atau Asset ID, pisahkan dengan koma atau enter"
+                                    placeholder="Paste SN atau Asset ID, pisahkan dengan koma, spasi, atau enter"
                                     value="{{ request('quick_search') }}"
-                                    title="Paste multiple serial numbers or asset IDs&#10;Separate by comma, semicolon, or newline">
+                                    title="Paste multiple serial numbers or asset IDs&#10;Separate by comma, semicolon, space, or newline">
                             </div>
                             <div class="col-md d-flex gap-1 align-items-end pb-1">
                                 <button type="submit" class="btn btn-sm btn-primary">
