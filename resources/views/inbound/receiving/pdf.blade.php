@@ -153,7 +153,7 @@
                         <div class="mt-auto pt-4">
                             <div class="border-top border-dark pt-1 mt-4">
                                 <p class="mb-0 small">Name : <strong>{{ $inbound->received_by }}</strong></p>
-                                <p class="mb-0 small">Date : {{ date('d-m-Y', strtotime($inbound->received_date)) }}</p>
+                                <p class="mb-0 small">Date : </p>
                                 <p class="mb-0 small">Time : {{ date('H:i') }}</p>
                             </div>
                         </div>
@@ -165,7 +165,7 @@
                         <div class="mt-auto pt-4">
                             <div class="border-top border-dark pt-1 mt-4">
                                 <p class="mb-0 small">Name : ____________________</p>
-                                <p class="mb-0 small">Date : {{ date('d-m-Y', strtotime($inbound->received_date)) }}</p>
+                                <p class="mb-0 small">Date : </p>
                                 <p class="mb-0 small">Time : ________</p>
                             </div>
                         </div>
