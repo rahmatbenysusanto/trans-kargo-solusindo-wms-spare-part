@@ -504,6 +504,284 @@ class OutboundController extends Controller
         }
     }
 
+    // ─────────────────────────────────────────────
+    // RELOKASI
+    // ─────────────────────────────────────────────
+
+    public function indexRelokasi(Request $request): View
+    {
+        $title = 'Relokasi';
+        $query = Outbound::with('client')->where('category', 'Relokasi');
+        $user = Auth::user();
+
+        if ($user->isAdminWMS()) {
+            if ($request->client_id) {
+                $query->where('client_id', $request->client_id);
+            }
+        } else {
+            $accessibleIds = $user->getAccessibleClientIds();
+            $query->where(function ($q) use ($accessibleIds) {
+                $q->whereIn('client_id', $accessibleIds)->orWhereNull('client_id');
+            });
+        }
+
+        $data = $query
+            ->when($request->search, function ($q) use ($request) {
+                return $q->where(function ($inner) use ($request) {
+                    $inner->where('number', 'like', '%' . $request->search . '%')
+                        ->orWhere('tks_dn_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('pickup_address', 'like', '%' . $request->search . '%')
+                        ->orWhere('from_address', 'like', '%' . $request->search . '%')
+                        ->orWhereHas('details', function ($dq) use ($request) {
+                            $dq->where('serial_number', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_name', 'like', '%' . $request->search . '%')
+                                ->orWhere('part_number', 'like', '%' . $request->search . '%');
+                        });
+                });
+            })
+            ->latest()
+            ->paginate(15);
+
+        $clients = Client::all();
+
+        return view('outbound.relokasi.index', compact('title', 'data', 'clients'));
+    }
+
+    public function createRelokasi(): View
+    {
+        $title = 'Create Relokasi';
+        return view('outbound.relokasi.create', compact('title'));
+    }
+
+    public function showRelokasi($id): View
+    {
+        $outbound = Outbound::with(['details', 'client'])->where('category', 'Relokasi')->findOrFail($id);
+
+        // Build relocation chain per serial number from inventory history
+        $histories = \App\Models\InventoryHistory::whereIn('serial_number', $outbound->details->pluck('serial_number'))
+            ->where('category', 'Relokasi')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('serial_number');
+
+        $title = 'Relokasi Detail';
+        return view('outbound.relokasi.show', compact('title', 'outbound', 'histories'));
+    }
+
+    public function storeRelokasi(Request $request)
+    {
+        $request->validate([
+            'from_address'  => 'required',
+            'pickup_address' => 'required',
+            'outbound_date' => 'required',
+            'outbound_by'   => 'required',
+            'products'      => 'required|array|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $outbound = Outbound::create([
+                'category'       => 'Relokasi',
+                'request_type'   => 'Relokasi',
+                'client_id'      => $request->post('client_id') ?: null,
+                'number'         => self::generateOutboundNumber(),
+                'tks_dn_number'  => $request->post('tks_dn_number') ?: self::generateTksDnNumber(),
+                'from_address'   => $request->post('from_address'),
+                'pickup_address' => $request->post('pickup_address'),
+                'qty'            => count($request->post('products')),
+                'status'         => 'new',
+                'outbound_date'  => $request->post('outbound_date'),
+                'outbound_by'    => $request->post('outbound_by'),
+                'remarks'        => $request->post('remarks'),
+            ]);
+
+            foreach ($request->post('products') as $product) {
+                $inventory = \App\Models\Inventory::where('serial_number', $product['serialNumber'])->first();
+
+                OutboundDetail::create([
+                    'outbound_id'   => $outbound->id,
+                    'product_id'    => $product['product_id'] ?? 0,
+                    'part_name'     => $product['partName'],
+                    'part_number'   => $product['partNumber'],
+                    'description'   => $product['partDescription'] ?? '',
+                    'qty'           => 1,
+                    'serial_number' => $product['serialNumber'],
+                    'condition'     => $product['condition'] ?? ($inventory?->condition ?? 'Good'),
+                ]);
+
+                \App\Models\InventoryHistory::create([
+                    'inventory_id'     => $inventory?->id,
+                    'serial_number'    => $product['serialNumber'],
+                    'type'             => 'Outbound',
+                    'category'         => 'Relokasi',
+                    'reference_number' => $outbound->tks_dn_number ?? $outbound->number,
+                    'description'      => "Item direlokasi dari {$outbound->from_address} ke {$outbound->pickup_address}",
+                    'user'             => $outbound->outbound_by,
+                    'from_location'    => $outbound->from_address,
+                    'to_location'      => $outbound->pickup_address,
+                ]);
+
+                if ($inventory) {
+                    $inventory->update([
+                        'qty'                => 0,
+                        'status'             => 'On Relocation',
+                        'last_movement_date' => now(),
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    public function cancelRelokasi(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $outbound = Outbound::with('details')
+                ->where('category', 'Relokasi')
+                ->findOrFail($request->post('id'));
+
+            if ($outbound->status === 'cancel') {
+                return response()->json(['status' => false, 'message' => 'Relokasi ini sudah dibatalkan.']);
+            }
+
+            foreach ($outbound->details as $detail) {
+                $sn = $detail->serial_number;
+                $inventory = \App\Models\Inventory::where('serial_number', $sn)->first();
+
+                // If another active relokasi still contains this SN → keep On Relocation
+                $hasOtherRelokasi = OutboundDetail::where('serial_number', $sn)
+                    ->whereHas('outbound', function ($q) use ($outbound) {
+                        $q->where('category', 'Relokasi')
+                            ->where('status', '!=', 'cancel')
+                            ->where('id', '!=', $outbound->id);
+                    })
+                    ->exists();
+
+                $restoreStatus = $hasOtherRelokasi ? 'On Relocation' : 'available';
+                $restoreQty    = $hasOtherRelokasi ? 0 : 1;
+
+                if ($inventory) {
+                    $inventory->update([
+                        'qty'                => $restoreQty,
+                        'status'             => $restoreStatus,
+                        'last_movement_date' => now(),
+                    ]);
+
+                    \App\Models\InventoryHistory::create([
+                        'inventory_id'     => $inventory->id,
+                        'serial_number'    => $sn,
+                        'type'             => 'Movement',
+                        'category'         => 'Cancel Relokasi',
+                        'reference_number' => $outbound->tks_dn_number ?? $outbound->number,
+                        'description'      => "Relokasi ({$outbound->from_address} → {$outbound->pickup_address}) dibatalkan. Status dikembalikan ke: {$restoreStatus}",
+                        'user'             => Auth::user()->name,
+                    ]);
+                }
+            }
+
+            $outbound->update(['status' => 'cancel']);
+
+            DB::commit();
+            return response()->json(['status' => true]);
+        } catch (\Throwable $err) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $err->getMessage()]);
+        }
+    }
+
+    public function getInventoryRelokasi(Request $request)
+    {
+        // Statuses that mean "already outbounded via another transaction" — shown with a warning flag
+        $outboundedStatuses = [
+            'Shipped / Outbound',
+            'Out for Replacement/ Support',
+            'Out for Loan',
+            'Out for Return',
+        ];
+
+        try {
+            // Include: available (qty>0), On Relocation (multi-hop), AND already-OB items (flagged)
+            // Exclude only: Write-off, staging
+            $query = \App\Models\Inventory::with(['storageLevel.bin.rak.zone', 'brand', 'productGroup'])
+                ->where(function ($q) use ($outboundedStatuses) {
+                    $q->where('qty', '>', 0)                      // available di WH
+                        ->orWhereIn('status', array_merge(
+                            $outboundedStatuses,
+                            ['On Relocation']
+                        ));
+                })
+                ->whereNotIn('status', ['Write-off', 'staging']);
+
+            if ($request->search) {
+                $s = $request->search;
+                $query->where(function ($q) use ($s) {
+                    $q->where('unique_id', 'like', "%$s%")
+                        ->orWhere('serial_number', 'like', "%$s%")
+                        ->orWhere('part_name', 'like', "%$s%")
+                        ->orWhere('part_number', 'like', "%$s%");
+                });
+            }
+
+            $serialNumbersInput = $request->get('serial_numbers');
+            $isSerialNumberLookup = false;
+            if ($serialNumbersInput) {
+                $sns = preg_split('/[\r\n,;]+/', $serialNumbersInput);
+                $sns = array_map('trim', $sns);
+                $sns = array_filter($sns, fn($v) => $v !== '');
+                if (!empty($sns)) {
+                    $query->whereIn('serial_number', $sns);
+                    $isSerialNumberLookup = true;
+                }
+            }
+
+            if ($request->exclude_ids && $request->exclude_ids !== '') {
+                $excludeIds = explode(',', $request->exclude_ids);
+                $query->whereNotIn('id', $excludeIds);
+            }
+
+            $data = $query->latest()
+                ->when(!$isSerialNumberLookup, fn($q) => $q->limit(50))
+                ->get()
+                ->map(function ($item) use ($outboundedStatuses) {
+                    $location = 'N/A';
+                    if ($item->storageLevel && $item->storageLevel->bin && $item->storageLevel->bin->rak && $item->storageLevel->bin->rak->zone) {
+                        $location = $item->storageLevel->bin->rak->zone->name . '-' .
+                            $item->storageLevel->bin->rak->name . '-' .
+                            $item->storageLevel->bin->name . '-' .
+                            $item->storageLevel->name;
+                    }
+                    return [
+                        'id'               => $item->id,
+                        'unique_id'        => $item->unique_id,
+                        'part_name'        => $item->part_name,
+                        'part_number'      => $item->part_number,
+                        'part_description' => $item->part_description,
+                        'serial_number'    => $item->serial_number,
+                        'brand'            => $item->brand ? $item->brand->name : '-',
+                        'product_group'    => $item->productGroup ? $item->productGroup->name : '-',
+                        'condition'        => $item->condition,
+                        'status'           => $item->status,
+                        'location'         => $location,
+                        'is_outbounded'    => in_array($item->status, $outboundedStatuses),
+                    ];
+                });
+
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => true, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ─────────────────────────────────────────────
+
     public function getInventory(Request $request)
     {
         try {

@@ -401,12 +401,26 @@ class InboundController extends Controller
                     $inboundDetail->notes = $notes[$id];
                 }
 
-                // Initial Inventory check (by SN or by existing WH Asset Number)
-                $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)
-                    ->when($inboundDetail->wh_asset_number, function ($q) use ($inboundDetail) {
-                        return $q->orWhere('unique_id', $inboundDetail->wh_asset_number);
-                    })
-                    ->first();
+                // If old_wh_asset_number is set (faulty return from replacement),
+                // inherit the asset# from the original outbounded device instead of generating a new one.
+                $inheritedFromReplacement = false;
+                if ($inboundDetail->old_wh_asset_number && !$inboundDetail->wh_asset_number) {
+                    $originalInventory = Inventory::where('unique_id', $inboundDetail->old_wh_asset_number)->first();
+                    if ($originalInventory) {
+                        $inboundDetail->wh_asset_number = $originalInventory->unique_id;
+                        $checkInventory = $originalInventory;
+                        $inheritedFromReplacement = true;
+                    }
+                }
+
+                // Standard inventory check (by SN or by existing WH Asset Number)
+                if (!$inheritedFromReplacement) {
+                    $checkInventory = Inventory::where('serial_number', $inboundDetail->serial_number)
+                        ->when($inboundDetail->wh_asset_number, function ($q) use ($inboundDetail) {
+                            return $q->orWhere('unique_id', $inboundDetail->wh_asset_number);
+                        })
+                        ->first();
+                }
 
                 // Generate or Fetch WH Asset Number
                 if (!$inboundDetail->wh_asset_number) {
@@ -426,37 +440,39 @@ class InboundController extends Controller
                 if ($checkInventory) {
                     $inventoryId = $checkInventory->id;
                     $checkInventory->update([
-                        'unique_id'         => $inboundDetail->wh_asset_number,
-                        'client_id'         => $inbound->client_id,
-                        'storage_level_id'  => $storageLevelId,
-                        'product_id'        => $inboundDetail->product_id,
-                        'brand_id'          => $inboundDetail->brand_id,
-                        'product_group_id'  => $inboundDetail->product_group_id,
-                        'qty'               => 1,
-                        'part_name'         => $inboundDetail->part_name,
-                        'part_number'       => $inboundDetail->part_number,
-                        'part_description'  => $inboundDetail->description,
-                        'serial_number'     => $inboundDetail->serial_number,
-                        'parent_serial_number' => $inboundDetail->parent_sn ?? ($inboundDetail->old_serial_number ?? $checkInventory->parent_serial_number),
-                        'status'            => 'available',
-                        'condition'         => $inboundDetail->condition,
+                        'unique_id'             => $inboundDetail->wh_asset_number,
+                        'client_id'             => $inbound->client_id,
+                        'storage_level_id'      => $storageLevelId,
+                        'product_id'            => $inboundDetail->product_id,
+                        'brand_id'              => $inboundDetail->brand_id,
+                        'product_group_id'      => $inboundDetail->product_group_id,
+                        'qty'                   => 1,
+                        'part_name'             => $inboundDetail->part_name,
+                        'part_number'           => $inboundDetail->part_number,
+                        'part_description'      => $inboundDetail->description,
+                        'serial_number'         => $inboundDetail->serial_number,
+                        'old_wh_asset_number'   => $inheritedFromReplacement ? $inboundDetail->old_wh_asset_number : $checkInventory->old_wh_asset_number,
+                        'parent_serial_number'  => $inboundDetail->parent_sn ?? ($inboundDetail->old_serial_number ?? $checkInventory->parent_serial_number),
+                        'status'                => 'available',
+                        'condition'             => $inboundDetail->condition,
                     ]);
                 } else {
                     $createInventory = Inventory::create([
-                        'unique_id'         => $inboundDetail->wh_asset_number,
-                        'client_id'         => $inbound->client_id,
-                        'storage_level_id'  => $storageLevelId,
-                        'product_id'        => $inboundDetail->product_id,
-                        'brand_id'          => $inboundDetail->brand_id,
-                        'product_group_id'  => $inboundDetail->product_group_id,
-                        'qty'               => 1,
-                        'part_name'         => $inboundDetail->part_name,
-                        'part_number'       => $inboundDetail->part_number,
-                        'part_description'  => $inboundDetail->description,
-                        'serial_number'     => $inboundDetail->serial_number,
-                        'parent_serial_number' => $inboundDetail->parent_sn ?? $inboundDetail->old_serial_number,
-                        'status'            => 'available',
-                        'condition'         => $inboundDetail->condition,
+                        'unique_id'             => $inboundDetail->wh_asset_number,
+                        'client_id'             => $inbound->client_id,
+                        'storage_level_id'      => $storageLevelId,
+                        'product_id'            => $inboundDetail->product_id,
+                        'brand_id'              => $inboundDetail->brand_id,
+                        'product_group_id'      => $inboundDetail->product_group_id,
+                        'qty'                   => 1,
+                        'part_name'             => $inboundDetail->part_name,
+                        'part_number'           => $inboundDetail->part_number,
+                        'part_description'      => $inboundDetail->description,
+                        'serial_number'         => $inboundDetail->serial_number,
+                        'old_wh_asset_number'   => $inboundDetail->old_wh_asset_number,
+                        'parent_serial_number'  => $inboundDetail->parent_sn ?? $inboundDetail->old_serial_number,
+                        'status'                => 'available',
+                        'condition'             => $inboundDetail->condition,
                     ]);
                     $inventoryId = $createInventory->id;
                 }
@@ -480,15 +496,19 @@ class InboundController extends Controller
                 $storage = \App\Models\StorageLevel::with('bin.rak.zone')->find($storageLevelId);
                 $locationName = $storage ? "{$storage->bin->rak->zone->name}-{$storage->bin->rak->name}-{$storage->bin->name}-{$storage->name}" : 'N/A';
 
+                $historyDesc = $inheritedFromReplacement
+                    ? "Item masuk sebagai faulty return, mewarisi Asset# {$inboundDetail->wh_asset_number} dari perangkat yang sebelumnya keluar untuk Replacement. Ditempatkan di {$locationName}."
+                    : "Item moved from Receiving Staging to {$locationName}.";
+
                 \App\Models\InventoryHistory::create([
-                    'inventory_id' => $inventoryId,
-                    'serial_number' => $inboundDetail->serial_number,
-                    'type' => 'Inbound',
-                    'category' => 'Put Away',
+                    'inventory_id'     => $inventoryId,
+                    'serial_number'    => $inboundDetail->serial_number,
+                    'type'             => 'Inbound',
+                    'category'         => 'Put Away',
                     'reference_number' => $inbound->number,
-                    'description' => 'Item moved from Receiving Staging to ' . $locationName,
-                    'user' => Auth::user()->name,
-                    'to_location' => $locationName
+                    'description'      => $historyDesc,
+                    'user'             => Auth::user()->name,
+                    'to_location'      => $locationName,
                 ]);
 
                 // Automatically clear Old SN in Outbound if this SN was a replacement target

@@ -158,6 +158,16 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         });
 
         Route::get('/get-inventory', 'getInventory')->name('outbound.get.inventory');
+
+        Route::prefix('/relokasi')->group(function () {
+            Route::get('/', 'indexRelokasi')->name('outbound.relokasi.index');
+            Route::get('/create', 'createRelokasi')->name('outbound.relokasi.create');
+            Route::post('/store', 'storeRelokasi')->name('outbound.relokasi.store');
+            Route::get('/get-inventory', 'getInventoryRelokasi')->name('outbound.relokasi.get.inventory');
+            Route::post('/cancel', 'cancelRelokasi')->name('outbound.relokasi.cancel');
+            Route::get('/{id}', 'showRelokasi')->name('outbound.relokasi.show');
+        });
+
         Route::get('/{id}', 'show')->name('outbound.show');
         Route::get('/print/{id}', 'printPdf')->name('outbound.print');
         Route::post('/cancel', 'cancel')->name('outbound.cancel');

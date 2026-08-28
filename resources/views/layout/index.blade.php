@@ -395,11 +395,23 @@
                     @endif
 
                     @if ($hasOutbound)
-                        <li class="menu-item {{ $title == 'Outbound' ? 'active' : '' }}">
-                            <a href="{{ route('outbound.index') }}" class="menu-link">
+                        <li class="menu-item {{ in_array($title, ['Outbound', 'Relokasi']) ? 'show open' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-truck-delivery"></i>
                                 <div data-i18n="Outbound">Outbound</div>
                             </a>
+                            <ul class="menu-sub">
+                                <li class="menu-item {{ $title == 'Outbound' ? 'active' : '' }}">
+                                    <a href="{{ route('outbound.index') }}" class="menu-link">
+                                        <div data-i18n="Outbound List">Outbound List</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item {{ $title == 'Relokasi' ? 'active' : '' }}">
+                                    <a href="{{ route('outbound.relokasi.index') }}" class="menu-link">
+                                        <div data-i18n="Relokasi">Relokasi</div>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     @endif
 
