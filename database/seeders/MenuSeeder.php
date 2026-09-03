@@ -34,6 +34,7 @@ class MenuSeeder extends Seeder
             'Inventory: Product Movement',
             'Inventory: Write-off',
             'Inventory: Cycle Count',
+            'Inventory: Asset Group',
             'Inventory: Edit Serial Number',
 
             // Outbound

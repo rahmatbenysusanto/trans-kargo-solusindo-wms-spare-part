@@ -54,7 +54,43 @@
                     <h4 class="fw-bold mb-0">Inventory Detail</h4>
                     <p class="text-muted small mb-0">Track lifecycle and complete specifications of the unit.</p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="ti tabler-box me-1"></i> Asset Group
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal"
+                                    data-bs-target="#invCreateGroupModal">
+                                    <i class="ti tabler-plus me-1 text-primary"></i> Create New Group with this Asset
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal"
+                                    data-bs-target="#invAddGroupModal">
+                                    <i class="ti tabler-folder-plus me-1 text-primary"></i> Add to Existing Group
+                                </button>
+                            </li>
+                            @if (isset($assetGroups) && $assetGroups->isNotEmpty())
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <h6 class="dropdown-header">In these groups</h6>
+                                </li>
+                                @foreach ($assetGroups as $ag)
+                                    <li>
+                                        <a class="dropdown-item text-mono small"
+                                            href="{{ route('inventory.asset-group.show', $ag->id) }}">
+                                            <i class="ti tabler-box me-1 text-muted"></i>{{ $ag->group_number }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            @endif
+                        </ul>
+                    </div>
                     <button onclick="window.print()" class="btn btn-sm btn-label-secondary">
                         <i class="ti tabler-printer me-1"></i> Print Page
                     </button>
@@ -452,4 +488,174 @@
             </div>
         </div>
     </div>
+
+    <!-- Create Group with this Asset Modal -->
+    <div class="modal fade" id="invCreateGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="invCreateGroupForm">
+                    @csrf
+                    <input type="hidden" name="inventory_ids[]" value="{{ $inventory->id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold"><i class="ti tabler-box me-1 text-primary"></i>New Asset Group</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex align-items-center gap-2 mb-3 p-2 border rounded bg-light">
+                            <span class="badge bg-label-primary font-monospace"
+                                style="font-size:0.7rem;">{{ $inventory->serial_number }}</span>
+                            <span class="small text-muted">{{ $inventory->part_name }}
+                                ({{ $inventory->unique_id }})</span>
+                            <span class="ms-auto badge bg-label-success">Seed</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Group Name
+                                <span class="text-muted">(optional)</span></label>
+                            <input type="text" name="name" class="form-control"
+                                placeholder="e.g. Site replacement unit — chain">
+                        </div>
+                        <div>
+                            <label class="form-label small fw-bold">Description
+                                <span class="text-muted">(optional)</span></label>
+                            <textarea name="description" rows="2" class="form-control"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="invCreateGroupSubmit">Create Group</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add to Existing Group Modal -->
+    <div class="modal fade" id="invAddGroupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="ti tabler-folder-plus me-1 text-primary"></i>Add to
+                        Existing Group</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-center gap-2 mb-3 p-2 border rounded bg-light">
+                        <span class="badge bg-label-primary font-monospace"
+                            style="font-size:0.7rem;">{{ $inventory->serial_number }}</span>
+                        <span class="small text-muted">{{ $inventory->part_name }}</span>
+                    </div>
+                    <select class="form-select" id="invGroupSelect" style="width:100%;"></select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="invAddGroupSubmit">Add to Group</button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('js')
+<script>
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500,
+        width: '18rem',
+        padding: '0.5rem'
+    });
+
+    const INVENTORY_ID = {{ $inventory->id }};
+    const CSRF = '{{ csrf_token() }}';
+    const CREATE_GROUP_URL = '{{ route('inventory.asset-group.store') }}';
+    const SEARCH_GROUPS_URL = '{{ route('inventory.asset-group.search.groups') }}';
+    const ADD_ITEMS_URL = '{{ route('inventory.asset-group.add-items', ':groupId:') }}';
+
+    function ajaxGroupResults(term) {
+        const q = new URLSearchParams({ search: term });
+        return fetch(SEARCH_GROUPS_URL + '?' + q.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => ({ results: data.results }));
+    }
+
+    // Create new group seeded with this asset
+    $('#invCreateGroupForm').on('submit', function (e) {
+        e.preventDefault();
+        const btn = $('#invCreateGroupSubmit');
+        btn.prop('disabled', true);
+
+        fetch(CREATE_GROUP_URL, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF },
+            body: new FormData(this)
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status) {
+                    Toast.fire({ icon: 'success', title: data.message || 'Created' });
+                    setTimeout(() => { window.location.href = data.redirect; }, 600);
+                } else {
+                    btn.prop('disabled', false);
+                    Swal.fire({ title: 'Failed', text: data.message || 'Something went wrong.', icon: 'error' });
+                }
+            })
+            .catch(() => {
+                btn.prop('disabled', false);
+                Swal.fire({ title: 'Failed', text: 'Network error.', icon: 'error' });
+            });
+    });
+
+    // Add this asset to an existing group
+    $('#invGroupSelect').select2({
+        dropdownParent: $('#invAddGroupModal'),
+        placeholder: '-- Search group number / name --',
+        allowClear: true,
+        ajax: {
+            url: SEARCH_GROUPS_URL,
+            dataType: 'json',
+            delay: 250,
+            data: p => ({ search: p.term }),
+            processResults: ajaxGroupResults
+        }
+    });
+
+    $('#invAddGroupModal').on('hidden.bs.modal', function () {
+        $('#invGroupSelect').val(null).trigger('change');
+    });
+
+    $('#invAddGroupSubmit').on('click', function () {
+        const groupId = $('#invGroupSelect').val();
+        if (!groupId) {
+            Swal.fire({ title: 'No selection', text: 'Pick an asset group first.', icon: 'info' });
+            return;
+        }
+        const btn = $(this);
+        btn.prop('disabled', true);
+
+        const body = new URLSearchParams();
+        body.append('_token', CSRF);
+        body.append('inventory_ids[]', INVENTORY_ID);
+
+        fetch(ADD_ITEMS_URL.replace(':groupId:', groupId), {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF },
+            body
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status) {
+                    Toast.fire({ icon: 'success', title: data.message || 'Added' });
+                    setTimeout(() => window.location.reload(), 500);
+                } else {
+                    btn.prop('disabled', false);
+                    Swal.fire({ title: 'Failed', text: data.message || 'Something went wrong.', icon: 'error' });
+                }
+            })
+            .catch(() => {
+                btn.prop('disabled', false);
+                Swal.fire({ title: 'Failed', text: 'Network error.', icon: 'error' });
+            });
+    });
+</script>
 @endsection

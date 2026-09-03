@@ -253,7 +253,8 @@
                             Auth::user()->hasMenu('Inventory: Write-off') ||
                             Auth::user()->hasMenu('Inventory: Edit Serial Number') ||
                             Auth::user()->hasMenu('Inventory: Edit Part Number') ||
-                            Auth::user()->hasMenu('Inventory: Cycle Count');
+                            Auth::user()->hasMenu('Inventory: Cycle Count') ||
+                            Auth::user()->hasMenu('Inventory: Asset Group');
 
                         $hasOutbound = Auth::user()->hasMenu('Outbound');
                         $hasInvoices = Auth::user()->hasMenu('Invoices');
@@ -312,7 +313,7 @@
 
                     @if ($hasInventory)
                         <li
-                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory History', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Storage Inventory', 'Write Off', 'Edit Serial Number', 'Edit Part Number', 'Cycle Count']) ? 'show open' : '' }}">
+                            class="menu-item {{ in_array($title, ['Inventory List', 'Inventory History', 'Inventory Product', 'Inventory Stock Statement', 'Stock Movement', 'Product Movement', 'Storage Inventory', 'Write Off', 'Edit Serial Number', 'Edit Part Number', 'Cycle Count', 'Asset Group']) ? 'show open' : '' }}">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-truck-loading"></i>
                                 <div data-i18n="Inventory">Inventory</div>
@@ -373,6 +374,13 @@
                                         <a href="{{ route('inventory.cycle-count') }}"
                                             class="menu-link text-warning">
                                             <div data-i18n="Cycle Count">Cycle Count</div>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if (Auth::user()->hasMenu('Inventory: Asset Group'))
+                                    <li class="menu-item {{ $title == 'Asset Group' ? 'active' : '' }}">
+                                        <a href="{{ route('inventory.asset-group.index') }}" class="menu-link">
+                                            <div data-i18n="Asset Group">Asset Group</div>
                                         </a>
                                     </li>
                                 @endif

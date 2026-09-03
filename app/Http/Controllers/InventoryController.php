@@ -651,7 +651,12 @@ class InventoryController extends Controller
 
         $history = $history->sortByDesc('date')->values();
 
-        return view('inventory.inventory-list.show', compact('title', 'inventory', 'history', 'parentInventory'));
+        // Asset groups this unit belongs to (for the Asset Group dropdown)
+        $assetGroups = \App\Models\AssetGroup::whereHas('items', fn ($q) => $q->where('inventory_id', $inventory->id))
+            ->latest()
+            ->get();
+
+        return view('inventory.inventory-list.show', compact('title', 'inventory', 'history', 'parentInventory', 'assetGroups'));
     }
 
     public function productMovementIndex(): View

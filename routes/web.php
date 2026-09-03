@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiChatController;
+use App\Http\Controllers\AssetGroupController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ClientController;
@@ -134,6 +135,18 @@ Route::middleware([AuthMiddleware::class])->group(function () {
         Route::post('/edit-sn', 'updateSn')->name('inventory.update.sn');
         Route::get('/edit-part-number', 'editPartNumber')->name('inventory.edit.part-number');
         Route::post('/edit-part-number', 'updatePartNumber')->name('inventory.update.part-number');
+    });
+
+    Route::prefix('/inventory/asset-group')->controller(AssetGroupController::class)->group(function () {
+        Route::get('/', 'index')->name('inventory.asset-group.index');
+        Route::get('/suggest/{id}', 'suggest')->name('inventory.asset-group.suggest');
+        Route::get('/search-inventory', 'searchInventory')->name('inventory.asset-group.search');
+        Route::get('/search-groups', 'searchGroups')->name('inventory.asset-group.search.groups');
+        Route::post('/store', 'store')->name('inventory.asset-group.store');
+        Route::get('/{id}', 'show')->name('inventory.asset-group.show');
+        Route::post('/{id}/items', 'addItems')->name('inventory.asset-group.add-items');
+        Route::post('/{id}/remove-item', 'removeItem')->name('inventory.asset-group.remove-item');
+        Route::post('/{id}/delete', 'destroy')->name('inventory.asset-group.destroy');
     });
 
     Route::prefix('/inventory/cycle-count')->controller(\App\Http\Controllers\CycleCountController::class)->group(function () {
